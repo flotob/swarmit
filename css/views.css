@@ -1,0 +1,14 @@
+/* Placeholder views */
+.placeholder-view {
+  padding: var(--space-6) 0;
+}
+
+.placeholder-view h2 {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-2);
+}
+
+.placeholder-view .params {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+}

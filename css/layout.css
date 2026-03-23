@@ -1,0 +1,61 @@
+/* App shell layout */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-logo {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.app-logo:hover {
+  text-decoration: none;
+  opacity: 0.9;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-nav a {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.app-nav a:hover {
+  color: var(--text);
+}
+
+.app-main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-5);
+  min-height: calc(100vh - 120px);
+}
+
+.app-footer {
+  text-align: center;
+  padding: var(--space-5);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  border-top: 1px solid var(--border);
+}
+
+/* Provider status */
+.provider-status {
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-xs);
+}

@@ -1,0 +1,12 @@
+{
+  "name": "swarmit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Decentralized message board on Swarm + Gnosis Chain",
+  "scripts": {
+    "vendor": "cp node_modules/ethers/dist/ethers.js vendor/ethers.js"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
+}
