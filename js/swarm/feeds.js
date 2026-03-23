@@ -7,7 +7,8 @@
  * immutable content behind the feed — typically a JSON index object.
  */
 
-import { fetchObject, refToHex } from './fetch.js';
+import { fetchObject } from './fetch.js';
+import { refToHex } from '../protocol/references.js';
 
 /**
  * Resolve a feed manifest to its latest content.

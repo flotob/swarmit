@@ -247,8 +247,11 @@ function boot() {
   router.init(document.getElementById('app'));
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
-} else {
+// ES modules execute after DOM parsing but before DOMContentLoaded.
+// Freedom Browser injects window.swarm at DOMContentLoaded via preload,
+// so we must wait for that event before detecting providers.
+if (document.readyState === 'complete') {
   boot();
+} else {
+  document.addEventListener('DOMContentLoaded', boot);
 }
