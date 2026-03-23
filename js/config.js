@@ -9,6 +9,7 @@ export const GNOSIS_RPC_URL = 'https://rpc.gnosischain.com';
 
 // Contract (placeholder — update after deployment)
 export const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
+export const CONTRACT_DEPLOY_BLOCK = '0x0'; // hex block number — update after deployment
 
 // Protocol
 export const PROTOCOL_VERSION = 'v1';
