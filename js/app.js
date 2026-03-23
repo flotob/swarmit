@@ -8,7 +8,7 @@ import * as state from './state.js';
 import { init as initHeader } from './components/header.js';
 import { isAvailable as isSwarmAvailable } from './lib/swarm.js';
 import { isAvailable as isEthereumAvailable } from './lib/ethereum.js';
-import { fetchObject, fetchProtocolObject, cacheSize } from './swarm/fetch.js';
+import { fetchObject, cacheSize } from './swarm/fetch.js';
 import { resolveFeed } from './swarm/feeds.js';
 
 // ============================================
@@ -215,7 +215,7 @@ function renderSwarmReadSpike(container) {
     if (!ref) { result1.textContent = 'Enter a reference'; return; }
     result1.textContent = 'Fetching...';
     try {
-      const obj = await fetchProtocolObject(ref);
+      const obj = await fetchObject(ref);
       result1.textContent = JSON.stringify(obj, null, 2);
       cacheInfo.textContent = `Cache size: ${cacheSize()} objects`;
     } catch (err) {
