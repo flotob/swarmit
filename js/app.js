@@ -8,6 +8,8 @@ import * as state from './state.js';
 import { init as initHeader } from './components/header.js';
 import { isAvailable as isSwarmAvailable } from './lib/swarm.js';
 import { isAvailable as isEthereumAvailable } from './lib/ethereum.js';
+import { fetchObject, fetchProtocolObject, cacheSize } from './swarm/fetch.js';
+import { resolveFeed } from './swarm/feeds.js';
 
 // ============================================
 // Provider detection
@@ -83,6 +85,9 @@ function placeholderView(name) {
 // ============================================
 
 function registerRoutes() {
+  // WP3 spike: temporary debug view at #/debug/swarm-read
+  router.register('#/debug/swarm-read', renderSwarmReadSpike);
+
   router.register('#/', placeholderView('Home'));
   router.register('#/r/:slug', placeholderView('Board'));
   router.register('#/r/:slug/submit', placeholderView('Create Post'));
@@ -110,6 +115,124 @@ function registerRoutes() {
     div.appendChild(a);
 
     container.appendChild(div);
+  });
+}
+
+// ============================================
+// WP3: Swarm read spike — temporary debug view
+// ============================================
+
+function renderSwarmReadSpike(container) {
+  const div = document.createElement('div');
+  div.className = 'placeholder-view';
+
+  const h2 = document.createElement('h2');
+  h2.textContent = 'Swarm Read Spike';
+  div.appendChild(h2);
+
+  const desc = document.createElement('p');
+  desc.className = 'muted';
+  desc.textContent = 'Test fetching immutable objects and resolving feeds from Swarm.';
+  div.appendChild(desc);
+
+  // Immutable object fetch
+  const section1 = document.createElement('div');
+  section1.style.marginTop = '24px';
+
+  const label1 = document.createElement('label');
+  label1.textContent = 'Fetch immutable object by reference:';
+  label1.style.display = 'block';
+  label1.style.marginBottom = '8px';
+  label1.style.fontSize = '13px';
+  section1.appendChild(label1);
+
+  const input1 = document.createElement('input');
+  input1.type = 'text';
+  input1.placeholder = 'bzz://... or 64-char hex';
+  input1.style.cssText = 'width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-mono);font-size:13px;';
+  section1.appendChild(input1);
+
+  const btn1 = document.createElement('button');
+  btn1.className = 'btn btn-primary';
+  btn1.textContent = 'Fetch Object';
+  btn1.style.marginTop = '8px';
+  section1.appendChild(btn1);
+
+  const result1 = document.createElement('pre');
+  result1.style.marginTop = '8px';
+  result1.style.maxHeight = '300px';
+  result1.style.overflow = 'auto';
+  result1.textContent = '';
+  section1.appendChild(result1);
+
+  div.appendChild(section1);
+
+  // Feed resolution
+  const section2 = document.createElement('div');
+  section2.style.marginTop = '24px';
+
+  const label2 = document.createElement('label');
+  label2.textContent = 'Resolve feed manifest:';
+  label2.style.display = 'block';
+  label2.style.marginBottom = '8px';
+  label2.style.fontSize = '13px';
+  section2.appendChild(label2);
+
+  const input2 = document.createElement('input');
+  input2.type = 'text';
+  input2.placeholder = 'bzz://... feed manifest reference';
+  input2.style.cssText = input1.style.cssText;
+  section2.appendChild(input2);
+
+  const btn2 = document.createElement('button');
+  btn2.className = 'btn btn-primary';
+  btn2.textContent = 'Resolve Feed';
+  btn2.style.marginTop = '8px';
+  section2.appendChild(btn2);
+
+  const result2 = document.createElement('pre');
+  result2.style.marginTop = '8px';
+  result2.style.maxHeight = '300px';
+  result2.style.overflow = 'auto';
+  result2.textContent = '';
+  section2.appendChild(result2);
+
+  div.appendChild(section2);
+
+  // Cache info
+  const cacheInfo = document.createElement('p');
+  cacheInfo.className = 'muted';
+  cacheInfo.style.marginTop = '24px';
+  cacheInfo.style.fontSize = '11px';
+  cacheInfo.textContent = `Cache size: ${cacheSize()} objects`;
+  div.appendChild(cacheInfo);
+
+  container.appendChild(div);
+
+  // Handlers
+  btn1.addEventListener('click', async () => {
+    const ref = input1.value.trim();
+    if (!ref) { result1.textContent = 'Enter a reference'; return; }
+    result1.textContent = 'Fetching...';
+    try {
+      const obj = await fetchProtocolObject(ref);
+      result1.textContent = JSON.stringify(obj, null, 2);
+      cacheInfo.textContent = `Cache size: ${cacheSize()} objects`;
+    } catch (err) {
+      result1.textContent = `Error: ${err.message}`;
+    }
+  });
+
+  btn2.addEventListener('click', async () => {
+    const ref = input2.value.trim();
+    if (!ref) { result2.textContent = 'Enter a feed manifest reference'; return; }
+    result2.textContent = 'Resolving...';
+    try {
+      const obj = await resolveFeed(ref);
+      result2.textContent = JSON.stringify(obj, null, 2);
+    } catch (err) {
+      result2.textContent = `Error: ${err.message}`;
+    }
   });
 }
 
