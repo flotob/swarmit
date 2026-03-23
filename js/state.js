@@ -14,8 +14,9 @@ const state = {
   userFeed: null,           // user's feed manifest bzzUrl or null
 
   // Provider status
-  swarmConnected: false,
-  walletConnected: false,
+  swarmDetected: false,     // window.swarm provider exists
+  swarmConnected: false,    // origin has been granted access via requestAccess
+  walletConnected: false,   // wallet connected AND on correct chain
 };
 
 // Per-board curator preferences (persisted to localStorage)

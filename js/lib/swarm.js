@@ -44,20 +44,33 @@ export async function getCapabilities() {
 }
 
 /**
+ * Normalize a provider publish result to ensure bzzUrl is canonical.
+ * The provider returns { reference: '64hex', bzzUrl: 'bzz://64hex' }.
+ * We keep both but ensure bzzUrl is always present and normalized.
+ */
+function normalizePublishResult(result) {
+  const ref = result.reference || '';
+  const bzzUrl = result.bzzUrl || (ref ? `bzz://${ref}` : '');
+  return { ...result, reference: ref, bzzUrl };
+}
+
+/**
  * Publish a JSON object to Swarm as application/json.
- * Returns the normalized bzz:// reference.
  * @param {Object} obj - The object to serialize and publish
  * @param {string} [name] - Optional name for publish history
  * @returns {Promise<{ reference: string, bzzUrl: string }>}
+ *   reference: bare 64-char hex
+ *   bzzUrl: normalized bzz://<hex> (canonical form for protocol IDs)
  */
 export async function publishJSON(obj, name) {
   if (!isAvailable()) throw new Error('Swarm provider not available');
 
-  return window.swarm.publishData({
+  const result = await window.swarm.publishData({
     data: JSON.stringify(obj),
     contentType: 'application/json',
     name: name || undefined,
   });
+  return normalizePublishResult(result);
 }
 
 /**
@@ -70,11 +83,12 @@ export async function publishJSON(obj, name) {
 export async function publishData(data, contentType, name) {
   if (!isAvailable()) throw new Error('Swarm provider not available');
 
-  return window.swarm.publishData({
+  const result = await window.swarm.publishData({
     data,
     contentType,
     name: name || undefined,
   });
+  return normalizePublishResult(result);
 }
 
 /**
@@ -86,10 +100,11 @@ export async function publishData(data, contentType, name) {
 export async function publishFiles(files, indexDocument) {
   if (!isAvailable()) throw new Error('Swarm provider not available');
 
-  return window.swarm.publishFiles({
+  const result = await window.swarm.publishFiles({
     files,
     indexDocument: indexDocument || undefined,
   });
+  return normalizePublishResult(result);
 }
 
 /**

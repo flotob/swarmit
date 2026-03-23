@@ -18,8 +18,9 @@ function detectProviders() {
   const ethereumAvailable = isEthereumAvailable();
 
   state.update({
-    swarmConnected: swarmAvailable,
-    walletConnected: false, // wallet requires explicit connect, not just detection
+    swarmDetected: swarmAvailable,
+    swarmConnected: false,   // requires explicit requestAccess, not just detection
+    walletConnected: false,  // requires explicit connect + chain switch
   });
 
   const statusEl = document.getElementById('provider-status');

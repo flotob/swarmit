@@ -31,6 +31,12 @@ export async function connect() {
   }
 
   const address = accounts[0];
+
+  // Ensure we're on Gnosis Chain before marking as connected.
+  // If the user rejects the chain switch, connect() throws and
+  // the wallet is never marked as ready.
+  await ensureGnosisChain();
+
   state.update({ walletConnected: true, userAddress: address });
 
   if (!listenerRegistered) {
@@ -43,9 +49,6 @@ export async function connect() {
       }
     });
   }
-
-  // Ensure we're on Gnosis Chain
-  await ensureGnosisChain();
 
   return address;
 }
