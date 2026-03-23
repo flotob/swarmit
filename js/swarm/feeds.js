@@ -52,28 +52,11 @@ export async function fetchBoardIndex(curatorProfile, boardId) {
   }
 }
 
-/**
- * Fetch a curator's threadIndex for a specific thread.
- *
- * Thread index feeds are not directly listed in curatorProfile.
- * The boardIndex entry for a submission may include a threadFeed or
- * threadIndexRef. If provided, we resolve it. Otherwise, we return null
- * and the client falls back to fetching submissions individually.
- *
- * @param {Object} boardIndexEntry - An entry from boardIndex.entries
- * @returns {Promise<Object|null>} The threadIndex object, or null
- */
-export async function fetchThreadIndex(boardIndexEntry) {
-  const threadFeed = boardIndexEntry?.threadFeed;
-  if (!threadFeed) return null;
-
-  try {
-    return await resolveFeed(threadFeed);
-  } catch (err) {
-    console.warn(`[Feeds] Failed to resolve threadIndex:`, err.message);
-    return null;
-  }
-}
+// Thread index resolution is deferred to WP8 (thread view).
+// The spec says the client resolves the curator's threadIndex feed
+// for a root submission, but the exact discovery mechanism (how the
+// client finds the feed manifest for a specific thread) is not yet
+// defined in the curator profile schema.
 
 /**
  * Fetch a curator's globalIndex.

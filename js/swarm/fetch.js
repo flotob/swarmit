@@ -7,14 +7,19 @@
 // In-memory cache: reference → parsed object. Immutable content never changes.
 const cache = new Map();
 
+const HEX_64_RE = /^[0-9a-f]{64}$/i;
+
 /**
- * Extract the 64-char hex reference from a bzz:// URL or bare hex string.
+ * Extract and validate the 64-char hex reference from a bzz:// URL or bare hex string.
+ * Rejects non-canonical inputs (paths, query strings, short hashes).
  * @param {string} ref - 'bzz://abc123...' or 'abc123...'
- * @returns {string} 64-char hex
+ * @returns {string} 64-char hex, or '' if invalid
  */
 export function refToHex(ref) {
   if (!ref || typeof ref !== 'string') return '';
-  return ref.replace(/^bzz:\/\//, '').trim();
+  const hex = ref.replace(/^bzz:\/\//, '').trim();
+  if (!HEX_64_RE.test(hex)) return '';
+  return hex;
 }
 
 /**
