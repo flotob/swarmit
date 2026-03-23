@@ -5,6 +5,8 @@
 
 import * as state from '../state.js';
 
+let listenerRegistered = false;
+
 /**
  * Check if the Swarm provider is available.
  */
@@ -22,10 +24,12 @@ export async function connect() {
   const result = await window.swarm.requestAccess();
   state.update({ swarmConnected: true });
 
-  // Listen for disconnect
-  window.swarm.on('disconnect', () => {
-    state.update({ swarmConnected: false });
-  });
+  if (!listenerRegistered) {
+    listenerRegistered = true;
+    window.swarm.on('disconnect', () => {
+      state.update({ swarmConnected: false });
+    });
+  }
 
   return result;
 }

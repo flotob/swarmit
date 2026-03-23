@@ -8,6 +8,8 @@
 import * as state from '../state.js';
 import { CHAIN_ID, CHAIN_ID_HEX } from '../config.js';
 
+let listenerRegistered = false;
+
 /**
  * Check if the wallet provider is available.
  */
@@ -31,14 +33,16 @@ export async function connect() {
   const address = accounts[0];
   state.update({ walletConnected: true, userAddress: address });
 
-  // Listen for account changes
-  window.ethereum.on('accountsChanged', (accs) => {
-    if (accs.length === 0) {
-      state.update({ walletConnected: false, userAddress: null });
-    } else {
-      state.update({ userAddress: accs[0] });
-    }
-  });
+  if (!listenerRegistered) {
+    listenerRegistered = true;
+    window.ethereum.on('accountsChanged', (accs) => {
+      if (accs.length === 0) {
+        state.update({ walletConnected: false, userAddress: null });
+      } else {
+        state.update({ userAddress: accs[0] });
+      }
+    });
+  }
 
   // Ensure we're on Gnosis Chain
   await ensureGnosisChain();

@@ -6,14 +6,16 @@
 import * as router from './router.js';
 import * as state from './state.js';
 import { init as initHeader } from './components/header.js';
+import { isAvailable as isSwarmAvailable } from './lib/swarm.js';
+import { isAvailable as isEthereumAvailable } from './lib/ethereum.js';
 
 // ============================================
 // Provider detection
 // ============================================
 
 function detectProviders() {
-  const swarmAvailable = !!(window.swarm && typeof window.swarm.request === 'function');
-  const ethereumAvailable = !!(window.ethereum && typeof window.ethereum.request === 'function');
+  const swarmAvailable = isSwarmAvailable();
+  const ethereumAvailable = isEthereumAvailable();
 
   state.update({
     swarmConnected: swarmAvailable,
