@@ -4,7 +4,8 @@
   "private": true,
   "description": "Decentralized message board on Swarm + Gnosis Chain",
   "scripts": {
-    "vendor": "cp node_modules/ethers/dist/ethers.js vendor/ethers.js"
+    "vendor": "cp node_modules/ethers/dist/ethers.js vendor/ethers.js",
+    "build": "rm -rf dist && mkdir -p dist && cp index.html dist/ && cp -r css js vendor dist/"
   },
   "dependencies": {
     "ethers": "^6.16.0"
