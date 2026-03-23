@@ -12,20 +12,35 @@ import { init as initHeader } from './components/header.js';
 // ============================================
 
 function detectProviders() {
-  const swarmAvailable = !!(window.swarm && window.swarm.isFreedomBrowser);
-  const ethereumAvailable = !!(window.ethereum);
+  const swarmAvailable = !!(window.swarm && typeof window.swarm.request === 'function');
+  const ethereumAvailable = !!(window.ethereum && typeof window.ethereum.request === 'function');
+
+  state.update({
+    swarmConnected: swarmAvailable,
+    walletConnected: false, // wallet requires explicit connect, not just detection
+  });
 
   const statusEl = document.getElementById('provider-status');
   if (statusEl) {
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+
     if (swarmAvailable && ethereumAvailable) {
-      statusEl.innerHTML = '<span class="badge ok">Swarm + Wallet available</span>';
+      badge.classList.add('ok');
+      badge.textContent = 'Swarm + Wallet available';
     } else if (swarmAvailable) {
-      statusEl.innerHTML = '<span class="badge warn">Swarm available, wallet not detected</span>';
+      badge.classList.add('warn');
+      badge.textContent = 'Swarm available, wallet not detected';
     } else if (ethereumAvailable) {
-      statusEl.innerHTML = '<span class="badge warn">Wallet available, Swarm not detected</span>';
+      badge.classList.add('warn');
+      badge.textContent = 'Wallet available, Swarm not detected';
     } else {
-      statusEl.innerHTML = '<span class="badge error">No providers detected — open in Freedom Browser</span>';
+      badge.classList.add('error');
+      badge.textContent = 'No providers detected \u2014 open in Freedom Browser';
     }
+
+    statusEl.textContent = '';
+    statusEl.appendChild(badge);
   }
 
   return { swarmAvailable, ethereumAvailable };
@@ -37,13 +52,26 @@ function detectProviders() {
 
 function placeholderView(name) {
   return (container, params) => {
-    container.innerHTML = `
-      <div class="placeholder-view">
-        <h2>${name}</h2>
-        <p class="muted">This view will be implemented in a later work package.</p>
-        ${params ? `<pre class="params">${JSON.stringify(params, null, 2)}</pre>` : ''}
-      </div>
-    `;
+    const div = document.createElement('div');
+    div.className = 'placeholder-view';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = name;
+    div.appendChild(h2);
+
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = 'This view will be implemented in a later work package.';
+    div.appendChild(p);
+
+    if (params && Object.keys(params).length > 0) {
+      const pre = document.createElement('pre');
+      pre.className = 'params';
+      pre.textContent = JSON.stringify(params, null, 2);
+      div.appendChild(pre);
+    }
+
+    container.appendChild(div);
   };
 }
 
@@ -61,13 +89,24 @@ function registerRoutes() {
   router.register('#/create-board', placeholderView('Create Board'));
 
   router.setNotFound((container) => {
-    container.innerHTML = `
-      <div class="placeholder-view">
-        <h2>Not Found</h2>
-        <p class="muted">Unknown route: <code>${window.location.hash}</code></p>
-        <a href="#/">Back to home</a>
-      </div>
-    `;
+    const div = document.createElement('div');
+    div.className = 'placeholder-view';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Not Found';
+    div.appendChild(h2);
+
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = 'Unknown route: ' + window.location.hash;
+    div.appendChild(p);
+
+    const a = document.createElement('a');
+    a.href = '#/';
+    a.textContent = 'Back to home';
+    div.appendChild(a);
+
+    container.appendChild(div);
   });
 }
 

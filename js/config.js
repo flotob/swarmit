@@ -13,7 +13,6 @@ export const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
 // Protocol
 export const PROTOCOL_VERSION = 'v1';
 export const PROTOCOL_PREFIX = 'freedom-board';
-export const USER_FEED_NAME = 'user-feed';
 
 // Protocol type identifiers
 export const TYPES = {
@@ -26,4 +25,12 @@ export const TYPES = {
   THREAD_INDEX: `${PROTOCOL_PREFIX}/thread-index/${PROTOCOL_VERSION}`,
   GLOBAL_INDEX: `${PROTOCOL_PREFIX}/global-index/${PROTOCOL_VERSION}`,
   CURATOR: `${PROTOCOL_PREFIX}/curator/${PROTOCOL_VERSION}`,
+};
+
+// Freedom Browser adapter conventions (not protocol-level)
+// These are client implementation details for how this app uses
+// Freedom's window.swarm feed API. Other clients may use different
+// feed naming or topic derivation schemes.
+export const FREEDOM_ADAPTER = {
+  USER_FEED_NAME: 'user-feed',
 };
