@@ -3,13 +3,12 @@
  */
 
 import * as state from '../state.js';
+import * as ethereum from '../lib/ethereum.js';
 
-let headerEl = null;
 let walletBtn = null;
 let walletStatus = null;
 
 export function init() {
-  headerEl = document.getElementById('app-header');
   walletBtn = document.getElementById('wallet-connect-btn');
   walletStatus = document.getElementById('wallet-status');
 
@@ -43,6 +42,19 @@ function render(s) {
 async function handleWalletClick() {
   if (state.get().walletConnected) return;
 
-  // Will be wired to lib/ethereum.js in WP2
-  console.log('[Header] Wallet connect clicked — provider wrapper not yet available');
+  if (!ethereum.isAvailable()) {
+    console.warn('[Header] Wallet provider not available');
+    return;
+  }
+
+  try {
+    walletBtn.disabled = true;
+    walletBtn.textContent = 'Connecting...';
+    await ethereum.connect();
+  } catch (err) {
+    console.error('[Header] Wallet connect failed:', err);
+    walletBtn.textContent = 'Connect Wallet';
+  } finally {
+    walletBtn.disabled = false;
+  }
 }
