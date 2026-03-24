@@ -92,7 +92,10 @@ function registerRoutes() {
     render(container);
   });
 
-  router.register('#/', placeholderView('Home'));
+  router.register('#/', async (container) => {
+    const { render } = await import('./views/home.js');
+    render(container);
+  });
   router.register('#/r/:slug', async (container, params) => {
     const { render } = await import('./views/board.js');
     render(container, params);
@@ -105,8 +108,14 @@ function registerRoutes() {
     const { render } = await import('./views/thread.js');
     render(container, params);
   });
-  router.register('#/u/:address', placeholderView('User Profile'));
-  router.register('#/curators', placeholderView('Curator Selection'));
+  router.register('#/u/:address', async (container, params) => {
+    const { render } = await import('./views/user-profile.js');
+    render(container, params);
+  });
+  router.register('#/curators', async (container, params) => {
+    const { render } = await import('./views/curator-picker.js');
+    render(container, params);
+  });
   router.register('#/create-board', placeholderView('Create Board'));
 
   router.setNotFound((container) => {

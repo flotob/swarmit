@@ -13,7 +13,11 @@ import { getCuratorPref } from '../state.js';
  */
 export async function loadCurators() {
   try {
-    return await getCuratorDeclarations();
+    const all = await getCuratorDeclarations();
+    // Deduplicate: keep latest declaration per curator address
+    const byAddr = new Map();
+    for (const c of all) byAddr.set(c.curator.toLowerCase(), c);
+    return [...byAddr.values()];
   } catch {
     return [];
   }

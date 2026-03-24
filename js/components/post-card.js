@@ -3,6 +3,7 @@
  */
 
 import { truncateAddress, timeAgo } from '../lib/format.js';
+import { navigate } from '../router.js';
 
 /**
  * Create a post card element.
@@ -34,7 +35,7 @@ export function createPostCard({ boardSlug, submission, content }) {
   if (submissionId) {
     card.addEventListener('click', () => {
       const ref = submissionId.replace('bzz://', '');
-      window.location.hash = `#/r/${encodeURIComponent(boardSlug)}/comments/${ref}`;
+      navigate(`#/r/${encodeURIComponent(boardSlug)}/comments/${ref}`);
     });
   }
 
