@@ -85,8 +85,12 @@ function placeholderView(name) {
 // ============================================
 
 function registerRoutes() {
-  // WP3 spike: temporary debug view at #/debug/swarm-read
+  // Debug views
   router.register('#/debug/swarm-read', renderSwarmReadSpike);
+  router.register('#/debug/create-fixtures', async (container) => {
+    const { render } = await import('./views/debug-fixtures.js');
+    render(container);
+  });
 
   router.register('#/', placeholderView('Home'));
   router.register('#/r/:slug', placeholderView('Board'));

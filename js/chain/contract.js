@@ -36,11 +36,18 @@ const ADDRESS_ZERO = '0x' + '0'.repeat(40);
 const BYTES32_ZERO = '0x' + '0'.repeat(64);
 
 /**
+ * Check if the contract address has been configured (not the placeholder).
+ */
+export function isContractConfigured() {
+  return !!(CONTRACT_ADDRESS && CONTRACT_ADDRESS !== ADDRESS_ZERO);
+}
+
+/**
  * Throw if the contract address is still the placeholder.
  * Call this at the entry point of any read or write operation.
  */
 export function assertContractConfigured() {
-  if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === ADDRESS_ZERO) {
+  if (!isContractConfigured()) {
     throw new Error('Contract address not configured — update CONTRACT_ADDRESS in config.js');
   }
 }
