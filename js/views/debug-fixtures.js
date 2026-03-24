@@ -10,7 +10,7 @@ import { isAvailable as isWalletAvailable, connect as connectWallet } from '../l
 import { CONTRACT_ADDRESS, FREEDOM_ADAPTER } from '../config.js';
 import { hexToBzz } from '../protocol/references.js';
 import { validate, buildBoard, buildPost, buildReply, buildSubmission,
-  buildUserFeedIndex, buildBoardIndex, buildThreadIndex, buildCuratorProfile } from '../protocol/objects.js';
+  buildUserFeedIndex, buildBoardIndex, buildThreadIndex, buildGlobalIndex, buildCuratorProfile } from '../protocol/objects.js';
 import { registerBoard, announceSubmission, declareCurator } from '../chain/transactions.js';
 import { isContractConfigured } from '../chain/contract.js';
 
