@@ -138,19 +138,29 @@ export async function render(container) {
       setStep('Publish board metadata', 'done', result.bzzUrl);
 
       // Step 3: Register on-chain
+      let registered = false;
       if (isContractConfigured()) {
         setStep('Register on-chain', 'active');
-        const tx = await registerBoard(slug, result.bzzUrl);
-        setStep('Register on-chain', 'done', `tx: ${tx}`);
-
-        status.setResult(`Board r/${slug} created!\n\nMetadata: ${result.bzzUrl}\nTx: ${tx}`);
+        try {
+          const tx = await registerBoard(slug, result.bzzUrl);
+          setStep('Register on-chain', 'done', `tx: ${tx}`);
+          registered = true;
+          status.setResult(`Board r/${slug} created!\n\nMetadata: ${result.bzzUrl}\nTx: ${tx}`);
+        } catch (txErr) {
+          setStep('Register on-chain', 'error', txErr.message);
+          status.setResult(`Board metadata published to Swarm, but on-chain registration failed.\n\nMetadata: ${result.bzzUrl}\nError: ${txErr.message}`);
+        }
       } else {
         setStep('Register on-chain', 'skipped', 'Contract not configured');
         status.setResult(`Board metadata published to Swarm (not registered on-chain yet).\n\nMetadata: ${result.bzzUrl}`);
       }
 
-      submitBtn.textContent = 'Created — redirecting...';
-      setTimeout(() => navigate(`#/r/${slug}`), 1500);
+      if (registered) {
+        submitBtn.textContent = 'Created — redirecting...';
+        setTimeout(() => navigate(`#/r/${slug}`), 1500);
+      } else {
+        submitBtn.textContent = 'Published (not registered)';
+      }
 
     } catch (err) {
       if (lastActiveStep) {
