@@ -9,7 +9,7 @@ export const GNOSIS_RPC_URL = 'https://rpc.gnosischain.com';
 
 // Contract — deployed on Gnosis Chain
 export const CONTRACT_ADDRESS = '0x34b27b9978E05B6EfD8AFEcc133C3b1fC5431613';
-export const CONTRACT_DEPLOY_BLOCK = '0x2B3B1E6'; // block 45315302
+export const CONTRACT_DEPLOY_BLOCK = '0x2b374e6'; // block 45315302
 
 // Protocol
 export const PROTOCOL_VERSION = 'v1';
