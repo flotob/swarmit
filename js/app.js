@@ -94,7 +94,10 @@ function registerRoutes() {
 
   router.register('#/', placeholderView('Home'));
   router.register('#/r/:slug', placeholderView('Board'));
-  router.register('#/r/:slug/submit', placeholderView('Create Post'));
+  router.register('#/r/:slug/submit', async (container, params) => {
+    const { render } = await import('./views/compose-post.js');
+    render(container, params);
+  });
   router.register('#/r/:slug/comments/:rootSubId', placeholderView('Thread'));
   router.register('#/u/:address', placeholderView('User Profile'));
   router.register('#/curators', placeholderView('Curator Selection'));
