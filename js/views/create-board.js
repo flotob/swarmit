@@ -3,12 +3,9 @@
  * Form to register a new board: publish metadata to Swarm + register on-chain.
  */
 
-import * as state from '../state.js';
-import { connect as connectWallet, isAvailable as isWalletAvailable } from '../lib/ethereum.js';
-import { connect as connectSwarm, isAvailable as isSwarmAvailable } from '../lib/swarm.js';
 import { createStatusBar } from '../components/status-bar.js';
-import { buildBoard, validate } from '../protocol/objects.js';
-import { publishValidated } from '../services/publish-pipeline.js';
+import { buildBoard } from '../protocol/objects.js';
+import { ensureProviders, publishValidated } from '../services/publish-pipeline.js';
 import { registerBoard } from '../chain/transactions.js';
 import { isContractConfigured } from '../chain/contract.js';
 import { navigate } from '../router.js';
@@ -98,10 +95,9 @@ export async function render(container) {
     const description = descInput.value.trim();
     if (!slug || !title || !description) return;
 
-    // Validate slug format
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug) || slug.length > 32) {
       status.el.style.display = 'block';
-      status.setResult('Slug must contain only lowercase letters, numbers, and hyphens.');
+      status.setResult('Slug must start and end with a letter/number, contain only a-z 0-9 hyphens, and be at most 32 characters.');
       return;
     }
 
@@ -125,22 +121,7 @@ export async function render(container) {
     try {
       // Step 1: Connect providers
       setStep('Connect providers', 'active');
-
-      if (!isWalletAvailable()) throw new Error('Wallet provider not available');
-      if (!isSwarmAvailable()) throw new Error('Swarm provider not available');
-
-      if (!state.get().walletConnected) {
-        setStep('Connect providers', 'active', 'Connecting wallet...');
-        await connectWallet();
-      }
-      if (!state.get().swarmConnected) {
-        setStep('Connect providers', 'active', 'Connecting to Swarm...');
-        await connectSwarm();
-      }
-
-      const userAddress = state.get().userAddress;
-      if (!userAddress) throw new Error('No wallet address after connect');
-
+      const userAddress = await ensureProviders((msg) => setStep('Connect providers', 'active', msg));
       setStep('Connect providers', 'done', userAddress);
 
       // Step 2: Build + validate + publish board metadata
@@ -168,7 +149,8 @@ export async function render(container) {
         status.setResult(`Board metadata published to Swarm (not registered on-chain yet).\n\nMetadata: ${result.bzzUrl}`);
       }
 
-      submitBtn.textContent = 'Created';
+      submitBtn.textContent = 'Created — redirecting...';
+      setTimeout(() => navigate(`#/r/${slug}`), 1500);
 
     } catch (err) {
       if (lastActiveStep) {

@@ -42,9 +42,10 @@ export async function ensureUserFeed(onStatus) {
 }
 
 /**
- * Ensure wallet and Swarm are connected, and user feed exists.
+ * Ensure wallet and Swarm are connected. Returns the wallet address.
+ * Does NOT create/check user feed — use ensureIdentity() for the full author flow.
  */
-export async function ensureIdentity(onStatus) {
+export async function ensureProviders(onStatus) {
   if (!isWalletAvailable()) throw new Error('Wallet provider not available');
   if (!isSwarmAvailable()) throw new Error('Swarm provider not available');
 
@@ -60,9 +61,15 @@ export async function ensureIdentity(onStatus) {
 
   const userAddress = state.get().userAddress;
   if (!userAddress) throw new Error('No wallet address after connect');
+  return userAddress;
+}
 
+/**
+ * Ensure wallet, Swarm, and user feed are ready. Full author identity flow.
+ */
+export async function ensureIdentity(onStatus) {
+  const userAddress = await ensureProviders(onStatus);
   const userFeed = await ensureUserFeed(onStatus);
-
   return { userAddress, userFeed };
 }
 
