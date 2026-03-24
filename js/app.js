@@ -116,7 +116,10 @@ function registerRoutes() {
     const { render } = await import('./views/curator-picker.js');
     render(container, params);
   });
-  router.register('#/create-board', placeholderView('Create Board'));
+  router.register('#/create-board', async (container) => {
+    const { render } = await import('./views/create-board.js');
+    render(container);
+  });
 
   router.setNotFound((container) => {
     const div = document.createElement('div');
