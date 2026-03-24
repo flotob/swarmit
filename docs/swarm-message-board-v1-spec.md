@@ -406,6 +406,14 @@ Each entry MUST contain:
 - `submissionId`
 - `submissionRef`
 
+Optional entry fields:
+
+- `rank`
+- `labels`
+- `threadIndexFeed`
+
+`threadIndexFeed`, if present, MUST be a stable feed-manifest `bzz://` URL for the chosen curator's `threadIndex` of that top-level submission. It is primarily relevant for top-level post entries, not replies.
+
 Example:
 
 ```json
@@ -418,6 +426,7 @@ Example:
     {
       "submissionId": "bzz://SUB1_REF",
       "submissionRef": "bzz://SUB1_REF",
+      "threadIndexFeed": "bzz://THREAD1_FEED_MANIFEST_REF",
       "rank": 1,
       "labels": ["hot"]
     }
@@ -444,6 +453,11 @@ Storage:
 Identity:
 
 - unique per `(rootSubmissionId, curator)`
+
+Discovery:
+
+- clients discover a curator's `threadIndex` feed for a thread from the matching top-level `boardIndex` entry's `threadIndexFeed`
+- `threadIndexFeed` SHOULD be a stable feed-manifest URL so later thread updates do not require changing the thread route itself
 
 Required fields:
 
@@ -735,11 +749,14 @@ Given a route such as `/r/tech/comments/<rootSubmissionId>`, a compliant client 
 
 1. load the application shell
 2. select a curator
-3. resolve the curator's `threadIndex` feed for the root submission
-4. fetch the latest `threadIndex`
-5. fetch each referenced `submission`
-6. fetch each referenced immutable content object
-7. render the materialized reply tree
+3. resolve the curator's `boardIndex` feed
+4. fetch the latest `boardIndex`
+5. locate the root submission entry and read its `threadIndexFeed`
+6. resolve that `threadIndex` feed
+7. fetch the latest `threadIndex`
+8. fetch each referenced `submission`
+9. fetch each referenced immutable content object
+10. render the materialized reply tree
 
 ```mermaid
 sequenceDiagram
@@ -749,6 +766,11 @@ sequenceDiagram
   participant S as Swarm
 
   U->>C: Open thread route
+  C->>F: Resolve boardIndex feed
+  F-->>C: latest boardIndex ref
+  C->>S: Fetch boardIndex
+  S-->>C: boardIndex object
+  C->>C: Read threadIndexFeed from root entry
   C->>F: Resolve threadIndex feed
   F-->>C: latest threadIndex ref
   C->>S: Fetch threadIndex

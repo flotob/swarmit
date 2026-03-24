@@ -267,6 +267,7 @@ Each entry requires:
     {
       "submissionId": "bzz://SUB1_REF",
       "submissionRef": "bzz://SUB1_REF",
+      "threadIndexFeed": "bzz://THREAD1_FEED_MANIFEST_REF",
       "rank": 1,
       "labels": ["hot"]
     }
@@ -297,6 +298,9 @@ Optional entry fields:
 
 - `rank`
 - `labels`
+- `threadIndexFeed`
+
+`threadIndexFeed`, if present, SHOULD be the stable feed-manifest `bzz://` URL for the curator's `threadIndex` of that top-level submission.
 
 Optional top-level fields:
 

@@ -93,12 +93,18 @@ function registerRoutes() {
   });
 
   router.register('#/', placeholderView('Home'));
-  router.register('#/r/:slug', placeholderView('Board'));
+  router.register('#/r/:slug', async (container, params) => {
+    const { render } = await import('./views/board.js');
+    render(container, params);
+  });
   router.register('#/r/:slug/submit', async (container, params) => {
     const { render } = await import('./views/compose-post.js');
     render(container, params);
   });
-  router.register('#/r/:slug/comments/:rootSubId', placeholderView('Thread'));
+  router.register('#/r/:slug/comments/:rootSubId', async (container, params) => {
+    const { render } = await import('./views/thread.js');
+    render(container, params);
+  });
   router.register('#/u/:address', placeholderView('User Profile'));
   router.register('#/curators', placeholderView('Curator Selection'));
   router.register('#/create-board', placeholderView('Create Board'));
