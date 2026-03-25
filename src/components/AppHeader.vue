@@ -1,6 +1,7 @@
 <script setup>
 import { useAuthStore } from '../stores/auth'
 import { CHAIN_ID_HEX } from '../config'
+import { truncateAddress } from '../lib/format.js'
 
 const auth = useAuthStore()
 
@@ -36,10 +37,6 @@ async function connectWallet() {
   }
 }
 
-function truncateAddress(addr) {
-  if (!addr || addr.length < 10) return addr || ''
-  return addr.slice(0, 6) + '...' + addr.slice(-4)
-}
 </script>
 
 <template>

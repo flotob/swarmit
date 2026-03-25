@@ -1,16 +1,16 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { isAvailable as isSwarmAvailable } from './lib/swarm.js'
+import { isAvailable as isWalletAvailable } from './lib/ethereum.js'
 import AppHeader from './components/AppHeader.vue'
 
 const auth = useAuthStore()
 
 function detectProviders() {
-  const swarmAvailable = !!(window.swarm && typeof window.swarm.request === 'function')
-  const walletAvailable = !!(window.ethereum && typeof window.ethereum.request === 'function')
-  auth.setSwarmDetected(swarmAvailable)
+  auth.setSwarmDetected(isSwarmAvailable())
 
-  if (walletAvailable) {
+  if (isWalletAvailable()) {
     window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
       if (accounts?.length > 0) {
         auth.setWallet(accounts[0])
@@ -19,17 +19,41 @@ function detectProviders() {
   }
 }
 
+// Listen for wallet account/chain changes
+function onAccountsChanged(accounts) {
+  if (accounts?.length > 0) {
+    auth.setWallet(accounts[0])
+  } else {
+    auth.clearWallet()
+  }
+}
+
 onMounted(() => {
-  // Try immediately, then retry after DOMContentLoaded in case
-  // Freedom Browser's preload hasn't injected window.swarm yet
   detectProviders()
+
+  // Retry with backoff if Swarm provider not yet injected by Freedom Browser's preload
   if (!auth.swarmDetected) {
-    if (document.readyState === 'complete') {
-      // Already loaded — give it one more tick
-      setTimeout(detectProviders, 100)
-    } else {
-      document.addEventListener('DOMContentLoaded', detectProviders)
+    let retries = 0
+    const maxRetries = 5
+    const poll = () => {
+      retries++
+      detectProviders()
+      if (!auth.swarmDetected && retries < maxRetries) {
+        setTimeout(poll, retries * 100)
+      }
     }
+    setTimeout(poll, 100)
+  }
+
+  // Register wallet event listeners
+  if (window.ethereum?.on) {
+    window.ethereum.on('accountsChanged', onAccountsChanged)
+  }
+})
+
+onUnmounted(() => {
+  if (window.ethereum?.removeListener) {
+    window.ethereum.removeListener('accountsChanged', onAccountsChanged)
   }
 })
 </script>
