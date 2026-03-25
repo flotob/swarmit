@@ -91,7 +91,7 @@ swarmit/
 
 ### Protocol
 
-The protocol is defined in the docs directory:
+The protocol is defined in the docs directory, starting with the [Whitepaper v1](docs/whitepaper-v1.pdf):
 
 - `docs/swarm-message-board-v1-spec.md` — normative protocol spec
 - `docs/swarm-message-board-v1-schemas.md` — object schemas
