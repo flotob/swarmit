@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBoard } from '../composables/useBoard'
+import { truncateAddress } from '../lib/format.js'
 import PostCard from '../components/PostCard.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
 
@@ -65,7 +66,7 @@ const { board, boardIndex, isLoading, isError, error, selectedCurator, showCurat
 
     <!-- Curator info -->
     <div v-if="selectedCurator && !isLoading" class="mt-6 text-xs text-gray-600">
-      Curated by {{ selectedCurator.profile?.name || selectedCurator.address }}
+      Curated by {{ selectedCurator.profile?.name || truncateAddress(selectedCurator.address) }}
     </div>
   </div>
 </template>

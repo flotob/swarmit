@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { getCuratorDeclarations } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
+import { fetchBoardIndex } from '../swarm/feeds.js'
 import { getCuratorPref, setCuratorPref } from '../state.js'
 
 /**
@@ -46,6 +47,32 @@ export function buildCandidates(slug, board, curators) {
   for (const c of curators) add(c.curator)
 
   return { list, needsPrompt, preferred }
+}
+
+/**
+ * Shared curator resolution loop — try candidates until one has a usable boardIndex.
+ */
+export async function resolveCuratorBoardIndex(slug, board, curatorList) {
+  const candidates = buildCandidates(slug, board, curatorList)
+
+  for (const addr of candidates.list) {
+    const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())
+    if (!match) continue
+
+    try {
+      const profile = await fetchObject(match.curatorProfileRef)
+      if (!profile) continue
+
+      const boardIdx = await fetchBoardIndex(profile, slug)
+      if (boardIdx?.entries?.length) {
+        return { boardIndex: boardIdx, curator: { address: addr, profile }, candidates }
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return null
 }
 
 export { setCuratorPref }

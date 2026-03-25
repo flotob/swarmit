@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { fetchObject } from '../swarm/fetch.js'
-import { fetchBoardIndex, resolveFeed } from '../swarm/feeds.js'
+import { resolveFeed } from '../swarm/feeds.js'
 import { hexToBzz } from '../protocol/references.js'
-import { useCuratorDeclarations, buildCandidates } from './useCurators.js'
+import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
 
 export function useThread(slugRef, rootSubIdRef) {
   const { data: curators } = useCuratorDeclarations()
@@ -25,49 +25,38 @@ export function useThread(slugRef, rootSubIdRef) {
 
       if (!rootRef || !curatorList.length) return null
 
-      const candidates = buildCandidates(slug, null, curatorList)
+      // Use shared curator resolution to get boardIndex
+      const resolved = await resolveCuratorBoardIndex(slug, null, curatorList)
+      if (!resolved) return null
 
-      for (const addr of candidates.list) {
-        const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())
-        if (!match) continue
+      const { boardIndex, curator, candidates } = resolved
 
-        try {
-          const profile = await fetchObject(match.curatorProfileRef)
-          if (!profile) continue
+      // Find root entry and its threadIndexFeed
+      const rootEntry = boardIndex.entries.find(
+        (e) => e.submissionId === rootRef || e.submissionRef === rootRef
+      )
+      if (!rootEntry?.threadIndexFeed) return null
 
-          const boardIndex = await fetchBoardIndex(profile, slug)
-          if (!boardIndex?.entries) continue
+      const threadIndex = await resolveFeed(rootEntry.threadIndexFeed)
+      if (!threadIndex?.nodes?.length) return null
 
-          const rootEntry = boardIndex.entries.find(
-            (e) => e.submissionId === rootRef || e.submissionRef === rootRef
-          )
-          if (!rootEntry?.threadIndexFeed) continue
+      // Fetch all submissions + content in parallel
+      const nodes = await Promise.all(
+        threadIndex.nodes.map(async (node) => {
+          try {
+            const submission = await fetchObject(node.submissionId)
+            const content = await fetchObject(submission.contentRef)
+            return { ...node, submission, content }
+          } catch {
+            return { ...node, submission: null, content: null }
+          }
+        })
+      )
 
-          const threadIndex = await resolveFeed(rootEntry.threadIndexFeed)
-          if (!threadIndex?.nodes?.length) continue
+      selectedCurator.value = curator
+      showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())
 
-          const nodes = await Promise.all(
-            threadIndex.nodes.map(async (node) => {
-              try {
-                const submission = await fetchObject(node.submissionId)
-                const content = await fetchObject(submission.contentRef)
-                return { ...node, submission, content }
-              } catch {
-                return { ...node, submission: null, content: null }
-              }
-            })
-          )
-
-          selectedCurator.value = { address: addr, profile }
-          showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== addr.toLowerCase())
-
-          return { threadIndex, nodes, rootRef }
-        } catch {
-          continue
-        }
-      }
-
-      return null
+      return { threadIndex, nodes, rootRef }
     },
     enabled: computed(() => !!slugRef.value && !!rootSubIdRef.value && !!curators.value?.length),
     staleTime: 30_000,

@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
-import { fetchBoardIndex } from '../swarm/feeds.js'
-import { useCuratorDeclarations, buildCandidates } from './useCurators.js'
+import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
 
 function useBoardMetadata(slug) {
   return useQuery({
@@ -25,7 +24,7 @@ export function useBoard(slugRef) {
   const selectedCurator = ref(null)
   const showCuratorBanner = ref(false)
 
-  const boardIndexQuery = useQuery({
+  const boardQuery = useQuery({
     queryKey: ['boardIndex', slugRef],
     queryFn: async () => {
       const slug = slugRef.value
@@ -34,28 +33,27 @@ export function useBoard(slugRef) {
 
       if (!curatorList.length) return null
 
-      const candidates = buildCandidates(slug, boardObj, curatorList)
+      const result = await resolveCuratorBoardIndex(slug, boardObj, curatorList)
+      if (!result) return null
 
-      for (const addr of candidates.list) {
-        const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())
-        if (!match) continue
+      const { boardIndex, curator, candidates } = result
+      selectedCurator.value = curator
+      showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())
 
-        try {
-          const profile = await fetchObject(match.curatorProfileRef)
-          if (!profile) continue
-
-          const boardIndex = await fetchBoardIndex(profile, slug)
-          if (boardIndex?.entries?.length) {
-            selectedCurator.value = { address: addr, profile }
-            showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== addr.toLowerCase())
-            return boardIndex
+      // Bulk-fetch submissions + content for all entries in parallel
+      const entries = await Promise.all(
+        boardIndex.entries.map(async (entry) => {
+          try {
+            const submission = await fetchObject(entry.submissionRef)
+            const content = submission?.contentRef ? await fetchObject(submission.contentRef) : null
+            return { ...entry, submission, content }
+          } catch {
+            return { ...entry, submission: null, content: null }
           }
-        } catch {
-          continue
-        }
-      }
+        })
+      )
 
-      return null
+      return { ...boardIndex, entries }
     },
     enabled: computed(() => !!slugRef.value && !!curators.value?.length),
     staleTime: 30_000,
@@ -64,10 +62,10 @@ export function useBoard(slugRef) {
   return {
     board,
     curators,
-    boardIndex: boardIndexQuery.data,
-    isLoading: boardIndexQuery.isLoading,
-    isError: boardIndexQuery.isError,
-    error: boardIndexQuery.error,
+    boardIndex: boardQuery.data,
+    isLoading: boardQuery.isLoading,
+    isError: boardQuery.isError,
+    error: boardQuery.error,
     selectedCurator,
     showCuratorBanner,
   }

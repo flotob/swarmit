@@ -1,29 +1,33 @@
 <script setup>
 import { computed } from 'vue'
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import DOMPurify from 'dompurify'
 
 const props = defineProps({
   text: { type: String, default: '' },
 })
 
-// Custom renderer: resolve bzz:// image URLs to /bzz/ paths
-const renderer = new marked.Renderer()
-renderer.image = function ({ href, title, text }) {
-  const src = href?.startsWith('bzz://') ? `/bzz/${href.slice(6)}/` : href
-  const titleAttr = title ? ` title="${title}"` : ''
-  return `<img src="${src}" alt="${text || ''}"${titleAttr} class="max-w-full rounded-md my-2" />`
+function escapeAttr(str) {
+  if (!str) return ''
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-marked.setOptions({
-  renderer,
+// Scoped Marked instance — does not affect global marked singleton
+const md = new Marked({
+  renderer: {
+    image({ href, title, text }) {
+      const src = href?.startsWith('bzz://') ? `/bzz/${href.slice(6)}/` : href
+      const titleAttr = title ? ` title="${escapeAttr(title)}"` : ''
+      return `<img src="${escapeAttr(src)}" alt="${escapeAttr(text)}"${titleAttr} class="max-w-full rounded-md my-2" />`
+    },
+  },
   breaks: true,
   gfm: true,
 })
 
 const html = computed(() => {
   if (!props.text) return ''
-  const raw = marked.parse(props.text)
+  const raw = md.parse(props.text)
   return DOMPurify.sanitize(raw, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'code', 'pre', 'blockquote',
       'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'img', 'hr'],
