@@ -310,6 +310,58 @@ Images follow a protocol-compliant model:
 - Touch-friendly forms and reply UI
 - Readable typography on small screens
 
+### UP15: Submission Lifecycle & Activity Feed
+
+This is a unique UX concept with no equivalent in traditional social media.
+
+In Swarmit, posting is not instant — it follows a lifecycle analogous to blockchain transaction settlement:
+
+1. **Publishing** — content objects created on Swarm
+2. **Announced** — transaction confirmed on Gnosis Chain
+3. **In the mempool** — on-chain but no curator has picked it up yet
+4. **Curated** — appears in one or more curator feeds (the "confirmation")
+5. **Settled** — stable in curator views (but could be removed — "reorged")
+
+The UX should make this lifecycle visible and useful, not hide it.
+
+**Submission tracker store** (Pinia, persisted to localStorage):
+- Tracks local submissions from the moment the user publishes
+- Each entry has: `submissionRef`, `boardSlug`, `kind`, `title/preview`, `createdAt`, `lifecycle` state
+- Lifecycle state updated by polling curators
+
+**Curator polling composable** (`useSubmissionStatus`):
+- For each pending submission, checks known curators' boardIndex feeds
+- Reports which curators have picked up each submission
+- Cheap: reuses TanStack Query cached boardIndexes when possible
+- Polling interval: same as curator's poll interval (~30s)
+
+**Activity panel** (sidebar or expandable drawer):
+- Top section: recent submissions with live lifecycle status
+  - "Publishing..." → "Announced on-chain" → "Waiting for curators..." → "Picked up by Curator X" → "In 2 curator feeds"
+- Bottom section: full post history from `userFeedIndex`
+- Most recent first, chronological order
+- Each entry: board link, title/preview, time, curator pickup count
+- Clicking an entry navigates to the thread
+
+**Inline status integration:**
+- In board/thread views, the current "pending curator indexing" placeholder is replaced with real lifecycle status
+- Posts by the current user that aren't yet curated show their actual state
+- Once a curator picks it up and the boardIndex refreshes, the pending indicator is removed automatically
+
+**What this connects to:**
+- The existing `userFeedIndex` is the user's on-chain post history — this panel renders it
+- The `SubmissionAnnounced` events are the "mempool" — we can query for the user's pending submissions
+- Curator `boardIndex` entries are the "confirmations" — we check if the submission appears
+- `pendingReplies` in ThreadView is an early version of this concept — it gets subsumed by the real tracker
+
+**Smoke test:**
+1. Submit a post
+2. See it appear in the activity panel as "Announced on-chain"
+3. Wait for the curator to pick it up (~30s)
+4. See the status change to "Picked up by Chronological Curator"
+5. Navigate to the board — post appears in the curated view
+6. The pending indicator in the activity panel is now "settled"
+
 ## Implementation Order
 
 ```
@@ -331,6 +383,8 @@ UP10 Image/Media ← biggest new feature
 UP11 Create Board
 UP12 Curator Picker    (parallel)
 UP13 User Profile
+ ↓
+UP15 Submission Lifecycle & Activity Feed ← unique UX concept
  ↓
 UP14 Mobile Polish
 ```
