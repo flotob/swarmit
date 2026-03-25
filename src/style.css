@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Dark theme by default */
+@custom-variant dark (&:is(.dark *));
