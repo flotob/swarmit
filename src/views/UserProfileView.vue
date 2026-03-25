@@ -71,7 +71,8 @@ async function goToThread(entry) {
   } else {
     try {
       const sub = await fetchObject(entry.submissionRef || entry.submissionId)
-      rootHex = refToHex(sub.rootSubmissionId || entry.submissionRef)
+      const { valid } = validate(sub)
+      rootHex = valid ? refToHex(sub.rootSubmissionId || entry.submissionRef) : refToHex(entry.submissionRef || entry.submissionId)
     } catch {
       rootHex = refToHex(entry.submissionRef || entry.submissionId)
     }

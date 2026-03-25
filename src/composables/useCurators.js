@@ -67,9 +67,10 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList) {
       if (!profileValid) continue
 
       const boardIdx = await fetchBoardIndex(profile, slug)
-      if (boardIdx?.entries?.length) {
-        return { boardIndex: boardIdx, curator: { address: addr, profile }, candidates }
-      }
+      if (!boardIdx?.entries?.length) continue
+      const { valid: idxValid } = validate(boardIdx)
+      if (!idxValid) continue
+      return { boardIndex: boardIdx, curator: { address: addr, profile }, candidates }
     } catch {
       continue
     }
