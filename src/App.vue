@@ -5,7 +5,7 @@ import AppHeader from './components/AppHeader.vue'
 
 const auth = useAuthStore()
 
-onMounted(() => {
+function detectProviders() {
   const swarmAvailable = !!(window.swarm && typeof window.swarm.request === 'function')
   const walletAvailable = !!(window.ethereum && typeof window.ethereum.request === 'function')
   auth.setSwarmDetected(swarmAvailable)
@@ -16,6 +16,20 @@ onMounted(() => {
         auth.setWallet(accounts[0])
       }
     }).catch(() => {})
+  }
+}
+
+onMounted(() => {
+  // Try immediately, then retry after DOMContentLoaded in case
+  // Freedom Browser's preload hasn't injected window.swarm yet
+  detectProviders()
+  if (!auth.swarmDetected) {
+    if (document.readyState === 'complete') {
+      // Already loaded — give it one more tick
+      setTimeout(detectProviders, 100)
+    } else {
+      document.addEventListener('DOMContentLoaded', detectProviders)
+    }
   }
 })
 </script>
