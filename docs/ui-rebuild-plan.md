@@ -337,6 +337,44 @@ UP14 Mobile Polish
 
 **Critical path:** UP1 → UP2+UP3 → UP5 → UP6+UP7 → UP8+UP9
 
+## Testing Strategy
+
+### Framework: Vitest + Vue Test Utils
+
+Vitest comes free with Vite — same config, same module resolution. Vue Test Utils for component mounting. No additional setup beyond `npm install -D vitest @vue/test-utils`.
+
+### What to test automatically
+
+| Layer | Tool | Examples |
+|-------|------|---------|
+| Protocol modules | Vitest (unit) | references.js, objects.js — pure function tests |
+| Composables | Vitest (unit) | useBoard, useThread, usePublish — mocked Swarm/chain |
+| Components | Vue Test Utils | ReplyForm, ComposePost, ImageUpload — interaction tests |
+| Stores | Vitest (unit) | Pinia stores — state transitions, persistence |
+
+### What stays manual
+
+- Freedom Browser integration (provider detection, Swarm publish, wallet connect)
+- End-to-end from Swarm (CSP, routing, cache persistence)
+- Visual regression (layout, responsiveness)
+
+### TDD approach
+
+Tests are written alongside each UP, not as a separate phase:
+- **UP1:** test setup, migrate protocol module tests from curator repo
+- **UP3:** composable tests are the highest-value target — data fetching + caching logic
+- **UP8/UP9:** interaction tests for compose + reply forms
+- Every UP adds tests for the code it introduces
+
+### Test script
+
+```json
+"scripts": {
+  "test": "vitest run",
+  "test:watch": "vitest"
+}
+```
+
 ## Regression Smoke Tests
 
 After each UP, verify all of these still work:
