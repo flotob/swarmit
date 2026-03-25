@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { reactive, watch, computed } from 'vue'
 import { useCuratorDeclarations, setCuratorPref } from '../composables/useCurators'
 import { fetchObject } from '../swarm/fetch.js'
 import { truncateAddress } from '../lib/format.js'
@@ -7,38 +7,42 @@ import { getCuratorPref } from '../state.js'
 
 const { data: curators, isLoading, isError, error } = useCuratorDeclarations()
 
-// Fetch profiles for all curators
-const profiles = ref(new Map()) // address → profile
+const profiles = reactive(new Map())
+
+// Track selection reactively (localStorage is not reactive)
+const selectionVersion = reactive({ v: 0 })
 
 async function loadProfiles() {
   if (!curators.value) return
-  for (const c of curators.value) {
-    if (profiles.value.has(c.curator)) continue
-    try {
-      const profile = await fetchObject(c.curatorProfileRef)
-      profiles.value.set(c.curator, profile)
-    } catch {
-      profiles.value.set(c.curator, null)
-    }
-  }
+  await Promise.allSettled(
+    curators.value
+      .filter((c) => !profiles.has(c.curator))
+      .map(async (c) => {
+        try {
+          const profile = await fetchObject(c.curatorProfileRef)
+          profiles.set(c.curator, profile)
+        } catch {
+          profiles.set(c.curator, null)
+        }
+      })
+  )
 }
 
-// Watch for curators to load
-import { watch } from 'vue'
 watch(curators, loadProfiles, { immediate: true })
 
 function getProfile(addr) {
-  return profiles.value.get(addr) || null
+  return profiles.get(addr) || null
 }
 
 function isSelected(addr, boardSlug) {
+  // Access selectionVersion to make this reactive
+  void selectionVersion.v
   return getCuratorPref(boardSlug)?.toLowerCase() === addr.toLowerCase()
 }
 
 function selectCurator(addr, boardSlug) {
   setCuratorPref(boardSlug, addr)
-  // Force reactivity update
-  profiles.value = new Map(profiles.value)
+  selectionVersion.v++
 }
 </script>
 
@@ -47,22 +51,18 @@ function selectCurator(addr, boardSlug) {
     <h2 class="text-2xl font-bold mb-2">Curators</h2>
     <p class="text-gray-500 mb-6">Choose a curator to change how boards are moderated and ordered.</p>
 
-    <!-- Loading -->
     <div v-if="isLoading" class="space-y-3">
       <div v-for="i in 3" :key="i" class="h-24 rounded-lg bg-gray-800 animate-pulse" />
     </div>
 
-    <!-- Error -->
     <div v-else-if="isError" class="p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400">
       {{ error?.message || 'Failed to load curators' }}
     </div>
 
-    <!-- Empty -->
     <div v-else-if="!curators?.length" class="text-center py-16 text-gray-500">
       No curators have declared themselves yet.
     </div>
 
-    <!-- Curator list -->
     <div v-else class="space-y-3">
       <div
         v-for="c in curators"
@@ -79,7 +79,6 @@ function selectCurator(addr, boardSlug) {
           {{ getProfile(c.curator).description }}
         </p>
 
-        <!-- Board feeds -->
         <div v-if="getProfile(c.curator)?.boardFeeds" class="mt-3 flex flex-wrap gap-2">
           <button
             v-for="(feedUrl, boardSlug) in getProfile(c.curator).boardFeeds"

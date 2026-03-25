@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo } from '../lib/format.js'
+import { refToHex } from '../protocol/references.js'
 
 const props = defineProps({
   entry: Object,       // { submissionId, submissionRef, submission, content, threadIndexFeed }
@@ -14,7 +15,7 @@ const authorAddress = computed(() => props.entry.content?.author?.address || pro
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
 
 function goToThread() {
-  const ref = props.entry.submissionId?.replace('bzz://', '') || props.entry.submissionRef?.replace('bzz://', '')
+  const ref = refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef)
   if (ref) {
     router.push({ name: 'thread', params: { slug: props.boardSlug, rootSubId: ref } })
   }

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '../stores/auth'
 import { truncateAddress, timeAgo } from '../lib/format.js'
+import { refToHex } from '../protocol/references.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { getBoardRegistrations, getSubmissionsForBoard } from '../chain/events.js'
@@ -62,13 +63,13 @@ const { data: profile, isLoading, isError, error } = useQuery({
 async function goToThread(entry) {
   let rootHex
   if (entry.kind === 'post') {
-    rootHex = (entry.submissionRef || entry.submissionId)?.replace('bzz://', '')
+    rootHex = refToHex(entry.submissionRef || entry.submissionId)
   } else {
     try {
       const sub = await fetchObject(entry.submissionRef || entry.submissionId)
-      rootHex = (sub.rootSubmissionId || entry.submissionRef)?.replace('bzz://', '')
+      rootHex = refToHex(sub.rootSubmissionId || entry.submissionRef)
     } catch {
-      rootHex = (entry.submissionRef || entry.submissionId)?.replace('bzz://', '')
+      rootHex = refToHex(entry.submissionRef || entry.submissionId)
     }
   }
   if (rootHex && entry.boardId) {

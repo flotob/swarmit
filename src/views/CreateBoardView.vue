@@ -146,7 +146,7 @@ async function handleSubmit() {
         :disabled="isCreating"
         class="px-4 py-2 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {{ isCreating ? 'Creating...' : result?.registered ? 'Created — redirecting...' : 'Create Board' }}
+        {{ isCreating ? 'Creating...' : result?.registered ? 'Created — redirecting...' : result ? 'Published (not registered)' : 'Create Board' }}
       </button>
     </form>
 
