@@ -17,3 +17,10 @@ export function timeAgo(timestamp) {
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
+
+const MAX_THREAD_DEPTH = 6;
+const PX_PER_DEPTH = 24;
+
+export function threadIndent(depth) {
+  return `${Math.min(depth || 0, MAX_THREAD_DEPTH) * PX_PER_DEPTH}px`;
+}

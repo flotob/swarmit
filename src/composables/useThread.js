@@ -67,6 +67,7 @@ export function useThread(slugRef, rootSubIdRef) {
     isLoading: threadQuery.isLoading,
     isError: threadQuery.isError,
     error: threadQuery.error,
+    rootSubRef,
     selectedCurator,
     showCuratorBanner,
   }

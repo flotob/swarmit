@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThread } from '../composables/useThread'
-import { truncateAddress } from '../lib/format.js'
+import { truncateAddress, threadIndent } from '../lib/format.js'
 import ReplyNode from '../components/ReplyNode.vue'
 import ReplyForm from '../components/ReplyForm.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
@@ -10,13 +10,12 @@ import CuratorBanner from '../components/CuratorBanner.vue'
 const route = useRoute()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
-const rootSubRef = computed(() => rootSubId.value ? `bzz://${rootSubId.value}` : null)
 
-const { thread, isLoading, isError, error, selectedCurator, showCuratorBanner } = useThread(slug, rootSubId)
+const { thread, isLoading, isError, error, rootSubRef, selectedCurator, showCuratorBanner } = useThread(slug, rootSubId)
 
 // Inline reply state
-const replyingTo = ref(null) // node being replied to
-const pendingReplies = ref([]) // { parentSubmissionId, submissionRef, bodyText }
+const replyingTo = ref(null)
+const pendingReplies = ref([])
 
 function handleReply(node) {
   replyingTo.value = node
@@ -31,7 +30,6 @@ function onReplyPublished(result) {
     pendingReplies.value.push({
       parentSubmissionId: replyingTo.value?.submissionId,
       submissionRef: result.submissionRef,
-      bodyText: '(pending curator indexing)',
     })
   }
   replyingTo.value = null
@@ -40,7 +38,6 @@ function onReplyPublished(result) {
 
 <template>
   <div>
-    <!-- Back link -->
     <router-link
       :to="{ name: 'board', params: { slug } }"
       class="text-sm text-gray-500 hover:text-gray-300 mb-4 inline-block"
@@ -48,7 +45,6 @@ function onReplyPublished(result) {
       &larr; r/{{ slug }}
     </router-link>
 
-    <!-- Curator banner -->
     <CuratorBanner
       v-if="showCuratorBanner && selectedCurator"
       :curator-name="selectedCurator.profile?.name"
@@ -82,7 +78,7 @@ function onReplyPublished(result) {
         />
 
         <!-- Inline reply form -->
-        <div v-if="replyingTo?.submissionId === node.submissionId" :style="{ marginLeft: `${Math.min((node.depth || 0) + 1, 6) * 24}px` }">
+        <div v-if="replyingTo?.submissionId === node.submissionId" :style="{ marginLeft: threadIndent((node.depth || 0) + 1) }">
           <ReplyForm
             :board-slug="slug"
             :parent-submission-id="node.submissionId"
@@ -92,18 +88,17 @@ function onReplyPublished(result) {
           />
         </div>
 
-        <!-- Pending replies for this node -->
+        <!-- Pending replies -->
         <div
           v-for="pending in pendingReplies.filter(p => p.parentSubmissionId === node.submissionId)"
           :key="pending.submissionRef"
-          :style="{ marginLeft: `${Math.min((node.depth || 0) + 1, 6) * 24}px` }"
+          :style="{ marginLeft: threadIndent((node.depth || 0) + 1) }"
           class="py-2 px-3 my-1 rounded-md bg-orange-900/10 border border-orange-800/30 text-xs text-orange-400/70 italic"
         >
           Your reply — pending curator indexing
         </div>
       </template>
 
-      <!-- Curator info -->
       <div v-if="selectedCurator" class="mt-6 text-xs text-gray-600">
         Curated by {{ selectedCurator.profile?.name || truncateAddress(selectedCurator.address) }}
       </div>

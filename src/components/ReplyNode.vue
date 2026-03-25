@@ -1,5 +1,5 @@
 <script setup>
-import { truncateAddress, timeAgo } from '../lib/format.js'
+import { truncateAddress, timeAgo, threadIndent } from '../lib/format.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 
 defineProps({
@@ -12,7 +12,7 @@ defineEmits(['reply'])
 
 <template>
   <div
-    :style="{ marginLeft: `${Math.min(node.depth || 0, 6) * 24}px` }"
+    :style="{ marginLeft: threadIndent(node.depth) }"
     class="py-3 border-b border-gray-800"
   >
     <!-- Header -->
