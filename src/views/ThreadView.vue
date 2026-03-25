@@ -1,20 +1,40 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThread } from '../composables/useThread'
 import { truncateAddress } from '../lib/format.js'
 import ReplyNode from '../components/ReplyNode.vue'
+import ReplyForm from '../components/ReplyForm.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
+const rootSubRef = computed(() => rootSubId.value ? `bzz://${rootSubId.value}` : null)
 
 const { thread, isLoading, isError, error, selectedCurator, showCuratorBanner } = useThread(slug, rootSubId)
 
+// Inline reply state
+const replyingTo = ref(null) // node being replied to
+const pendingReplies = ref([]) // { parentSubmissionId, submissionRef, bodyText }
+
 function handleReply(node) {
-  // UP9 will implement inline reply
-  console.log('Reply to:', node.submissionId)
+  replyingTo.value = node
+}
+
+function cancelReply() {
+  replyingTo.value = null
+}
+
+function onReplyPublished(result) {
+  if (result) {
+    pendingReplies.value.push({
+      parentSubmissionId: replyingTo.value?.submissionId,
+      submissionRef: result.submissionRef,
+      bodyText: '(pending curator indexing)',
+    })
+  }
+  replyingTo.value = null
 }
 </script>
 
@@ -54,13 +74,34 @@ function handleReply(node) {
 
     <!-- Thread -->
     <div v-else class="mt-2">
-      <ReplyNode
-        v-for="node in thread.nodes"
-        :key="node.submissionId"
-        :node="node"
-        :is-root="node.parentSubmissionId === null"
-        @reply="handleReply"
-      />
+      <template v-for="node in thread.nodes" :key="node.submissionId">
+        <ReplyNode
+          :node="node"
+          :is-root="node.parentSubmissionId === null"
+          @reply="handleReply"
+        />
+
+        <!-- Inline reply form -->
+        <div v-if="replyingTo?.submissionId === node.submissionId" :style="{ marginLeft: `${Math.min((node.depth || 0) + 1, 6) * 24}px` }">
+          <ReplyForm
+            :board-slug="slug"
+            :parent-submission-id="node.submissionId"
+            :root-submission-id="rootSubRef"
+            @published="onReplyPublished"
+            @cancel="cancelReply"
+          />
+        </div>
+
+        <!-- Pending replies for this node -->
+        <div
+          v-for="pending in pendingReplies.filter(p => p.parentSubmissionId === node.submissionId)"
+          :key="pending.submissionRef"
+          :style="{ marginLeft: `${Math.min((node.depth || 0) + 1, 6) * 24}px` }"
+          class="py-2 px-3 my-1 rounded-md bg-orange-900/10 border border-orange-800/30 text-xs text-orange-400/70 italic"
+        >
+          Your reply — pending curator indexing
+        </div>
+      </template>
 
       <!-- Curator info -->
       <div v-if="selectedCurator" class="mt-6 text-xs text-gray-600">
