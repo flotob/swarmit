@@ -17,7 +17,7 @@ export function useCuratorDeclarations() {
       for (const c of all) byAddr.set(c.curator.toLowerCase(), c)
       return [...byAddr.values()]
     },
-    staleTime: 5 * 60_000,
+    staleTime: 30_000, // 30s — curators update profiles when new boards appear
   })
 }
 
