@@ -3,188 +3,316 @@
 ## Current State
 
 The SPA is functionally complete but looks like a proof of concept:
-- Inline styles everywhere, no consistent design system
+- Vanilla JS with raw `document.createElement` everywhere — unmaintainable
+- Inline styles, no consistent design system
 - No reply UI (pipeline exists but no form in thread view)
 - Create Board page exists but isn't linked from navigation
 - No image/media support
-- Markdown renderer exists but is minimal
+- Markdown renderer is minimal and hand-rolled
 - No loading states, empty states, or error states with real design
 - No mobile responsiveness
+- No data caching — every navigation re-fetches everything from Swarm
 
-## Goal
+## Decision: Full Rewrite with Modern Stack
 
-A Reddit-like experience: familiar layout, clean typography, functional posting and replying, media support, and a design that doesn't look like a developer tool.
+The proof-of-concept phase is over. We're adding **Vite as a build step** and migrating to a proper framework. The build output is still static files uploaded to Swarm — no server at runtime.
 
-## Design Direction
+## Technology Stack
 
-Reddit-inspired but Swarm-native:
-- Dark theme (already in place, refine it)
-- Card-based post listings with vote/comment counts area (even if not functional yet)
-- Threaded reply indentation with collapse
-- Sidebar with board info and curator status
-- Top navigation with board links, create board, user menu
-- Compact information density like old.reddit.com rather than new Reddit's whitespace
+| Layer | Choice | Why |
+|-------|--------|-----|
+| **Build** | Vite | Fast dev server, HMR, produces static output for Swarm |
+| **Framework** | Vue 3 (SFCs, Composition API) | Full component model, excellent tooling, large ecosystem |
+| **Router** | Vue Router (hash mode) | `createWebHashHistory()` — works on Swarm without server rewrites |
+| **State** | Pinia | Official Vue state management, simple API |
+| **Data fetching** | TanStack Query (Vue) | SWR caching, background refetch, persistence to IndexedDB |
+| **Persistence** | IndexedDB via idb-keyval | Async, non-blocking, survives sessions. Cache API for large binary (images) |
+| **Markdown render** | marked + DOMPurify | Battle-tested rendering + XSS sanitization |
+| **Markdown editor** | Tiptap (Vue 3) | Headless rich text editor, markdown I/O, extensible |
+| **CSS** | Tailwind CSS | Utility-first, dark mode, responsive — build step handles purging |
+| **Icons** | Heroicons or similar | Tailwind-compatible icon set |
+
+## Design Principles
+
+- **No fake affordances.** Don't show vote buttons, subscriber counts, sort options, or search bars that don't work. Only render UI for features that exist. Clearly label anything that's coming later.
+- **Curator trust boundary.** Content from curator-backed feeds is curator-authored. Local/pending data (e.g., a reply just submitted) must be visually distinct — shown as "pending, not yet curated" rather than mixed into the curator's tree.
+- **Show cached, revalidate in background.** On every navigation, render from cache immediately. Check for updates in the background. Update the view when fresh data arrives. The user should never see "Loading..." on a page they've visited before.
+- **Loading, empty, and error states are part of every view**, not a late polish phase. Each view must handle all three from the start.
+
+## Data Caching Architecture
+
+Our data has two distinct caching profiles:
+
+### Immutable content (posts, replies, submissions, board metadata)
+- Keyed by Swarm `bzz://` reference
+- **Cache forever** — content-addressed data never changes
+- Store in IndexedDB via idb-keyval
+- TanStack Query with `staleTime: Infinity`
+
+### Mutable feeds (boardIndex, threadIndex, globalIndex, curatorProfile)
+- Keyed by feed manifest reference + curator address
+- **Stale-while-revalidate** — show cached version immediately, refetch in background
+- Short staleTime (e.g., 30 seconds), background refetch on window focus
+- TanStack Query with `persistQueryClient` backed by IndexedDB
+
+### Chain data (board registrations, curator declarations)
+- **Cache per session**, refetch on app start
+- Moderate staleTime (e.g., 5 minutes)
+
+## Migration Strategy
+
+The existing protocol layer (`js/protocol/`, `js/chain/`, `js/services/`, `js/swarm/`) is pure logic with no DOM dependencies. It migrates as-is into the new `src/` directory. Views and components are rewritten as Vue SFCs.
+
+```
+src/
+  main.js                    # Vue app creation, router, plugins
+  App.vue                    # Root layout (nav, main, footer)
+  router/
+    index.js                 # Vue Router with hash mode
+  stores/
+    auth.js                  # Pinia: wallet connection, user address, user feed
+    providers.js             # Pinia: Swarm/wallet provider detection
+  composables/
+    useBoard.js              # TanStack Query: board metadata + boardIndex
+    useThread.js             # TanStack Query: threadIndex + submissions
+    useCurators.js           # TanStack Query: curator declarations + profiles
+    usePublish.js            # Publish pipeline (post, reply, board)
+  views/
+    HomeView.vue             # Board listing
+    BoardView.vue            # Board page with post cards
+    ThreadView.vue           # Thread with reply tree
+    ComposePostView.vue      # Create post with Tiptap editor
+    CreateBoardView.vue      # Register a new board
+    CuratorPickerView.vue    # Choose curator per board
+    UserProfileView.vue      # User submission history
+  components/
+    AppHeader.vue            # Top navigation bar
+    PostCard.vue             # Post summary in listings
+    ReplyNode.vue            # Single reply in thread tree
+    ReplyForm.vue            # Inline reply form
+    StatusBar.vue            # Multi-step publish progress
+    CuratorBanner.vue        # "Showing view from X — Change" banner
+    PendingReply.vue         # Locally submitted reply (not yet curated)
+    MarkdownRenderer.vue     # marked + DOMPurify wrapper
+    MarkdownEditor.vue       # Tiptap-based editor with toolbar
+    ImageUpload.vue          # Image upload via window.swarm
+    ConnectButton.vue        # Wallet/Swarm connect button
+  protocol/                  # Migrated as-is from current js/protocol/
+    references.js
+    objects.js
+  chain/                     # Migrated as-is
+    contract.js
+    events.js
+    transactions.js
+  swarm/                     # Migrated as-is
+    fetch.js
+    feeds.js
+  services/                  # Migrated as-is
+    publish-pipeline.js
+    curator.js
+  lib/                       # Migrated as-is
+    swarm.js
+    ethereum.js
+    rpc.js
+    format.js
+```
 
 ## Work Packages
 
-### UP1: Design System + CSS Overhaul
+### UP1: Vite + Vue Scaffold
 
-Replace inline styles with a proper CSS class system.
+Set up the new build pipeline alongside the existing code.
 
-- Define form classes: `.form-input`, `.form-textarea`, `.form-label`, `.form-group`
-- Define layout classes: `.content-with-sidebar`, `.sidebar`, `.main-content`
-- Define post classes: `.post-card`, `.post-title`, `.post-meta`, `.post-body`
-- Define thread classes: `.reply-node`, `.reply-header`, `.reply-body`, `.reply-actions`
-- Define utility classes: `.loading`, `.empty-state`, `.error-state`
-- Update `variables.css` with refined spacing, colors, and typography
-- Add responsive breakpoints for mobile
-- Remove all inline `style.cssText` from views and components
+- `npm create vite@latest` with Vue template, or manual setup
+- Configure Vite for static output (no server)
+- Vue Router with hash mode, matching existing route table
+- Pinia store setup
+- TanStack Query plugin with IndexedDB persistence
+- Tailwind CSS with dark mode
+- Migrate protocol/chain/swarm/services modules into `src/`
+- Basic `App.vue` shell with router-view
+- `npm run build` produces `dist/` for Swarm upload
+- Verify: upload to Swarm, open in Freedom Browser, see the shell
 
-### UP2: Navigation + Layout Shell
+### UP2: Layout + Navigation
 
-Redesign the app shell to match Reddit's layout.
+- `AppHeader.vue`: logo, board links, Create Board, wallet connect/status
+- Responsive layout with Tailwind (sidebar on desktop, collapsible on mobile)
+- `ConnectButton.vue`: wallet + Swarm connection with status display
+- Provider detection on boot (same as current `detectProviders`)
+- Route transitions
 
-- Top bar: logo, search (placeholder), board links, Create Board button, user menu (address + connect)
-- Board-scoped header when inside `#/r/:slug` (board name, description, submit button, curator indicator)
-- Sidebar: board rules/description, curator info, related boards (when on a board page)
-- Footer: minimal
-- Mobile: hamburger menu, collapsible sidebar
+**Smoke test:** Header renders, wallet connect works, routes resolve.
 
-### UP3: Home Page Redesign
+### UP3: Data Layer + Caching
 
-- Board cards with title, description, subscriber/post count placeholders
-- "Create Board" call to action
-- If curator's globalIndex is available, show cross-board recent posts
-- Empty state when no boards exist
+- TanStack Query composables for all data fetching:
+  - `useBoard(slug)` — board metadata from chain + boardIndex from curator feed
+  - `useThread(slug, rootSubId)` — threadIndex + all submissions/content
+  - `useCurators()` — curator declarations from chain
+  - `useBoardList()` — board registrations from chain
+- Curator selection logic (existing `services/curator.js`) wrapped in composables
+- IndexedDB persistence via idb-keyval
+- Immutable content: `staleTime: Infinity`
+- Mutable feeds: `staleTime: 30_000`, refetch on window focus
+- Cache warming: render from cache on navigation, update when fresh data arrives
 
-### UP4: Board View Redesign
+**Smoke test:** Navigate to board, see cached data on second visit without loading flash.
 
-- Post cards: title, author, time ago, comment count, board badge
-- Sort options placeholder (Hot / New / Top — only "New" works for now, others are UI-only)
-- "Submit Post" button prominent
-- Curator indicator bar (which curator, change link)
-- Pagination or infinite scroll placeholder (load more button)
-- Empty state: "No posts yet. Be the first!"
+### UP4: Home Page
 
-### UP5: Post Card Component
+- `HomeView.vue`: board cards from `useBoardList()`
+- Board card: title, description, click to navigate
+- Create Board call-to-action link
+- Loading skeleton, empty state, error state with retry
 
-- Title (clickable → thread)
-- Author address (clickable → user profile) with truncation
-- Time ago
-- Preview of body text (first ~200 chars)
-- Comment count (from threadIndex nodes if available)
-- Board badge (when shown in global/cross-board context)
+**Smoke test:** Home loads boards, clicking navigates to board view.
 
-### UP6: Thread View Redesign
+### UP5: Board View + Post Cards
 
-- Root post displayed prominently: full title, author, time, full markdown body, media
-- Reply form directly below root post (always visible)
-- Threaded replies with depth indentation, collapse/expand per branch
-- Each reply: author, time, markdown body, "Reply" button
-- Inline reply form that appears when clicking "Reply" on any comment
-- Back to board link
+- `BoardView.vue`: uses `useBoard(slug)` composable
+- `PostCard.vue`: title, author, time ago, comment count, body preview
+- Curator banner when auto-selected or fallthrough
+- Submit Post button linking to compose
+- Loading skeleton, empty state ("No posts yet"), error state
 
-### UP7: Inline Reply
+**Smoke test:** Board resolves curator, shows posts. Cards link to threads.
 
-Wire the existing `publishReply()` pipeline into the thread view.
+### UP6: Thread View + Reply Tree
 
-- Reply form: textarea + submit button
-- Appears inline below the comment being replied to
-- Uses `parentSubmissionId` from the clicked comment, `rootSubmissionId` from the thread root
-- Multi-step status bar (same as compose-post)
-- After success: show the new reply optimistically in the tree (even before curator picks it up)
+- `ThreadView.vue`: uses `useThread(slug, rootSubId)` composable
+- Root post: full title, author, time, rendered markdown body
+- `ReplyNode.vue`: depth-indented, collapsible branches
+- `CuratorBanner.vue` when curator was auto-selected
+- Back-to-board link
+- Loading/empty/error states
 
-### UP8: Compose Post Redesign
+**Smoke test:** Thread loads from curator's threadIndexFeed, replies show at correct depth.
 
-- Full-width form with title input and markdown editor area
-- Markdown toolbar: bold, italic, link, code, image
-- Live preview panel (toggle or side-by-side)
-- Board selector if navigated to from home (pre-filled if from board)
-- Status bar during publish (existing, just styled better)
+### UP7: Markdown Rendering
 
-### UP9: Image/Media Support
+- `MarkdownRenderer.vue`: renders markdown via `marked`, sanitizes with `DOMPurify`
+- Custom `marked` renderer for `bzz://` image URLs → `<img src="/bzz/ref/">`
+- Support: headings, bold, italic, links, code, code blocks, lists, blockquotes, images
+- Integrated into `PostCard` (preview), `ThreadView` (full body), `ReplyNode` (body)
 
-- Image upload via Freedom Browser's `publishData` API
-- Insert image reference into markdown as `![alt](bzz://<ref>)`
-- Display images in post/reply bodies (markdown renderer resolves `bzz://` image URLs)
-- Image preview in compose form
-- Attachment descriptors per protocol spec (contentType, sizeBytes, kind)
-- Size limits and format validation
+**Smoke test:** Posts with markdown formatting render correctly and safely.
 
-### UP10: Create Board Polish
+### UP8: Compose Post with Rich Editor
 
-- Link from navigation (always visible)
-- Better form design with slug preview ("Your board will be at r/your-slug")
-- Governance info section (currently hardcoded to EOA)
-- Success state with link to the new board
+- `ComposePostView.vue`: title input + Tiptap editor
+- `MarkdownEditor.vue`: Tiptap configured for markdown I/O
+- Toolbar: bold, italic, heading, link, code, blockquote, image upload
+- Board context from route params
+- Publish pipeline with `StatusBar.vue` progress
+- Partial success messaging (Swarm published but chain skipped/failed)
 
-### UP11: Curator Picker Redesign
+**Smoke test:** Compose a post with formatting, publish succeeds, post appears on board after curator picks it up.
 
-- Card per curator with avatar placeholder, name, description
-- Per-board selection with visual feedback
-- Show which boards each curator covers
-- Active curator highlighted
-- Accessible from board header
+### UP9: Inline Reply
 
-### UP12: User Profile Redesign
+- `ReplyForm.vue`: appears inline below any comment when "Reply" is clicked
+- Uses `publishReply()` from publish pipeline
+- `parentSubmissionId` from the clicked comment, `rootSubmissionId` from thread root
+- `StatusBar.vue` for progress
+- `PendingReply.vue`: after success, show the reply as a visually distinct "pending — not yet curated" block below the parent. Does NOT insert into the curator's reply tree.
+- Pending replies stored in Pinia, cleared when the curator's next threadIndex includes them
 
-- User address as header
-- Submission history with proper post cards (not just refs)
-- Filter by board, by type (posts/replies)
-- Link to user's posts from post/reply author addresses throughout the app
+**Smoke test:** Reply to a post, see pending reply, curator picks it up and it appears in the real tree.
 
-### UP13: Loading, Empty, Error States
+### UP10: Image/Media Support
 
-- Skeleton loading screens for board and thread views
-- Meaningful empty states ("No posts yet", "No curators", "Board not found")
-- Error states with retry buttons
-- Connection status indicator (Swarm/wallet) persistent in header
+Images follow a protocol-compliant model:
 
-### UP14: Mobile Responsiveness
+1. User picks/pastes/drags an image in the Tiptap editor
+2. Image is published to Swarm via `window.swarm.publishData({ data, contentType })`
+3. An `AttachmentDescriptor` is added to the post/reply object per protocol spec:
+   ```json
+   { "reference": "bzz://<ref>", "contentType": "image/png", "sizeBytes": 12345, "kind": "image" }
+   ```
+4. The `bzz://` reference is inserted into the markdown body as `![alt](bzz://<ref>)` for rendering convenience
+5. The canonical source of truth is the `attachments` array — the markdown image syntax is a rendering aid
 
-- Responsive layout at 768px and 480px breakpoints
+- `ImageUpload.vue`: handles file picker, paste, drag-and-drop, upload progress
+- Custom `marked` extension: resolve `bzz://` URLs to `/bzz/` paths for `<img>` tags
+- Size limits (e.g., 5MB per image) and format validation (png, jpg, gif, webp)
+- Images work in both posts and replies
+
+**Smoke test:** Upload an image in compose, see it in the preview, publish, see it rendered in the thread.
+
+### UP11: Create Board
+
+- `CreateBoardView.vue`: slug input with live preview, title, description
+- Slug validation (lowercase alphanumeric + hyphens, max 32 chars)
+- Publish to Swarm + register on-chain with progress
+- Redirect to new board on success
+- Linked from navigation header
+
+**Smoke test:** Create a board, see it on the home page, navigate to it.
+
+### UP12: Curator Picker
+
+- `CuratorPickerView.vue`: card per curator with name, description, curated boards
+- Per-board selection buttons with visual feedback
+- Current selection shown, persisted to localStorage
+- Accessible from curator banner on board/thread views
+
+**Smoke test:** Select a curator, navigate to board, see content from chosen curator.
+
+### UP13: User Profile
+
+- `UserProfileView.vue`: address, submission history with proper post cards
+- Uses user's feed index to show submissions
+- Reply entries resolve `rootSubmissionId` before linking to thread
+- Author addresses clickable throughout the app
+
+**Smoke test:** Click author on a post, see their profile with submission history.
+
+### UP14: Mobile Polish
+
+- Responsive Tailwind breakpoints (sm, md, lg)
 - Collapsible sidebar
-- Touch-friendly reply/compose forms
+- Touch-friendly forms and reply UI
 - Readable typography on small screens
 
 ## Implementation Order
 
 ```
-UP1  Design System ← foundation for everything else
+UP1  Vite + Vue Scaffold ← foundation
  ↓
-UP2  Navigation + Layout Shell
-UP3  Home Page
+UP2  Layout + Navigation
+UP3  Data Layer + Caching ← can parallel with UP2
  ↓
-UP4  Board View
-UP5  Post Card
+UP4  Home Page
+UP5  Board View + Post Cards
  ↓
-UP6  Thread View
-UP7  Inline Reply ← first new functionality
+UP6  Thread View + Reply Tree
+UP7  Markdown Rendering ← needed by UP6
  ↓
-UP8  Compose Post Redesign
-UP9  Image/Media ← biggest new feature
+UP8  Compose Post with Editor
+UP9  Inline Reply ← first new functionality
+UP10 Image/Media ← biggest new feature
  ↓
-UP10 Create Board Polish
-UP11 Curator Picker
-UP12 User Profile
+UP11 Create Board
+UP12 Curator Picker    (parallel)
+UP13 User Profile
  ↓
-UP13 Loading/Empty/Error States
-UP14 Mobile
+UP14 Mobile Polish
 ```
 
-**Critical path:** UP1 → UP2 → UP4+UP5 → UP6+UP7 → UP9
+**Critical path:** UP1 → UP2+UP3 → UP5 → UP6+UP7 → UP8+UP9
 
-UP3, UP10, UP11, UP12 can happen in parallel once UP1+UP2 are done.
+## Regression Smoke Tests
 
-## Open Questions
+After each UP, verify all of these still work:
 
-1. **DOM helper** — should we extract the `el()` helper from debug-fixtures into a shared utility, or adopt a lightweight templating approach? The current `document.createElement` chains will get unwieldy with richer UI.
-2. **CSS approach** — stay with vanilla CSS, or adopt something like CSS modules or a minimal utility framework? Given the "no build tools" constraint, vanilla CSS with good class naming is probably the right call.
-3. **Markdown editor** — build a minimal toolbar ourselves, or vendor a lightweight editor? For v1, a simple toolbar that inserts markdown syntax is probably enough.
-4. **Image upload UX** — drag-and-drop, paste, or file picker? Freedom Browser's `publishData` supports all, but the UX differs.
-
-## Notes
-
-- The `el()` helper from `debug-fixtures.js` should be extracted to `js/lib/dom.js` and used by all views. This will significantly reduce boilerplate.
-- The `/simplify` review pattern should continue for each UP.
-- The reviewer/spec AI should check UP7 (reply) and UP9 (media) for protocol compliance.
+- [ ] Home loads registered boards from chain
+- [ ] Board view resolves curator-backed boardIndex and renders posts
+- [ ] Thread view resolves threadIndexFeed and renders reply tree
+- [ ] Compose post publishes to Swarm and announces on chain
+- [ ] Create board publishes metadata and registers on chain
+- [ ] Curator picker persists selection and affects board/thread rendering
+- [ ] User profile resolves feed and shows submission history
+- [ ] Cached pages render instantly on second visit
+- [ ] Wallet connect/disconnect works correctly
+- [ ] App loads and functions in Freedom Browser from a Swarm-hosted URL
