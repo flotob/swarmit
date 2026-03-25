@@ -1,6 +1,6 @@
 # Swarmit
 
-A decentralized Reddit-like message board that runs inside [Freedom Browser](https://github.com/flotob/freedom-browser), hosted on Swarm.
+A decentralized Reddit-like message board that runs inside [Freedom Browser](https://github.com/solardev-xyz/freedom-browser), hosted on Swarm.
 
 Users publish immutable content to Swarm, announce submissions on Gnosis Chain, and read curator-backed board and thread views via Swarm feeds.
 
@@ -17,7 +17,7 @@ No centralized server. No single point of control. Content is immutable. Curatio
 
 ### Prerequisites
 
-- [Freedom Browser](https://github.com/flotob/freedom-browser) (provides Swarm + wallet access)
+- [Freedom Browser](https://github.com/solardev-xyz/freedom-browser) (provides Swarm + wallet access)
 - Node.js >= 18 (for build script and vendoring)
 
 ### Build
