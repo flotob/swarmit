@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '../stores/auth'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { refToHex } from '../protocol/references.js'
+import { validate } from '../protocol/objects.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { getBoardRegistrations, getSubmissionsForBoard } from '../chain/events.js'
@@ -35,6 +36,8 @@ const { data: profile, isLoading, isError, error } = useQuery({
             const match = subs.find((s) => s.author?.toLowerCase() === addr.toLowerCase())
             if (match) {
               const submission = await fetchObject(match.submissionRef)
+              const { valid } = validate(submission)
+              if (!valid) return null
               return submission?.author?.userFeed || null
             }
           } catch { /* skip */ }
@@ -49,7 +52,8 @@ const { data: profile, isLoading, isError, error } = useQuery({
     // Resolve feed index
     try {
       const feedIndex = await resolveFeed(userFeedRef)
-      if (feedIndex?.entries?.length) {
+      const { valid } = validate(feedIndex)
+      if (valid && feedIndex?.entries?.length) {
         return { entries: [...feedIndex.entries].reverse(), feedFound: true }
       }
     } catch { /* feed not available */ }

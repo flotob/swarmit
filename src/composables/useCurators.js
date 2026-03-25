@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { getCuratorDeclarations } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { fetchBoardIndex } from '../swarm/feeds.js'
+import { validate } from '../protocol/objects.js'
 import { getCuratorPref, setCuratorPref } from '../state.js'
 
 /**
@@ -62,6 +63,8 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList) {
     try {
       const profile = await fetchObject(match.curatorProfileRef)
       if (!profile) continue
+      const { valid: profileValid } = validate(profile)
+      if (!profileValid) continue
 
       const boardIdx = await fetchBoardIndex(profile, slug)
       if (boardIdx?.entries?.length) {

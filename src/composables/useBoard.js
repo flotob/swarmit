@@ -32,8 +32,12 @@ export function useBoard(slugRef) {
   const selectedCurator = ref(null)
   const showCuratorBanner = ref(false)
 
-  // boardMeta is a dependency — refetch when board metadata arrives
-  const boardMetaKey = computed(() => board.value?.boardId || '_none')
+  // Depend on selection-relevant board metadata, not just boardId
+  const boardMetaKey = computed(() => {
+    const b = board.value
+    if (!b) return '_none'
+    return `${b.boardId}:${b.defaultCurator || ''}:${(b.endorsedCurators || []).join(',')}`
+  })
 
   const boardQuery = useQuery({
     queryKey: ['boardIndex', slugRef, boardMetaKey],

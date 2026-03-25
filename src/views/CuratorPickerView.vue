@@ -2,6 +2,7 @@
 import { reactive, watch, computed } from 'vue'
 import { useCuratorDeclarations, setCuratorPref } from '../composables/useCurators'
 import { fetchObject } from '../swarm/fetch.js'
+import { validate } from '../protocol/objects.js'
 import { truncateAddress } from '../lib/format.js'
 import { getCuratorPref } from '../state.js'
 
@@ -20,7 +21,8 @@ async function loadProfiles() {
       .map(async (c) => {
         try {
           const profile = await fetchObject(c.curatorProfileRef)
-          profiles.set(c.curator, profile)
+          const { valid } = validate(profile)
+          profiles.set(c.curator, valid ? profile : null)
         } catch {
           profiles.set(c.curator, null)
         }
