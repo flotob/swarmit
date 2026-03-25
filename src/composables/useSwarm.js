@@ -28,7 +28,7 @@ export function useSwarm() {
       name: name || undefined,
     })
     const ref = result.reference || ''
-    const bzzUrl = result.bzzUrl || (ref ? `bzz://${ref}` : '')
+    const bzzUrl = result.bzzUrl || hexToBzz(ref)
     return { reference: ref, bzzUrl }
   }
 
@@ -36,7 +36,7 @@ export function useSwarm() {
     if (!isAvailable()) throw new Error('Swarm provider not available')
     const result = await window.swarm.publishData({ data, contentType, name: name || undefined })
     const ref = result.reference || ''
-    const bzzUrl = result.bzzUrl || (ref ? `bzz://${ref}` : '')
+    const bzzUrl = result.bzzUrl || hexToBzz(ref)
     return { reference: ref, bzzUrl }
   }
 

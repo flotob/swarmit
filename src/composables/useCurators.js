@@ -21,47 +21,31 @@ export function useCuratorDeclarations() {
 }
 
 /**
- * Fetch a curator's profile by address.
+ * Build an ordered candidate list for curator selection.
+ * Shared by useBoard and useThread.
  */
-export function useCuratorProfile(curatorAddress, curators) {
-  return useQuery({
-    queryKey: ['curatorProfile', curatorAddress],
-    queryFn: async () => {
-      const match = curators.value?.find(
-        (c) => c.curator.toLowerCase() === curatorAddress.value?.toLowerCase()
-      )
-      if (!match) return null
-      return fetchObject(match.curatorProfileRef)
-    },
-    enabled: computed(() => !!curatorAddress.value && !!curators.value?.length),
-    staleTime: 5 * 60_000,
-  })
-}
+export function buildCandidates(slug, board, curators) {
+  const seen = new Set()
+  const list = []
 
-/**
- * Select the best curator for a board.
- * Order: user pref > board.defaultCurator > single endorsed > first declared.
- */
-export function selectCurator(slug, board, curators) {
-  const pref = getCuratorPref(slug)
-  if (pref) return pref
+  function add(addr) {
+    if (!addr) return
+    const lower = addr.toLowerCase()
+    if (seen.has(lower)) return
+    seen.add(lower)
+    list.push(addr)
+  }
 
-  if (board?.defaultCurator) return board.defaultCurator
-  if (board?.endorsedCurators?.length === 1) return board.endorsedCurators[0]
+  add(getCuratorPref(slug))
+  add(board?.defaultCurator)
+  if (board?.endorsedCurators?.length === 1) add(board.endorsedCurators[0])
 
-  if (curators?.length > 0) return curators[0].curator
-  return null
-}
+  const preferred = list.length > 0 ? list[0] : null
+  const needsPrompt = list.length === 0 && curators.length > 1
 
-/**
- * Whether the user needs to be prompted to choose a curator.
- */
-export function needsCuratorPrompt(slug, board, curators) {
-  const pref = getCuratorPref(slug)
-  if (pref) return false
-  if (board?.defaultCurator) return false
-  if (board?.endorsedCurators?.length === 1) return false
-  return curators?.length > 1
+  for (const c of curators) add(c.curator)
+
+  return { list, needsPrompt, preferred }
 }
 
 export { setCuratorPref }

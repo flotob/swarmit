@@ -1,13 +1,10 @@
 import { useQuery } from '@tanstack/vue-query'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { fetchBoardIndex } from '../swarm/feeds.js'
-import { useCuratorDeclarations, selectCurator, needsCuratorPrompt } from './useCurators.js'
+import { useCuratorDeclarations, buildCandidates } from './useCurators.js'
 
-/**
- * Load board metadata from chain.
- */
 function useBoardMetadata(slug) {
   return useQuery({
     queryKey: ['boardMeta', slug],
@@ -21,9 +18,6 @@ function useBoardMetadata(slug) {
   })
 }
 
-/**
- * Full board composable — metadata + curator selection + boardIndex with fallthrough.
- */
 export function useBoard(slugRef) {
   const { data: board } = useBoardMetadata(slugRef)
   const { data: curators } = useCuratorDeclarations()
@@ -31,9 +25,8 @@ export function useBoard(slugRef) {
   const selectedCurator = ref(null)
   const showCuratorBanner = ref(false)
 
-  // Resolve curator + boardIndex
   const boardIndexQuery = useQuery({
-    queryKey: ['boardIndex', slugRef, curators],
+    queryKey: ['boardIndex', slugRef],
     queryFn: async () => {
       const slug = slugRef.value
       const boardObj = board.value
@@ -41,11 +34,8 @@ export function useBoard(slugRef) {
 
       if (!curatorList.length) return null
 
-      // Build candidate list
       const candidates = buildCandidates(slug, boardObj, curatorList)
-      const preferred = candidates.preferred
 
-      // Try each candidate until one has usable data
       for (const addr of candidates.list) {
         const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())
         if (!match) continue
@@ -57,7 +47,7 @@ export function useBoard(slugRef) {
           const boardIndex = await fetchBoardIndex(profile, slug)
           if (boardIndex?.entries?.length) {
             selectedCurator.value = { address: addr, profile }
-            showCuratorBanner.value = candidates.needsPrompt || (preferred && preferred.toLowerCase() !== addr.toLowerCase())
+            showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== addr.toLowerCase())
             return boardIndex
           }
         } catch {
@@ -81,36 +71,4 @@ export function useBoard(slugRef) {
     selectedCurator,
     showCuratorBanner,
   }
-}
-
-function buildCandidates(slug, board, curators) {
-  const seen = new Set()
-  const list = []
-  let needsPrompt = false
-
-  function add(addr) {
-    if (!addr) return
-    const lower = addr.toLowerCase()
-    if (seen.has(lower)) return
-    seen.add(lower)
-    list.push(addr)
-  }
-
-  // Import getCuratorPref directly to avoid circular composable deps
-  let pref = null
-  try {
-    const stored = JSON.parse(localStorage.getItem('swarmit-curator-prefs') || '{}')
-    pref = stored[slug] || null
-  } catch {}
-
-  add(pref)
-  add(board?.defaultCurator)
-  if (board?.endorsedCurators?.length === 1) add(board.endorsedCurators[0])
-
-  const preferred = list.length > 0 ? list[0] : null
-  needsPrompt = list.length === 0 && curators.length > 1
-
-  for (const c of curators) add(c.curator)
-
-  return { list, needsPrompt, preferred }
 }

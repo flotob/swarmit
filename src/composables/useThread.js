@@ -3,11 +3,8 @@ import { computed, ref } from 'vue'
 import { fetchObject } from '../swarm/fetch.js'
 import { fetchBoardIndex, resolveFeed } from '../swarm/feeds.js'
 import { hexToBzz } from '../protocol/references.js'
-import { useCuratorDeclarations } from './useCurators.js'
+import { useCuratorDeclarations, buildCandidates } from './useCurators.js'
 
-/**
- * Full thread composable — resolves boardIndex → threadIndexFeed → threadIndex → nodes.
- */
 export function useThread(slugRef, rootSubIdRef) {
   const { data: curators } = useCuratorDeclarations()
 
@@ -28,7 +25,6 @@ export function useThread(slugRef, rootSubIdRef) {
 
       if (!rootRef || !curatorList.length) return null
 
-      // Build candidate list (same logic as useBoard)
       const candidates = buildCandidates(slug, null, curatorList)
 
       for (const addr of candidates.list) {
@@ -50,7 +46,6 @@ export function useThread(slugRef, rootSubIdRef) {
           const threadIndex = await resolveFeed(rootEntry.threadIndexFeed)
           if (!threadIndex?.nodes?.length) continue
 
-          // Fetch all submissions + content in parallel
           const nodes = await Promise.all(
             threadIndex.nodes.map(async (node) => {
               try {
@@ -86,34 +81,4 @@ export function useThread(slugRef, rootSubIdRef) {
     selectedCurator,
     showCuratorBanner,
   }
-}
-
-function buildCandidates(slug, board, curators) {
-  const seen = new Set()
-  const list = []
-
-  function add(addr) {
-    if (!addr) return
-    const lower = addr.toLowerCase()
-    if (seen.has(lower)) return
-    seen.add(lower)
-    list.push(addr)
-  }
-
-  let pref = null
-  try {
-    const stored = JSON.parse(localStorage.getItem('swarmit-curator-prefs') || '{}')
-    pref = stored[slug] || null
-  } catch {}
-
-  add(pref)
-  add(board?.defaultCurator)
-  if (board?.endorsedCurators?.length === 1) add(board.endorsedCurators[0])
-
-  const preferred = list.length > 0 ? list[0] : null
-  const needsPrompt = list.length === 0 && curators.length > 1
-
-  for (const c of curators) add(c.curator)
-
-  return { list, needsPrompt, preferred }
 }

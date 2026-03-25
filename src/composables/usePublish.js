@@ -4,7 +4,6 @@ import { useSwarm } from './useSwarm.js'
 import { useAuthStore } from '../stores/auth'
 import { validate, buildPost, buildReply, buildSubmission, buildUserFeedIndex } from '../protocol/objects.js'
 import { resolveFeed } from '../swarm/feeds.js'
-import { validateUserFeedIndex } from '../protocol/objects.js'
 import { announceSubmission } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
 import { FREEDOM_ADAPTER } from '../config'
@@ -55,8 +54,8 @@ export function usePublish() {
     try {
       const index = await resolveFeed(userFeed)
       if (!index) return null
-      const errors = validateUserFeedIndex(index)
-      if (errors.length > 0) throw new Error(`Invalid userFeedIndex: ${errors.join(', ')}`)
+      const { valid, errors } = validate(index)
+      if (!valid) throw new Error(`Invalid userFeedIndex: ${errors.join(', ')}`)
       return index
     } catch (err) {
       if (err.message.includes('404')) return null
@@ -65,7 +64,10 @@ export function usePublish() {
   }
 
   async function runPipeline({ boardSlug, kind, contentLabel, contentBuilderFn, submissionExtras, chainExtras, stepNames }) {
-    if (pipelineLock) throw new Error('A publish is already in progress')
+    if (pipelineLock) {
+      error.value = 'A publish is already in progress'
+      throw new Error('A publish is already in progress')
+    }
     pipelineLock = true
 
     steps.value = stepNames.map((name) => ({ name, status: 'pending', detail: '' }))
@@ -142,7 +144,10 @@ export function usePublish() {
     } catch (err) {
       // Mark the active step as error
       const active = steps.value.find((s) => s.status === 'active')
-      if (active) active.status = 'error'
+      if (active) {
+        active.status = 'error'
+        active.detail = err.message
+      }
       error.value = err.message
       throw err
     } finally {
