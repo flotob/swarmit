@@ -1,42 +1,18 @@
 <script setup>
 import { useAuthStore } from '../stores/auth'
-import { CHAIN_ID_HEX } from '../config'
+import { useWallet } from '../composables/useWallet'
 import { truncateAddress } from '../lib/format.js'
 
 const auth = useAuthStore()
+const wallet = useWallet()
 
 async function connectWallet() {
-  if (!window.ethereum) return
   try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-    if (accounts?.length > 0) {
-      auth.setWallet(accounts[0])
-      // Switch to Gnosis Chain
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: CHAIN_ID_HEX }],
-        })
-      } catch (err) {
-        if (err.code === 4902) {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: CHAIN_ID_HEX,
-              chainName: 'Gnosis Chain',
-              nativeCurrency: { name: 'xDAI', symbol: 'xDAI', decimals: 18 },
-              rpcUrls: ['https://rpc.gnosischain.com'],
-              blockExplorerUrls: ['https://gnosisscan.io'],
-            }],
-          })
-        }
-      }
-    }
+    await wallet.connect()
   } catch (err) {
     console.error('Wallet connect failed:', err)
   }
 }
-
 </script>
 
 <template>
