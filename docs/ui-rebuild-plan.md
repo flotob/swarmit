@@ -1,4 +1,6 @@
-# Swarmit SPA — UI Rebuild Plan
+# Swarmit SPA — Frontend Rewrite Plan
+
+This is a **full frontend platform rewrite**, not a cosmetic UI rebuild. The existing vanilla JS proof-of-concept is replaced with a modern Vue 3 stack. The protocol layer, chain integration, and Swarm helpers are preserved; everything else is rewritten.
 
 ## Current State
 
@@ -39,6 +41,15 @@ The proof-of-concept phase is over. We're adding **Vite as a build step** and mi
 - **Show cached, revalidate in background.** On every navigation, render from cache immediately. Check for updates in the background. Update the view when fresh data arrives. The user should never see "Loading..." on a page they've visited before.
 - **Loading, empty, and error states are part of every view**, not a late polish phase. Each view must handle all three from the start.
 
+## Markdown Contract
+
+The richer editor stack must not broaden protocol semantics:
+
+- **The canonical stored body is always `{ kind: "markdown", text: "..." }`** — plain markdown text, same as v1 spec
+- **No raw HTML round-tripping.** Tiptap converts to/from markdown. The stored text field never contains HTML.
+- **The allowed rendering subset is intentionally limited.** `marked` renders CommonMark, but `DOMPurify` strips anything dangerous. The renderer does NOT allow arbitrary HTML passthrough.
+- **`bzz://` image URLs in markdown** (`![alt](bzz://ref)`) are a rendering convenience. The canonical image data lives in the `attachments` array on the post/reply object.
+
 ## Data Caching Architecture
 
 Our data has two distinct caching profiles:
@@ -61,7 +72,21 @@ Our data has two distinct caching profiles:
 
 ## Migration Strategy
 
-The existing protocol layer (`js/protocol/`, `js/chain/`, `js/services/`, `js/swarm/`) is pure logic with no DOM dependencies. It migrates as-is into the new `src/` directory. Views and components are rewritten as Vue SFCs.
+### Migrate mostly intact (pure logic, no DOM or app-state dependencies)
+- `protocol/references.js`, `protocol/objects.js` — pure functions
+- `chain/contract.js`, `chain/events.js`, `chain/transactions.js` — ABI, queries, tx builders
+- `swarm/fetch.js`, `swarm/feeds.js` — object fetching, feed resolution (cache layer replaced by TanStack Query)
+- `lib/rpc.js` — read-only RPC client
+- `lib/format.js` — formatting helpers
+
+### Refactor behind Vue composables/adapters
+- `services/publish-pipeline.js` — mixes app state, provider connection, feed mutation, and UI step callbacks. Refactor into a composable (`usePublish`) using Pinia stores for state and emitting progress events.
+- `services/curator.js` — depends on `state.js` for curator preferences. Wrap in a `useCurators` composable backed by Pinia.
+- `lib/swarm.js` — wraps `window.swarm`, manages connection state. Refactor into a Pinia store (`stores/providers.js`).
+- `lib/ethereum.js` — wraps `window.ethereum`, manages wallet state. Same — Pinia store.
+- `state.js` — replaced entirely by Pinia stores.
+
+Views and components are rewritten as Vue SFCs.
 
 ```
 src/
@@ -119,20 +144,30 @@ src/
 
 ## Work Packages
 
-### UP1: Vite + Vue Scaffold
+### UP1: Vite + Vue Scaffold + Compatibility Spike
 
-Set up the new build pipeline alongside the existing code.
+Set up the new build pipeline and prove it works end-to-end from Swarm before building any real UI.
 
-- `npm create vite@latest` with Vue template, or manual setup
-- Configure Vite for static output (no server)
+**Phase 1: Scaffold**
+- Vite + Vue 3 project setup
 - Vue Router with hash mode, matching existing route table
-- Pinia store setup
-- TanStack Query plugin with IndexedDB persistence
-- Tailwind CSS with dark mode
-- Migrate protocol/chain/swarm/services modules into `src/`
+- Pinia store setup (auth + providers)
+- Tailwind CSS with dark mode config
+- Migrate portable protocol/chain/swarm modules into `src/`
 - Basic `App.vue` shell with router-view
 - `npm run build` produces `dist/` for Swarm upload
-- Verify: upload to Swarm, open in Freedom Browser, see the shell
+
+**Phase 2: Compatibility spike (acceptance gate)**
+The bundled app must pass these tests from a Swarm-hosted URL in Freedom Browser before proceeding:
+- [ ] App shell loads and Vue hydrates correctly
+- [ ] `window.swarm` and `window.ethereum` detection works
+- [ ] Board read: fetch chain events + curator feed + render a board (minimal, can be ugly)
+- [ ] Thread read: resolve threadIndexFeed + render submissions
+- [ ] Compose post: full publish pipeline (Swarm + chain announce) works
+- [ ] TanStack Query cache persists to IndexedDB and loads on page revisit
+- [ ] No CSP violations, no blocked scripts, no CORS errors
+
+If any of these fail, fix before proceeding. This prevents building 13 more UPs on a broken foundation.
 
 ### UP2: Layout + Navigation
 
