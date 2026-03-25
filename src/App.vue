@@ -3,35 +3,54 @@ import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { isAvailable as isSwarmAvailable } from './lib/swarm.js'
 import { isAvailable as isWalletAvailable } from './lib/ethereum.js'
+import { CHAIN_ID } from './config'
 import AppHeader from './components/AppHeader.vue'
 
 const auth = useAuthStore()
 
-function detectProviders() {
-  auth.setSwarmDetected(isSwarmAvailable())
+/**
+ * Check if the wallet is on Gnosis Chain and has accounts.
+ * Single truth path for wallet readiness — used at boot and on events.
+ */
+async function checkWalletState() {
+  if (!isWalletAvailable()) {
+    auth.clearWallet()
+    return
+  }
 
-  if (isWalletAvailable()) {
-    window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
-      if (accounts?.length > 0) {
-        auth.setWallet(accounts[0])
-      }
-    }).catch(() => {})
+  try {
+    const [accounts, chainId] = await Promise.all([
+      window.ethereum.request({ method: 'eth_accounts' }),
+      window.ethereum.request({ method: 'eth_chainId' }),
+    ])
+
+    const onCorrectChain = parseInt(chainId, 16) === CHAIN_ID
+    if (accounts?.length > 0 && onCorrectChain) {
+      auth.setWallet(accounts[0])
+    } else {
+      auth.clearWallet()
+    }
+  } catch {
+    auth.clearWallet()
   }
 }
 
-// Listen for wallet account/chain changes
-function onAccountsChanged(accounts) {
-  if (accounts?.length > 0) {
-    auth.setWallet(accounts[0])
-  } else {
-    auth.clearWallet()
-  }
+function detectProviders() {
+  auth.setSwarmDetected(isSwarmAvailable())
+  checkWalletState()
+}
+
+function onAccountsChanged() {
+  checkWalletState()
+}
+
+function onChainChanged() {
+  checkWalletState()
 }
 
 onMounted(() => {
   detectProviders()
 
-  // Retry with backoff if Swarm provider not yet injected by Freedom Browser's preload
   if (!auth.swarmDetected) {
     let retries = 0
     const maxRetries = 5
@@ -45,15 +64,16 @@ onMounted(() => {
     setTimeout(poll, 100)
   }
 
-  // Register wallet event listeners
   if (window.ethereum?.on) {
     window.ethereum.on('accountsChanged', onAccountsChanged)
+    window.ethereum.on('chainChanged', onChainChanged)
   }
 })
 
 onUnmounted(() => {
   if (window.ethereum?.removeListener) {
     window.ethereum.removeListener('accountsChanged', onAccountsChanged)
+    window.ethereum.removeListener('chainChanged', onChainChanged)
   }
 })
 </script>

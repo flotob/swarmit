@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
+import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
 
 function useBoardMetadata(slug) {
@@ -10,7 +11,14 @@ function useBoardMetadata(slug) {
     queryFn: async () => {
       const meta = await getLatestBoardMetadata(slug.value)
       if (!meta?.boardRef) return null
-      return fetchObject(meta.boardRef)
+      const board = await fetchObject(meta.boardRef)
+      // Validate board object at the trust boundary
+      const { valid } = validate(board)
+      if (!valid) {
+        console.warn('[useBoard] Invalid board object, ignoring')
+        return null
+      }
+      return board
     },
     enabled: computed(() => !!slug.value),
     staleTime: 60_000,
@@ -24,8 +32,11 @@ export function useBoard(slugRef) {
   const selectedCurator = ref(null)
   const showCuratorBanner = ref(false)
 
+  // boardMeta is a dependency — refetch when board metadata arrives
+  const boardMetaKey = computed(() => board.value?.boardId || '_none')
+
   const boardQuery = useQuery({
-    queryKey: ['boardIndex', slugRef],
+    queryKey: ['boardIndex', slugRef, boardMetaKey],
     queryFn: async () => {
       const slug = slugRef.value
       const boardObj = board.value
@@ -40,18 +51,32 @@ export function useBoard(slugRef) {
       selectedCurator.value = curator
       showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())
 
-      // Bulk-fetch submissions + content for all entries in parallel
-      const entries = await Promise.all(
+      // Validate boardIndex at the trust boundary
+      const { valid } = validate(boardIndex)
+      if (!valid) {
+        console.warn('[useBoard] Invalid boardIndex, ignoring')
+        return null
+      }
+
+      // Bulk-fetch submissions + content, drop malformed entries individually
+      const entries = (await Promise.all(
         boardIndex.entries.map(async (entry) => {
           try {
             const submission = await fetchObject(entry.submissionRef)
+            const subResult = validate(submission)
+            if (!subResult.valid) return null
+
             const content = submission?.contentRef ? await fetchObject(submission.contentRef) : null
+            if (content) {
+              const contentResult = validate(content)
+              if (!contentResult.valid) return null
+            }
             return { ...entry, submission, content }
           } catch {
-            return { ...entry, submission: null, content: null }
+            return null
           }
         })
-      )
+      )).filter(Boolean)
 
       return { ...boardIndex, entries }
     },

@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { hexToBzz } from '../protocol/references.js'
+import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
 
 export function useThread(slugRef, rootSubIdRef) {
@@ -25,13 +27,22 @@ export function useThread(slugRef, rootSubIdRef) {
 
       if (!rootRef || !curatorList.length) return null
 
-      // Use shared curator resolution to get boardIndex
-      const resolved = await resolveCuratorBoardIndex(slug, null, curatorList)
+      // Load board metadata for curator selection (defaultCurator, endorsedCurators)
+      let board = null
+      try {
+        const meta = await getLatestBoardMetadata(slug)
+        if (meta?.boardRef) {
+          board = await fetchObject(meta.boardRef)
+          const { valid } = validate(board)
+          if (!valid) board = null
+        }
+      } catch { /* continue without board metadata */ }
+
+      const resolved = await resolveCuratorBoardIndex(slug, board, curatorList)
       if (!resolved) return null
 
       const { boardIndex, curator, candidates } = resolved
 
-      // Find root entry and its threadIndexFeed
       const rootEntry = boardIndex.entries.find(
         (e) => e.submissionId === rootRef || e.submissionRef === rootRef
       )
@@ -40,18 +51,32 @@ export function useThread(slugRef, rootSubIdRef) {
       const threadIndex = await resolveFeed(rootEntry.threadIndexFeed)
       if (!threadIndex?.nodes?.length) return null
 
-      // Fetch all submissions + content in parallel
-      const nodes = await Promise.all(
+      // Validate threadIndex at the trust boundary
+      const { valid } = validate(threadIndex)
+      if (!valid) {
+        console.warn('[useThread] Invalid threadIndex, ignoring')
+        return null
+      }
+
+      // Fetch all submissions + content, drop malformed nodes individually
+      const nodes = (await Promise.all(
         threadIndex.nodes.map(async (node) => {
           try {
             const submission = await fetchObject(node.submissionId)
+            const subResult = validate(submission)
+            if (!subResult.valid) return null
+
             const content = await fetchObject(submission.contentRef)
+            if (content) {
+              const contentResult = validate(content)
+              if (!contentResult.valid) return null
+            }
             return { ...node, submission, content }
           } catch {
-            return { ...node, submission: null, content: null }
+            return null
           }
         })
-      )
+      )).filter(Boolean)
 
       selectedCurator.value = curator
       showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())
