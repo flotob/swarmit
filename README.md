@@ -40,12 +40,18 @@ Navigate to:
 - `#/` — home page (lists registered boards)
 - `#/r/<slug>` — board view (curator-backed post listing)
 - `#/r/<slug>/submit` — compose a post
-- `#/r/<slug>/comments/<submissionId>` — thread view
+- `#/r/<slug>/comments/<rootSubmissionId>` — thread view (must be the root post's submission ID)
 - `#/curators` — curator picker
 - `#/u/<address>` — user profile
 - `#/create-board` — register a new board
 - `#/debug/swarm-read` — test Swarm reads
 - `#/debug/create-fixtures` — publish test protocol objects
+
+## What needs to be running
+
+- **Freedom Browser** — provides `window.swarm` (Swarm publish/feeds) and `window.ethereum` (wallet). Browsing works without connecting, but publishing requires both.
+- **SwarmitRegistry contract** — deployed on Gnosis Chain for board discovery and submission announcements. Already deployed at `0x34b27b9978E05B6EfD8AFEcc133C3b1fC5431613`.
+- **Curator service** — indexes submissions and publishes board/thread views. Without a running curator, boards will show "No curator has data for this board." See [Swarmit Curator](https://github.com/flotob/swarmit-curator).
 
 ## Architecture
 
@@ -68,6 +74,7 @@ swarmit/
     views/                # All page views (lazy-loaded)
     components/           # Shared UI components
   vendor/                 # Vendored ethers.js (CSP requires local JS)
+  contracts/              # SwarmitRegistry Solidity contract + tests
   fixtures/               # Test fixture documentation
   docs/                   # Protocol specs
 ```
@@ -101,6 +108,17 @@ SwarmitRegistry deployed on Gnosis Chain:
 ## Companion: Curator Service
 
 The SPA reads curator-backed views but doesn't produce them. You need a running [Swarmit Curator](https://github.com/flotob/swarmit-curator) to index submissions and publish board/thread views.
+
+## Smoke Test
+
+1. `npm run build` and upload `dist/` to Swarm via Freedom Browser
+2. Navigate to `#/debug/swarm-read` — paste any known `bzz://` ref, verify Swarm reads work
+3. Navigate to `#/debug/create-fixtures` — publish test objects (connects wallet + Swarm)
+4. Use the chain buttons to register the board and announce submissions
+5. Navigate to `#/r/test` — board should show posts (requires a running curator)
+6. Click a post — thread view with replies
+7. Navigate to `#/r/test/submit` — publish a real post through the compose form
+8. Wait for the curator to pick it up — the post should appear on the board within one poll cycle
 
 ## Implementation Notes
 
