@@ -1,15 +1,22 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useUiStore } from './stores/ui'
 import { isAvailable as isSwarmAvailable } from './lib/swarm.js'
 import { isAvailable as isWalletAvailable } from './lib/ethereum.js'
 import { CHAIN_ID } from './config'
 import { useSubmissionStatus } from './composables/useSubmissionStatus'
+import { useAutoShowSidebar } from './composables/useAutoShowSidebar'
 import AppHeader from './components/AppHeader.vue'
 import ActivityPanel from './components/ActivityPanel.vue'
+import MobileBottomBar from './components/MobileBottomBar.vue'
+import MobileDrawer from './components/MobileDrawer.vue'
 
 const auth = useAuthStore()
-useSubmissionStatus() // Start polling for pending submission pickups
+const ui = useUiStore()
+
+useSubmissionStatus()
+useAutoShowSidebar()
 
 async function checkWalletState() {
   if (!isWalletAvailable()) {
@@ -73,14 +80,34 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-gray-200">
+  <div class="min-h-screen bg-gray-950 text-gray-200 flex flex-col">
     <AppHeader />
-    <main class="max-w-4xl mx-auto px-4 py-6">
-      <router-view />
-      <ActivityPanel />
-    </main>
-    <footer class="max-w-4xl mx-auto px-4 py-8 text-center text-sm text-gray-600">
+
+    <div class="flex-1 flex justify-center px-4">
+      <div class="flex w-full max-w-5xl">
+        <main class="flex-1 min-w-0 py-6 pb-16 lg:pb-6">
+          <router-view />
+        </main>
+
+        <!-- Desktop sidebar (hidden below lg by CSS) -->
+        <aside
+          v-if="ui.sidebarOpen"
+          class="hidden lg:block w-56 shrink-0 border-l border-gray-800 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3"
+        >
+          <ActivityPanel />
+        </aside>
+      </div>
+    </div>
+
+    <footer class="px-4 py-8 text-center text-sm text-gray-600">
       Swarmit — decentralized message board on Swarm + Gnosis Chain
     </footer>
+
+    <MobileBottomBar />
+
+    <!-- Mobile drawer (hidden at lg+ by internal lg:hidden) -->
+    <MobileDrawer :open="ui.sidebarOpen" @close="ui.closeSidebar()">
+      <ActivityPanel />
+    </MobileDrawer>
   </div>
 </template>
