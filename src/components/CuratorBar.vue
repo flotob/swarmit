@@ -1,12 +1,13 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { setCuratorPref } from '../composables/useCurators'
+import { fetchObject } from '../swarm/fetch.js'
+import { validate } from '../protocol/objects.js'
 import { truncateAddress } from '../lib/format.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
@@ -14,16 +15,48 @@ import {
 const props = defineProps({
   curatorName: String,
   curatorAddress: String,
-  curators: Array,       // curator declarations: [{ curator: address, curatorProfileRef }]
-  context: String,       // board slug or '_global'
+  curators: Array,
+  context: String,
 })
 
-const otherCurators = computed(() => {
-  if (!props.curators || !props.curatorAddress) return []
-  return props.curators.filter(
-    (c) => c.curator?.toLowerCase() !== props.curatorAddress?.toLowerCase()
+// Fetch profiles for all curators (cached by fetchObject — no extra network after first load)
+const profiles = reactive(new Map())
+
+watch(() => props.curators, async (list) => {
+  if (!list) return
+  await Promise.allSettled(
+    list
+      .filter((c) => !profiles.has(c.curator))
+      .map(async (c) => {
+        try {
+          const profile = await fetchObject(c.curatorProfileRef)
+          const { valid } = validate(profile)
+          profiles.set(c.curator, valid ? profile : null)
+        } catch {
+          profiles.set(c.curator, null)
+        }
+      })
   )
+}, { immediate: true })
+
+function curatorName(addr) {
+  return profiles.get(addr)?.name || truncateAddress(addr)
+}
+
+const allCurators = computed(() => {
+  if (!props.curators) return []
+  return props.curators.map((c) => ({
+    address: c.curator,
+    name: curatorName(c.curator),
+    active: c.curator?.toLowerCase() === props.curatorAddress?.toLowerCase(),
+  }))
 })
+
+const hasAlternatives = computed(() => allCurators.value.length > 1)
+
+const displayName = computed(() =>
+  props.curatorName || truncateAddress(props.curatorAddress)
+)
 
 function selectCurator(address) {
   setCuratorPref(props.context, address)
@@ -31,28 +64,28 @@ function selectCurator(address) {
 </script>
 
 <template>
-  <div class="px-3 py-2 mb-4 rounded-md bg-gray-800/50 border border-gray-700 text-sm text-gray-400 flex items-center justify-between">
-    <span>
-      Showing view from
-      <span class="text-gray-200 font-medium">{{ curatorName || truncateAddress(curatorAddress) }}</span>
-    </span>
+  <div class="px-3 py-2 mb-4 rounded-md bg-gray-800/50 border border-gray-700 text-sm text-gray-400">
+    <span>Showing view from </span>
 
-    <DropdownMenu v-if="otherCurators.length">
-      <DropdownMenuTrigger class="text-orange-400 hover:text-orange-300 text-xs cursor-pointer outline-none">
-        Change curator
+    <DropdownMenu v-if="hasAlternatives">
+      <DropdownMenuTrigger class="inline-flex items-center gap-1 text-gray-200 font-medium hover:text-orange-400 cursor-pointer outline-none transition-colors">
+        {{ displayName }}
+        <svg class="w-3.5 h-3.5 opacity-60" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" class="w-64">
-        <DropdownMenuLabel>Switch curator</DropdownMenuLabel>
+      <DropdownMenuContent align="start" class="w-72">
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          v-for="c in otherCurators"
-          :key="c.curator"
-          @click="selectCurator(c.curator)"
-          class="cursor-pointer"
+          v-for="c in allCurators"
+          :key="c.address"
+          @click="selectCurator(c.address)"
+          class="cursor-pointer flex items-center justify-between"
         >
-          <span class="truncate">{{ truncateAddress(c.curator) }}</span>
+          <span class="truncate">{{ c.name }}</span>
+          <span v-if="c.active" class="text-green-500 text-xs shrink-0 ml-2">&#10003;</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <span v-else class="text-gray-200 font-medium">{{ displayName }}</span>
   </div>
 </template>
