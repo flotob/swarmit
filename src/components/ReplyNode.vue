@@ -1,6 +1,7 @@
 <script setup>
 import { truncateAddress, timeAgo, threadIndent } from '../lib/format.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import AttachmentGallery from './AttachmentGallery.vue'
 
 defineProps({
   node: Object,        // { submissionId, parentSubmissionId, depth, submission, content }
@@ -38,6 +39,13 @@ defineEmits(['reply'])
     <MarkdownRenderer
       v-if="node.content?.body?.text"
       :text="node.content.body.text"
+    />
+
+    <!-- Attachment fallback: images not embedded in markdown -->
+    <AttachmentGallery
+      v-if="node.content?.attachments?.length"
+      :attachments="node.content.attachments"
+      :body-text="node.content.body?.text || ''"
     />
 
     <!-- Failed to load -->

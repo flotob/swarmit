@@ -8,6 +8,7 @@ import { refToHex } from '../protocol/references.js'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS } from '../lib/submission-status.js'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
+import AttachmentGallery from '../components/AttachmentGallery.vue'
 import { ref } from 'vue'
 
 const route = useRoute()
@@ -143,6 +144,11 @@ const statusColors = {
       <div v-else-if="content" class="mb-6">
         <h2 v-if="content.title" class="text-xl font-bold mb-3">{{ content.title }}</h2>
         <MarkdownRenderer v-if="content.body?.text" :text="content.body.text" />
+        <AttachmentGallery
+          v-if="content.attachments?.length"
+          :attachments="content.attachments"
+          :body-text="content.body?.text || ''"
+        />
         <div class="mt-3 text-xs text-gray-600">
           by {{ truncateAddress(content.author?.address) }}
         </div>

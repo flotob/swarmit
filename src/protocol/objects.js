@@ -296,13 +296,22 @@ export function validateBoard(obj) {
  * Validate a post object.
  */
 export function validatePost(obj) {
-  return collectErrors(
+  const result = collectErrors(
     requireProtocol(obj, TYPES.POST),
     requireAuthorRef(obj),
     requireString(obj, 'title'),
     requireBody(obj),
     requireNumber(obj, 'createdAt'),
   );
+  // Attachments are optional — only validate structure if present
+  if (obj.attachments && Array.isArray(obj.attachments) && obj.attachments.length > 0) {
+    const attErrors = validateEntries(obj.attachments, [
+      { name: 'reference', bzz: true },
+      { name: 'contentType', type: 'string' },
+    ], 'attachments');
+    if (attErrors) result.push(...attErrors);
+  }
+  return result;
 }
 
 /**

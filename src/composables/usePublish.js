@@ -175,12 +175,12 @@ export function usePublish() {
   const POST_STEPS = ['Ensure identity', 'Publish post', 'Publish submission', 'Update user feed', 'Announce on-chain']
   const REPLY_STEPS = ['Ensure identity', 'Publish reply', 'Publish submission', 'Update user feed', 'Announce on-chain']
 
-  async function publishPost({ boardSlug, title, bodyText }) {
+  async function publishPost({ boardSlug, title, bodyText, attachments }) {
     return runPipeline({
       boardSlug,
       kind: 'post',
       contentLabel: 'Publish post',
-      contentBuilderFn: (author) => buildPost({ author, title, body: { kind: 'markdown', text: bodyText } }),
+      contentBuilderFn: (author) => buildPost({ author, title, body: { kind: 'markdown', text: bodyText }, attachments }),
       submissionExtras: {},
       chainExtras: { parentSubmissionId: null, rootSubmissionId: null },
       stepNames: POST_STEPS,

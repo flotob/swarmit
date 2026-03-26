@@ -12,6 +12,25 @@ describe('builders produce valid objects', () => {
     expect(valid).toBe(true)
   })
 
+  it('buildPost with attachments', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'With image',
+      body: { kind: 'markdown', text: 'See attached' },
+      attachments: [{ reference: VALID_REF, contentType: 'image/png', sizeBytes: 12345, kind: 'image' }],
+    })
+    const { valid, errors } = validate(post)
+    expect(errors).toEqual([])
+    expect(valid).toBe(true)
+    expect(post.attachments).toHaveLength(1)
+    expect(post.attachments[0].reference).toBe(VALID_REF)
+  })
+
+  it('buildPost without attachments omits the field', () => {
+    const post = buildPost({ author: AUTHOR, title: 'No images', body: { kind: 'markdown', text: 'Text only' } })
+    expect(post.attachments).toBeUndefined()
+  })
+
   it('buildReply', () => {
     const reply = buildReply({ author: AUTHOR, body: { kind: 'markdown', text: 'Reply' } })
     const { valid } = validate(reply)
@@ -98,5 +117,40 @@ describe('validation catches errors', () => {
     const idx = buildBoardIndex({ boardId: 'test', curator: '0x1', entries: [{}] })
     const { valid } = validate(idx)
     expect(valid).toBe(false)
+  })
+
+  it('rejects post with invalid attachment reference', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Bad attachment',
+      body: { kind: 'markdown', text: 'Test' },
+      attachments: [{ reference: 'not-a-ref', contentType: 'image/png' }],
+    })
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('attachments[0].reference'))).toBe(true)
+  })
+
+  it('rejects post with attachment missing contentType', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Missing type',
+      body: { kind: 'markdown', text: 'Test' },
+      attachments: [{ reference: VALID_REF }],
+    })
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('contentType'))).toBe(true)
+  })
+
+  it('passes post with valid attachments', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Good attachment',
+      body: { kind: 'markdown', text: 'Test' },
+      attachments: [{ reference: VALID_REF, contentType: 'image/png', sizeBytes: 100, kind: 'image', name: 'test.png' }],
+    })
+    const { valid } = validate(post)
+    expect(valid).toBe(true)
   })
 })
