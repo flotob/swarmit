@@ -16,11 +16,20 @@ const statusColors = {
   [STATUS.SETTLED]: 'text-gray-600',
 }
 
-function goToThread(item) {
-  const rootRef = item.kind === 'post' ? item.submissionRef : item.rootSubmissionId
-  const hex = refToHex(rootRef)
-  if (hex && item.boardSlug) {
-    router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: hex } })
+function handleClick(item) {
+  // Curated/settled items → go to the thread
+  if (item.status === STATUS.CURATED || item.status === STATUS.SETTLED) {
+    const rootRef = item.kind === 'post' ? item.submissionRef : item.rootSubmissionId
+    const hex = refToHex(rootRef)
+    if (hex && item.boardSlug) {
+      router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: hex } })
+      return
+    }
+  }
+  // Pending/published items → go to submission detail
+  const hex = refToHex(item.submissionRef)
+  if (hex) {
+    router.push({ name: 'submission-detail', params: { submissionRef: hex } })
   }
 }
 </script>
@@ -35,7 +44,7 @@ function goToThread(item) {
       <div
         v-for="item in store.recent"
         :key="item.submissionRef"
-        @click="goToThread(item)"
+        @click="handleClick(item)"
         class="flex items-start gap-2 p-2 rounded-md hover:bg-gray-800/50 cursor-pointer transition-colors group"
       >
         <!-- Status icon -->
