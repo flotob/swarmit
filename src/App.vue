@@ -83,18 +83,20 @@ onUnmounted(() => {
   <div class="min-h-screen bg-gray-950 text-gray-200 flex flex-col">
     <AppHeader />
 
-    <div class="flex-1 max-w-5xl mx-auto px-4" :class="ui.sidebarOpen ? 'lg:grid lg:grid-cols-[1fr_14rem]' : ''">
-      <main class="min-w-0 py-6 pb-16 lg:pb-6">
-        <router-view />
-      </main>
+    <div class="flex-1 flex justify-center px-4">
+      <div class="flex w-full max-w-5xl">
+        <main class="flex-1 min-w-0 py-6 pb-16 lg:pb-6">
+          <router-view />
+        </main>
 
-      <!-- Desktop sidebar -->
-      <aside
-        v-if="ui.sidebarOpen"
-        class="hidden lg:block border-l border-gray-800 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3"
-      >
-        <ActivityPanel />
-      </aside>
+        <!-- Desktop sidebar (hidden below lg by CSS) -->
+        <aside
+          v-if="ui.sidebarOpen"
+          class="hidden lg:block w-56 shrink-0 border-l border-gray-800 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3"
+        >
+          <ActivityPanel />
+        </aside>
+      </div>
     </div>
 
     <footer class="px-4 py-8 text-center text-sm text-gray-600">
