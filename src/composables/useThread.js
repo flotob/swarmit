@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
-import { fetchObject } from '../swarm/fetch.js'
+import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { hexToBzz } from '../protocol/references.js'
 import { validate } from '../protocol/objects.js'
@@ -58,25 +58,7 @@ export function useThread(slugRef, rootSubIdRef) {
         return null
       }
 
-      // Fetch all submissions + content, drop malformed nodes individually
-      const nodes = (await Promise.all(
-        threadIndex.nodes.map(async (node) => {
-          try {
-            const submission = await fetchObject(node.submissionId)
-            const subResult = validate(submission)
-            if (!subResult.valid) return null
-
-            const content = await fetchObject(submission.contentRef)
-            if (content) {
-              const contentResult = validate(content)
-              if (!contentResult.valid) return null
-            }
-            return { ...node, submission, content }
-          } catch {
-            return null
-          }
-        })
-      )).filter(Boolean)
+      const nodes = await resolveEntries(threadIndex.nodes, { refKey: 'submissionId' })
 
       selectedCurator.value = curator
       showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())

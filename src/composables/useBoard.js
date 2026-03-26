@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
-import { fetchObject } from '../swarm/fetch.js'
+import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
 
@@ -62,25 +62,7 @@ export function useBoard(slugRef) {
         return null
       }
 
-      // Bulk-fetch submissions + content, drop malformed entries individually
-      const entries = (await Promise.all(
-        boardIndex.entries.map(async (entry) => {
-          try {
-            const submission = await fetchObject(entry.submissionRef)
-            const subResult = validate(submission)
-            if (!subResult.valid) return null
-
-            const content = submission?.contentRef ? await fetchObject(submission.contentRef) : null
-            if (content) {
-              const contentResult = validate(content)
-              if (!contentResult.valid) return null
-            }
-            return { ...entry, submission, content }
-          } catch {
-            return null
-          }
-        })
-      )).filter(Boolean)
+      const entries = await resolveEntries(boardIndex.entries)
 
       return { ...boardIndex, entries }
     },

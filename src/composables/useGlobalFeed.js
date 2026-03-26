@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useCuratorDeclarations, getCuratorPref } from './useCurators.js'
 import { fetchGlobalIndex } from '../swarm/feeds.js'
-import { fetchObject } from '../swarm/fetch.js'
+import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 
 const MAX_ENTRIES = 30
@@ -15,16 +15,16 @@ const MAX_ENTRIES = 30
 export function useGlobalFeed() {
   const { data: curators } = useCuratorDeclarations()
 
-  const selectedCurator = ref(null)
-  const showCuratorBanner = ref(false)
+  const curatorKey = computed(() =>
+    (curators.value || []).map((c) => c.curator.toLowerCase()).sort()
+  )
 
   const globalQuery = useQuery({
-    queryKey: ['globalFeed', computed(() => curators.value?.length ?? 0)],
+    queryKey: ['globalFeed', curatorKey],
     queryFn: async () => {
       const curatorList = curators.value || []
       if (!curatorList.length) return null
 
-      // Try preferred global curator first, then fall back to any with a feed
       const preferred = getCuratorPref('_global')
       const ordered = preferred
         ? [preferred, ...curatorList.map((c) => c.curator).filter((a) => a.toLowerCase() !== preferred.toLowerCase())]
@@ -45,31 +45,16 @@ export function useGlobalFeed() {
           const { valid: indexValid } = validate(globalIndex)
           if (!indexValid) continue
 
-          selectedCurator.value = { address: addr, profile }
-          showCuratorBanner.value = !preferred || preferred.toLowerCase() !== addr.toLowerCase()
-
-          // Bulk-fetch submissions + content, capped, drop malformed individually
           const capped = globalIndex.entries.slice(0, MAX_ENTRIES)
-          const entries = (await Promise.all(
-            capped.map(async (entry) => {
-              try {
-                const submission = await fetchObject(entry.submissionRef)
-                const subResult = validate(submission)
-                if (!subResult.valid) return null
+          const entries = await resolveEntries(capped)
 
-                const content = submission?.contentRef ? await fetchObject(submission.contentRef) : null
-                if (content) {
-                  const contentResult = validate(content)
-                  if (!contentResult.valid) return null
-                }
-                return { ...entry, submission, content }
-              } catch {
-                return null
-              }
-            })
-          )).filter(Boolean)
-
-          return { entries, curator: addr, updatedAt: globalIndex.updatedAt }
+          return {
+            entries,
+            curatorAddress: addr,
+            curatorProfile: profile,
+            wasPreferred: preferred?.toLowerCase() === addr.toLowerCase(),
+            updatedAt: globalIndex.updatedAt,
+          }
         } catch {
           continue
         }
@@ -79,6 +64,17 @@ export function useGlobalFeed() {
     },
     enabled: computed(() => !!curators.value?.length),
     staleTime: 30_000,
+  })
+
+  const selectedCurator = computed(() => {
+    const data = globalQuery.data.value
+    if (!data) return null
+    return { address: data.curatorAddress, profile: data.curatorProfile }
+  })
+
+  const showCuratorBanner = computed(() => {
+    const data = globalQuery.data.value
+    return !!data && !data.wasPreferred
   })
 
   return {

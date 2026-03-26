@@ -5,6 +5,7 @@
  */
 
 import { refToHex } from '../protocol/references.js';
+import { validate } from '../protocol/objects.js';
 
 // In-memory cache: reference → parsed object. Immutable content never changes.
 const cache = new Map();
@@ -66,6 +67,36 @@ export async function fetchProtocolObject(ref) {
   }
 
   return obj;
+}
+
+/**
+ * Bulk-fetch and validate submission + content for a list of index entries.
+ * Shared by useBoard, useThread, and useGlobalFeed.
+ * Drops malformed entries individually rather than failing the whole list.
+ * @param {Array} entries - index entries with a submission reference
+ * @param {object} [options]
+ * @param {string} [options.refKey='submissionRef'] - entry field containing the submission reference
+ * @returns {Promise<Array>} entries enriched with { submission, content }, nulls filtered out
+ */
+export async function resolveEntries(entries, { refKey = 'submissionRef' } = {}) {
+  return (await Promise.all(
+    entries.map(async (entry) => {
+      try {
+        const submission = await fetchObject(entry[refKey])
+        const { valid: subValid } = validate(submission)
+        if (!subValid) return null
+
+        const content = submission?.contentRef ? await fetchObject(submission.contentRef) : null
+        if (content) {
+          const { valid: contentValid } = validate(content)
+          if (!contentValid) return null
+        }
+        return { ...entry, submission, content }
+      } catch {
+        return null
+      }
+    })
+  )).filter(Boolean)
 }
 
 /**
