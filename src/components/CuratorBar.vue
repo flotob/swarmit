@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
+import { ChevronDown, Check } from 'lucide-vue-next'
 
 const props = defineProps({
   curatorName: String,
@@ -66,7 +67,7 @@ function selectCurator(address) {
     <DropdownMenu v-if="allCurators.length > 1">
       <DropdownMenuTrigger class="inline-flex items-center gap-1 text-foreground font-medium hover:text-primary cursor-pointer outline-none transition-colors">
         {{ displayName }}
-        <svg class="w-3.5 h-3.5 opacity-60" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+        <ChevronDown class="w-3.5 h-3.5 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" class="w-72">
         <DropdownMenuItem
@@ -76,7 +77,7 @@ function selectCurator(address) {
           class="cursor-pointer flex items-center justify-between"
         >
           <span class="truncate">{{ c.name }}</span>
-          <svg v-if="c.active" class="w-4 h-4 text-primary shrink-0 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
+          <Check v-if="c.active" class="w-4 h-4 text-primary shrink-0 ml-2" />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

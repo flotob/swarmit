@@ -13,9 +13,9 @@ const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfil
   <div>
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold text-foreground">Feed</h1>
-      <router-link :to="{ name: 'boards' }">
-        <Button variant="ghost" size="sm">Browse boards</Button>
-      </router-link>
+      <Button variant="ghost" size="sm" as-child>
+        <router-link :to="{ name: 'boards' }">Browse boards</router-link>
+      </Button>
     </div>
 
     <CuratorBar
@@ -44,9 +44,9 @@ const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfil
     <div v-else-if="!feed?.entries?.length" class="text-center py-16">
       <p class="text-lg mb-2 text-foreground">No curated feed available yet.</p>
       <p class="text-sm mb-4 text-muted-foreground">Curators haven't published a cross-board feed, or no posts exist.</p>
-      <router-link :to="{ name: 'boards' }">
-        <Button variant="outline">Browse boards instead</Button>
-      </router-link>
+      <Button variant="outline" as-child>
+        <router-link :to="{ name: 'boards' }">Browse boards instead</router-link>
+      </Button>
     </div>
 
     <!-- Feed entries -->

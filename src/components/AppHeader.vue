@@ -6,6 +6,7 @@ import { useWallet } from '../composables/useWallet'
 import { truncateAddress } from '../lib/format.js'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
+import { Bell } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -60,9 +61,7 @@ async function connectWallet() {
           :title="ui.sidebarOpen ? 'Hide activity' : 'Show activity'"
         >
           <span class="relative">
-            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-            </svg>
+            <Bell class="w-4 h-4" />
             <Badge
               v-if="submissions.pending.length"
               class="absolute -top-2 -right-2.5 h-4 min-w-4 px-1 text-[9px] justify-center"

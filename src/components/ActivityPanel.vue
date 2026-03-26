@@ -68,12 +68,12 @@ function handleClick(item) {
             </div>
 
             <div class="text-xs text-muted-foreground mt-0.5">
-              <template v-if="item.status === 'curated' || item.status === 'settled'">
+              <template v-if="item.status === STATUS.CURATED || item.status === STATUS.SETTLED">
                 {{ item.curatorPickups.length }} curator{{ item.curatorPickups.length !== 1 ? 's' : '' }}
                 · {{ timeAgo(item.curatorPickups[item.curatorPickups.length - 1]?.pickedUpAt || item.createdAt) }}
               </template>
-              <template v-else-if="item.status === 'waiting'">
-                {{ STATUS_LABELS.waiting }}
+              <template v-else-if="item.status === STATUS.WAITING">
+                {{ STATUS_LABELS[STATUS.WAITING] }}
               </template>
               <template v-else>
                 {{ STATUS_LABELS[item.status] }} · {{ timeAgo(item.createdAt) }}

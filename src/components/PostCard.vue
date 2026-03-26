@@ -29,7 +29,7 @@ function goToThread() {
 <template>
   <Card
     @click="goToThread"
-    class="cursor-pointer hover:bg-accent/50 transition-colors"
+    class="cursor-pointer hover:bg-accent/50 transition-colors py-0 gap-0"
   >
     <CardContent class="p-4">
       <!-- Loading -->
