@@ -5,7 +5,7 @@ const { data: boards } = useBoardList()
 </script>
 
 <template>
-  <div class="bg-header text-header-foreground text-xs border-b border-border overflow-x-auto whitespace-nowrap">
+  <div class="bg-board-bar text-header-foreground text-xs border-b border-header-border overflow-x-auto whitespace-nowrap">
     <div class="flex items-center gap-1 px-4 h-7">
       <span class="font-semibold uppercase tracking-wider mr-2 shrink-0 opacity-70">Boards</span>
       <template v-if="boards?.length">

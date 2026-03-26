@@ -30,7 +30,7 @@ async function connectWallet() {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 bg-header border-b border-header-foreground/10">
+  <header class="sticky top-0 z-50 bg-header border-b border-header-border">
     <div class="px-4 h-12 flex items-center justify-between">
       <div class="flex items-center gap-6">
         <router-link to="/" class="text-lg font-bold text-header-foreground hover:opacity-80 transition-opacity">
