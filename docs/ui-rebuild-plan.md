@@ -440,32 +440,33 @@ Tests are written alongside each UP, not as a separate phase:
 - **UP6**: Thread view + ReplyNode (depth indentation, curator fallthrough)
 - **UP7**: Markdown rendering (marked + DOMPurify, bzz:// image URLs, scoped Marked instance)
 - **UP8**: Compose post (usePublish pipeline, StatusBar progress, partial success)
-- **UP9**: Inline reply (ReplyForm in thread, pending reply indicator — stub, not final UP15 design)
+- **UP9**: Inline reply (ReplyForm in thread, pending reply indicator, submissions store integration)
+- **UP10**: Image upload for posts (textarea + image button, Swarm upload, attachment descriptors, AttachmentGallery fallback). Tiptap editor deferred — current approach is textarea + image button. Posts only per v1 spec; reply attachments would need a spec change.
 - **UP11**: Create board (slug validation, publish + register, redirect)
 - **UP12**: Curator picker (profile cards, per-board selection, persisted)
 - **UP13**: User profile (feed resolution, submission history, reply navigation)
+- **UP15**: Submission lifecycle & activity feed (Pinia store, curator polling, ActivityPanel sidebar with auto-show, SubmissionDetailView, inline status in thread/board views)
 
 ### Also completed (not in original plan)
 - Read-side protocol validation at every Swarm trust boundary
 - Wallet chain check (boot + chainChanged listener)
 - IndexedDB query cache persistence (idb-keyval + TanStack Query persister)
-- 35 automated protocol tests (Vitest)
+- 56 automated tests (Vitest): protocol objects, references, image upload validation
 - Curator service bugs fixed (profile publish loop, boardIndex ordering, bee-js v11 API)
+- Activity sidebar with mobile bottom drawer (toggle, auto-show on publish)
+- `bzzToGatewayUrl` utility in references.js for consistent bzz:// rendering
 
 ### Remaining
-- **UP10**: Image/media support — Tiptap editor, image upload via window.swarm, attachment descriptors
-- **UP15**: Submission lifecycle & activity feed — the "mempool" UX, curator polling, persistent tracker
-- **UP14**: Mobile polish — responsive Tailwind breakpoints, collapsible sidebar, touch-friendly forms
+- **UP14**: Mobile polish — responsive Tailwind breakpoints, touch-friendly forms
+- **Sidebar layout fix** — desktop sidebar width not constrained correctly, needs investigation in Freedom Browser with DevTools
+- **Tiptap editor** — rich text editing for compose/reply, deferred from UP10
 
-### Recommended order
-1. **UP15** — solves the "I posted but where is it?" pain point observed during testing
-2. **UP10** — Tiptap editor + image upload (biggest technical lift, not blocking anyone)
-3. **UP14** — mobile polish (last)
-
-### Additional work identified during testing
+### Additional work identified during development
 - Compose post UX: multi-step approval flow in Freedom Browser is clunky (needs browser-side permission trust model, not SPA fix)
 - Curator service: consider lowering CONFIRMATIONS for faster pickup during development
 - Test coverage: composable tests and wallet boot logic tests still needed
+- Retry chain announcement: button in SubmissionDetailView for posts published to Swarm but not announced on-chain
+- Migrate state.js to Pinia: old curator preference storage still uses vanilla state.js shim
 
 ## Regression Smoke Tests
 
