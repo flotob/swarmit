@@ -85,19 +85,19 @@ onUnmounted(() => {
   <div class="min-h-screen flex flex-col">
     <AppHeader />
 
-    <div class="flex-1 flex justify-center px-4">
-      <div class="flex w-full max-w-5xl">
-        <main class="flex-1 min-w-0 py-6 pb-16 lg:pb-6">
+    <div class="flex-1 flex">
+      <main class="flex-1 min-w-0 px-4 py-6 pb-16 lg:pb-6">
+        <div class="mx-auto max-w-3xl">
           <router-view />
-        </main>
+        </div>
+      </main>
 
-        <aside
-          v-if="ui.sidebarOpen"
-          class="hidden lg:block w-56 shrink-0 border-l border-border sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3"
-        >
-          <ActivityPanel />
-        </aside>
-      </div>
+      <aside
+        v-if="ui.sidebarOpen"
+        class="hidden lg:block w-72 shrink-0 border-l border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-4"
+      >
+        <ActivityPanel />
+      </aside>
     </div>
 
     <footer class="px-4 py-8 text-center text-sm text-muted-foreground">
