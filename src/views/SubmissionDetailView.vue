@@ -145,7 +145,7 @@ const statusColors = {
         <h2 v-if="content.title" class="text-xl font-bold mb-3">{{ content.title }}</h2>
         <MarkdownRenderer v-if="content.body?.text" :text="content.body.text" />
         <AttachmentGallery
-          v-if="content.attachments?.length"
+          v-if="content.title && content.attachments?.length"
           :attachments="content.attachments"
           :body-text="content.body?.text || ''"
         />

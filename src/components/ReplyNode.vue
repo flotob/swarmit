@@ -41,9 +41,9 @@ defineEmits(['reply'])
       :text="node.content.body.text"
     />
 
-    <!-- Attachment fallback: images not embedded in markdown -->
+    <!-- Attachment fallback (posts only — replies don't have attachments per v1 spec) -->
     <AttachmentGallery
-      v-if="node.content?.attachments?.length"
+      v-if="node.content?.title && node.content?.attachments?.length"
       :attachments="node.content.attachments"
       :body-text="node.content.body?.text || ''"
     />

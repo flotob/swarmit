@@ -41,10 +41,6 @@ function onImageUploaded(descriptor) {
 
 function onImageRemoved(descriptor) {
   attachments.value = attachments.value.filter((a) => a.reference !== descriptor.reference)
-
-  const syntax = `![${descriptor.name || 'image'}](${descriptor.reference})`
-  const next = body.value.replace(syntax, '')
-  if (next !== body.value) body.value = next.trim()
 }
 
 async function handleSubmit() {
