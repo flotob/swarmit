@@ -13,15 +13,15 @@ export const useCuratorPrefsStore = defineStore('curatorPrefs', () => {
 
   watch(preferences, () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
-  }, { deep: true })
+  }, { deep: true, flush: 'post' })
 
   function getPreference(slug) {
-    return preferences[slug] || null
+    return preferences[slug] ?? null
   }
 
   function setPreference(slug, curatorAddress) {
     preferences[slug] = curatorAddress
   }
 
-  return { preferences, getPreference, setPreference }
+  return { getPreference, setPreference }
 })

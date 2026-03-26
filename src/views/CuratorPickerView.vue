@@ -1,13 +1,11 @@
 <script setup>
 import { reactive, watch, computed } from 'vue'
-import { useCuratorDeclarations, setCuratorPref } from '../composables/useCurators'
-import { useCuratorPrefsStore } from '../stores/curators.js'
+import { useCuratorDeclarations, getCuratorPref, setCuratorPref } from '../composables/useCurators'
 import { fetchObject } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { truncateAddress } from '../lib/format.js'
 
 const { data: curators, isLoading, isError, error } = useCuratorDeclarations()
-const curatorPrefs = useCuratorPrefsStore()
 
 const profiles = reactive(new Map())
 
@@ -35,7 +33,7 @@ function getProfile(addr) {
 }
 
 function isSelected(addr, boardSlug) {
-  return curatorPrefs.getPreference(boardSlug)?.toLowerCase() === addr.toLowerCase()
+  return getCuratorPref(boardSlug)?.toLowerCase() === addr.toLowerCase()
 }
 
 function selectCurator(addr, boardSlug) {

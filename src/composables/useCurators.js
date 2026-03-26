@@ -80,6 +80,10 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList) {
   return null
 }
 
+export function getCuratorPref(slug) {
+  return useCuratorPrefsStore().getPreference(slug)
+}
+
 export function setCuratorPref(slug, address) {
   useCuratorPrefsStore().setPreference(slug, address)
 }
