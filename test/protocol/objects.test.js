@@ -143,6 +143,18 @@ describe('validation catches errors', () => {
     expect(errors.some(e => e.includes('contentType'))).toBe(true)
   })
 
+  it('rejects post with non-array attachments', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Bad type',
+      body: { kind: 'markdown', text: 'Test' },
+    })
+    post.attachments = 'not-an-array'
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('must be an array'))).toBe(true)
+  })
+
   it('passes post with valid attachments', () => {
     const post = buildPost({
       author: AUTHOR,

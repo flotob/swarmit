@@ -42,11 +42,9 @@ function onImageUploaded(descriptor) {
 function onImageRemoved(descriptor) {
   attachments.value = attachments.value.filter((a) => a.reference !== descriptor.reference)
 
-  // Remove the markdown image syntax from body if present
   const syntax = `![${descriptor.name || 'image'}](${descriptor.reference})`
-  if (body.value.includes(syntax)) {
-    body.value = body.value.replace(syntax, '').trim()
-  }
+  const next = body.value.replace(syntax, '')
+  if (next !== body.value) body.value = next.trim()
 }
 
 async function handleSubmit() {

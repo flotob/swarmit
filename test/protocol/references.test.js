@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { refToHex, hexToBzz, isValidRef, isValidBzzRef, hexToBytes32, bytes32ToHex, refToBytes32, bytes32ToRef, slugToBoardId } from '../../src/protocol/references.js'
+import { refToHex, hexToBzz, isValidRef, isValidBzzRef, hexToBytes32, bytes32ToHex, refToBytes32, bytes32ToRef, slugToBoardId, bzzToGatewayUrl } from '../../src/protocol/references.js'
 
 const VALID_HEX = 'a'.repeat(64)
 const VALID_BZZ = `bzz://${'a'.repeat(64)}`
@@ -56,4 +56,13 @@ describe('slugToBoardId', () => {
     expect(id1.length).toBe(66) // 0x + 64 hex
   })
   it('throws for empty', () => expect(() => slugToBoardId('')).toThrow())
+})
+
+describe('bzzToGatewayUrl', () => {
+  it('converts bzz:// to /bzz/ path', () => expect(bzzToGatewayUrl(VALID_BZZ)).toBe(`/bzz/${VALID_HEX}/`))
+  it('returns non-bzz input unchanged', () => expect(bzzToGatewayUrl('https://example.com')).toBe('https://example.com'))
+  it('returns null/undefined unchanged', () => {
+    expect(bzzToGatewayUrl(null)).toBeNull()
+    expect(bzzToGatewayUrl(undefined)).toBeUndefined()
+  })
 })

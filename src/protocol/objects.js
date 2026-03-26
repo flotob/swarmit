@@ -303,13 +303,16 @@ export function validatePost(obj) {
     requireBody(obj),
     requireNumber(obj, 'createdAt'),
   );
-  // Attachments are optional — only validate structure if present
-  if (obj.attachments && Array.isArray(obj.attachments) && obj.attachments.length > 0) {
-    const attErrors = validateEntries(obj.attachments, [
-      { name: 'reference', bzz: true },
-      { name: 'contentType', type: 'string' },
-    ], 'attachments');
-    if (attErrors) result.push(...attErrors);
+  if (obj.attachments != null) {
+    if (!Array.isArray(obj.attachments)) {
+      result.push('attachments must be an array');
+    } else if (obj.attachments.length > 0) {
+      const attErrors = validateEntries(obj.attachments, [
+        { name: 'reference', bzz: true },
+        { name: 'contentType', type: 'string' },
+      ], 'attachments');
+      if (attErrors) result.push(...attErrors);
+    }
   }
   return result;
 }

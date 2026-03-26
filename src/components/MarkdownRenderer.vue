@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Marked } from 'marked'
 import DOMPurify from 'dompurify'
+import { bzzToGatewayUrl } from '../protocol/references.js'
 
 const props = defineProps({
   text: { type: String, default: '' },
@@ -12,11 +13,10 @@ function escapeAttr(str) {
   return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-// Scoped Marked instance — does not affect global marked singleton
 const md = new Marked({
   renderer: {
     image({ href, title, text }) {
-      const src = href?.startsWith('bzz://') ? `/bzz/${href.slice(6)}/` : href
+      const src = bzzToGatewayUrl(href) || href
       const titleAttr = title ? ` title="${escapeAttr(title)}"` : ''
       return `<img src="${escapeAttr(src)}" alt="${escapeAttr(text)}"${titleAttr} class="max-w-full rounded-md my-2" />`
     },

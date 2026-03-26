@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useSwarm } from '../composables/useSwarm'
 import { validateImage, buildAttachmentDescriptor, ALLOWED_TYPES } from '../lib/image-upload.js'
 
@@ -54,6 +54,12 @@ function removeUpload(index) {
   uploads.value.splice(index, 1)
   emit('removed', removed.descriptor)
 }
+
+onUnmounted(() => {
+  uploads.value.forEach((u) => {
+    if (u.previewUrl) URL.revokeObjectURL(u.previewUrl)
+  })
+})
 </script>
 
 <template>

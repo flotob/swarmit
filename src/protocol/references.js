@@ -112,3 +112,14 @@ export function slugToBoardId(slug) {
   if (!slug || typeof slug !== 'string') throw new Error('Board slug is required');
   return keccak256(toUtf8Bytes(slug));
 }
+
+/**
+ * Convert a bzz:// reference to a gateway-relative URL for rendering.
+ * Used by components that need to display Swarm content via the local gateway.
+ * @param {string} bzzRef - 'bzz://<64hex>' reference
+ * @returns {string} '/bzz/<64hex>/' gateway path, or the input unchanged if not a bzz:// ref
+ */
+export function bzzToGatewayUrl(bzzRef) {
+  if (!bzzRef || typeof bzzRef !== 'string' || !bzzRef.startsWith('bzz://')) return bzzRef;
+  return `/bzz/${bzzRef.slice(6)}/`;
+}
