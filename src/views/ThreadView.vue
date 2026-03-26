@@ -2,20 +2,27 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThread } from '../composables/useThread'
+import { useSubmissionsStore } from '../stores/submissions'
 import { truncateAddress, threadIndent } from '../lib/format.js'
 import ReplyNode from '../components/ReplyNode.vue'
 import ReplyForm from '../components/ReplyForm.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
+import SubmissionStatus from '../components/SubmissionStatus.vue'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
 
 const { thread, isLoading, isError, error, rootSubRef, selectedCurator, showCuratorBanner } = useThread(slug, rootSubId)
+const submissions = useSubmissionsStore()
 
 // Inline reply state
 const replyingTo = ref(null)
-const pendingReplies = ref([])
+
+// Pending replies from the submissions store for this thread
+const pendingReplies = computed(() =>
+  rootSubRef.value ? submissions.pendingForThread(rootSubRef.value) : []
+)
 
 function handleReply(node) {
   replyingTo.value = node
@@ -25,14 +32,12 @@ function cancelReply() {
   replyingTo.value = null
 }
 
-function onReplyPublished(result) {
-  if (result) {
-    pendingReplies.value.push({
-      parentSubmissionId: replyingTo.value?.submissionId,
-      submissionRef: result.submissionRef,
-    })
-  }
+function onReplyPublished() {
   replyingTo.value = null
+}
+
+function pendingForNode(nodeSubmissionId) {
+  return pendingReplies.value.filter((p) => p.parentSubmissionId === nodeSubmissionId)
 }
 </script>
 
@@ -88,14 +93,16 @@ function onReplyPublished(result) {
           />
         </div>
 
-        <!-- Pending replies -->
+        <!-- Pending replies from submissions store -->
         <div
-          v-for="pending in pendingReplies.filter(p => p.parentSubmissionId === node.submissionId)"
+          v-for="pending in pendingForNode(node.submissionId)"
           :key="pending.submissionRef"
           :style="{ marginLeft: threadIndent((node.depth || 0) + 1) }"
-          class="py-2 px-3 my-1 rounded-md bg-orange-900/10 border border-orange-800/30 text-xs text-orange-400/70 italic"
         >
-          Your reply — pending curator indexing
+          <SubmissionStatus
+            :status="pending.status"
+            :curator-count="pending.curatorPickups.length"
+          />
         </div>
       </template>
 

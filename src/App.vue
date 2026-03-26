@@ -4,14 +4,13 @@ import { useAuthStore } from './stores/auth'
 import { isAvailable as isSwarmAvailable } from './lib/swarm.js'
 import { isAvailable as isWalletAvailable } from './lib/ethereum.js'
 import { CHAIN_ID } from './config'
+import { useSubmissionStatus } from './composables/useSubmissionStatus'
 import AppHeader from './components/AppHeader.vue'
+import ActivityPanel from './components/ActivityPanel.vue'
 
 const auth = useAuthStore()
+useSubmissionStatus() // Start polling for pending submission pickups
 
-/**
- * Check if the wallet is on Gnosis Chain and has accounts.
- * Single truth path for wallet readiness — used at boot and on events.
- */
 async function checkWalletState() {
   if (!isWalletAvailable()) {
     auth.clearWallet()
@@ -40,13 +39,8 @@ function detectProviders() {
   checkWalletState()
 }
 
-function onAccountsChanged() {
-  checkWalletState()
-}
-
-function onChainChanged() {
-  checkWalletState()
-}
+function onAccountsChanged() { checkWalletState() }
+function onChainChanged() { checkWalletState() }
 
 onMounted(() => {
   detectProviders()
@@ -83,6 +77,7 @@ onUnmounted(() => {
     <AppHeader />
     <main class="max-w-4xl mx-auto px-4 py-6">
       <router-view />
+      <ActivityPanel />
     </main>
     <footer class="max-w-4xl mx-auto px-4 py-8 text-center text-sm text-gray-600">
       Swarmit — decentralized message board on Swarm + Gnosis Chain

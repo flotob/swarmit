@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useWallet } from './useWallet.js'
 import { useSwarm } from './useSwarm.js'
 import { useAuthStore } from '../stores/auth'
+import { useSubmissionsStore } from '../stores/submissions'
 import { validate, buildPost, buildReply, buildSubmission, buildUserFeedIndex } from '../protocol/objects.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { announceSubmission } from '../chain/transactions.js'
@@ -17,6 +18,7 @@ export function usePublish() {
   const wallet = useWallet()
   const swarm = useSwarm()
   const auth = useAuthStore()
+  const submissions = useSubmissionsStore()
 
   const steps = ref([])
   const isPublishing = ref(false)
@@ -141,6 +143,20 @@ export function usePublish() {
         userFeedIndexRef: indexResult.bzzUrl,
         announced,
       }
+
+      // Track in submissions store for lifecycle monitoring
+      submissions.add({
+        submissionRef: subResult.bzzUrl,
+        contentRef: contentResult.bzzUrl,
+        boardSlug,
+        kind,
+        title: content.title || null,
+        bodyPreview: content.body?.text?.slice(0, 100) || null,
+        rootSubmissionId: submissionExtras.rootSubmissionId || subResult.bzzUrl,
+        parentSubmissionId: submissionExtras.parentSubmissionId || null,
+        txHash: null, // We don't have the tx hash from announceSubmission currently
+        announced,
+      })
     } catch (err) {
       // Mark the active step as error
       const active = steps.value.find((s) => s.status === 'active')
