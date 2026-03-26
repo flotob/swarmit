@@ -1,8 +1,7 @@
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import { computed } from 'vue'
 import { setCuratorPref } from '../composables/useCurators'
-import { fetchObject } from '../swarm/fetch.js'
-import { validate } from '../protocol/objects.js'
+import { useCuratorProfiles } from '../composables/useCuratorProfiles'
 import { truncateAddress } from '../lib/format.js'
 import {
   DropdownMenu,
@@ -19,28 +18,7 @@ const props = defineProps({
   context: String,
 })
 
-const profiles = reactive(new Map())
-
-watch(() => props.curators, async (list) => {
-  if (!list) return
-  await Promise.allSettled(
-    list
-      .filter((c) => c.curator && !profiles.has(c.curator))
-      .map(async (c) => {
-        try {
-          const profile = await fetchObject(c.curatorProfileRef)
-          const { valid } = validate(profile)
-          profiles.set(c.curator, valid ? profile : null)
-        } catch {
-          profiles.set(c.curator, null)
-        }
-      })
-  )
-}, { immediate: true })
-
-function profileName(addr) {
-  return profiles.get(addr)?.name || truncateAddress(addr)
-}
+const { profileName } = useCuratorProfiles(() => props.curators)
 
 const allCurators = computed(() => {
   if (!props.curators) return []

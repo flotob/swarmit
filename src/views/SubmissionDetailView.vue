@@ -6,7 +6,7 @@ import { fetchObject } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { refToHex } from '../protocol/references.js'
 import { truncateAddress, timeAgo } from '../lib/format.js'
-import { STATUS, STATUS_ICONS, STATUS_LABELS } from '../lib/submission-status.js'
+import { STATUS, STATUS_ICONS, STATUS_LABELS, STATUS_PANEL_COLORS } from '../lib/submission-status.js'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
 import AttachmentGallery from '../components/AttachmentGallery.vue'
 import { Button } from '../components/ui/button'
@@ -67,13 +67,6 @@ function goToThread() {
   }
 }
 
-const statusColors = {
-  [STATUS.PUBLISHED]: 'bg-secondary border-border text-muted-foreground',
-  [STATUS.ANNOUNCED]: 'bg-warning/10 border-warning/30 text-warning',
-  [STATUS.WAITING]: 'bg-primary/10 border-primary/30 text-primary',
-  [STATUS.CURATED]: 'bg-success/10 border-success/30 text-success',
-  [STATUS.SETTLED]: 'bg-secondary border-border text-muted-foreground',
-}
 </script>
 
 <template>
@@ -88,7 +81,7 @@ const statusColors = {
     </div>
 
     <template v-else>
-      <div :class="statusColors[tracked.status]" class="p-4 rounded-lg border mb-6">
+      <div :class="STATUS_PANEL_COLORS[tracked.status]" class="p-4 rounded-lg border mb-6">
         <div class="flex items-center gap-2 mb-1">
           <span class="text-lg">{{ STATUS_ICONS[tracked.status] }}</span>
           <span class="font-medium">{{ STATUS_LABELS[tracked.status] }}</span>

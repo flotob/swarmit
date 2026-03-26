@@ -1,8 +1,6 @@
 <script setup>
-import { reactive, watch } from 'vue'
 import { useCuratorDeclarations, getCuratorPref, setCuratorPref } from '../composables/useCurators'
-import { fetchObject } from '../swarm/fetch.js'
-import { validate } from '../protocol/objects.js'
+import { useCuratorProfiles } from '../composables/useCuratorProfiles'
 import { truncateAddress } from '../lib/format.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -11,27 +9,7 @@ import { Alert, AlertDescription } from '../components/ui/alert'
 import { Check } from 'lucide-vue-next'
 
 const { data: curators, isLoading, isError, error } = useCuratorDeclarations()
-
-const profiles = reactive(new Map())
-
-async function loadProfiles() {
-  if (!curators.value) return
-  await Promise.allSettled(
-    curators.value
-      .filter((c) => !profiles.has(c.curator))
-      .map(async (c) => {
-        try {
-          const profile = await fetchObject(c.curatorProfileRef)
-          const { valid } = validate(profile)
-          profiles.set(c.curator, valid ? profile : null)
-        } catch {
-          profiles.set(c.curator, null)
-        }
-      })
-  )
-}
-
-watch(curators, loadProfiles, { immediate: true })
+const { profiles } = useCuratorProfiles(curators)
 
 function getProfile(addr) {
   return profiles.get(addr) || null

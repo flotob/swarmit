@@ -30,3 +30,11 @@ export const STATUS_LABELS = {
   [STATUS.CURATED]: 'Curated',
   [STATUS.SETTLED]: 'Settled',
 }
+
+export const STATUS_PANEL_COLORS = {
+  [STATUS.PUBLISHED]: 'bg-secondary border-border text-muted-foreground',
+  [STATUS.ANNOUNCED]: 'bg-warning/10 border-warning/30 text-warning',
+  [STATUS.WAITING]: 'bg-primary/10 border-primary/30 text-primary',
+  [STATUS.CURATED]: 'bg-success/10 border-success/30 text-success',
+  [STATUS.SETTLED]: 'bg-secondary border-border text-muted-foreground',
+}
