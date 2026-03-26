@@ -40,9 +40,9 @@ function share() {
 </script>
 
 <template>
-  <div class="flex items-center gap-0 py-2 hover:bg-accent/30 transition-colors">
+  <div class="flex items-start gap-0 py-2 hover:bg-accent/30 transition-colors">
     <!-- Rank (vertically centered via items-center on parent) -->
-    <div v-if="rank" class="w-8 shrink-0 text-right pr-1 text-sm text-muted-foreground font-medium">
+    <div v-if="rank" class="w-8 shrink-0 text-right pr-1 pt-2 text-sm text-muted-foreground font-medium">
       {{ rank }}
     </div>
 
@@ -58,10 +58,13 @@ function share() {
     </div>
 
     <!-- Thumbnail -->
-    <router-link v-if="threadRoute" :to="threadRoute" class="w-18 h-14 shrink-0 mr-2 rounded overflow-hidden bg-secondary flex items-center justify-center">
+    <router-link v-if="threadRoute" :to="threadRoute" class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
       <img v-if="thumbnail" :src="thumbnail" class="w-full h-full object-cover" alt="" />
       <FileText v-else class="w-6 h-6 text-muted-foreground/30" />
     </router-link>
+    <div v-else class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
+      <FileText class="w-6 h-6 text-muted-foreground/30" />
+    </div>
 
     <!-- Content -->
     <div class="flex-1 min-w-0 py-1">
