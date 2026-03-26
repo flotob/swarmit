@@ -29,6 +29,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -77,6 +79,12 @@
 
   /* Destructive = errors, danger */
   --destructive: oklch(57.7% 0.245 27.325);
+
+  /* Success = confirmations, completed */
+  --success: oklch(55% 0.2 150);
+
+  /* Warning = pending, attention */
+  --warning: oklch(75% 0.15 85);
 
   /* Borders & inputs */
   --border: oklch(90% 0.005 60);
@@ -129,6 +137,12 @@
 
   /* Destructive */
   --destructive: oklch(70.4% 0.191 22.216);
+
+  /* Success */
+  --success: oklch(72% 0.22 150);
+
+  /* Warning */
+  --warning: oklch(85% 0.18 85);
 
   /* Borders & inputs */
   --border: oklch(25% 0.015 260);

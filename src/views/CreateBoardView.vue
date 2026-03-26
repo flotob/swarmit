@@ -8,6 +8,10 @@ import { buildBoard, validate } from '../protocol/objects.js'
 import { registerBoard } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
 import StatusBar from '../components/StatusBar.vue'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Textarea } from '../components/ui/textarea'
+import { Alert, AlertDescription } from '../components/ui/alert'
 
 const router = useRouter()
 const wallet = useWallet()
@@ -49,13 +53,11 @@ async function handleSubmit() {
   }
 
   try {
-    // Step 1: Connect
     setStep('Connect providers', 'active')
     if (!auth.walletConnected) await wallet.connect()
     if (!auth.swarmConnected) await swarm.connect()
     setStep('Connect providers', 'done', auth.userAddress)
 
-    // Step 2: Publish board metadata
     setStep('Publish board metadata', 'active')
     const board = buildBoard({
       slug: s,
@@ -69,7 +71,6 @@ async function handleSubmit() {
     const pubResult = await swarm.publishJSON(board, 'board')
     setStep('Publish board metadata', 'done', pubResult.bzzUrl)
 
-    // Step 3: Register on-chain
     let registered = false
     if (isContractConfigured()) {
       setStep('Register on-chain', 'active')
@@ -101,69 +102,65 @@ async function handleSubmit() {
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold mb-6">Create Board</h2>
+    <h1 class="text-2xl font-bold text-foreground mb-6">Create Board</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-4 max-w-lg">
       <div>
-        <label class="block text-sm text-gray-400 mb-1">Slug</label>
-        <input
+        <label class="block text-sm text-muted-foreground mb-1">Slug</label>
+        <Input
           v-model="slug"
           type="text"
           placeholder="e.g. tech, music, random"
           required
           :disabled="isCreating"
-          class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500 disabled:opacity-50"
         />
-        <p class="text-xs text-gray-600 mt-1">Your board will be at r/{{ slug || '...' }}</p>
+        <p class="text-xs text-muted-foreground mt-1">Your board will be at r/{{ slug || '...' }}</p>
       </div>
 
       <div>
-        <label class="block text-sm text-gray-400 mb-1">Title</label>
-        <input
+        <label class="block text-sm text-muted-foreground mb-1">Title</label>
+        <Input
           v-model="title"
           type="text"
           placeholder="Board display name"
           required
           :disabled="isCreating"
-          class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label class="block text-sm text-gray-400 mb-1">Description</label>
-        <textarea
+        <label class="block text-sm text-muted-foreground mb-1">Description</label>
+        <Textarea
           v-model="description"
           placeholder="What is this board about?"
           required
           rows="3"
           :disabled="isCreating"
-          class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-600 resize-y focus:outline-none focus:border-orange-500 disabled:opacity-50"
+          class="resize-y"
         />
       </div>
 
-      <button
-        type="submit"
-        :disabled="isCreating"
-        class="px-4 py-2 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <Button type="submit" :disabled="isCreating">
         {{ isCreating ? 'Creating...' : result?.registered ? 'Created — redirecting...' : result ? 'Published (not registered)' : 'Create Board' }}
-      </button>
+      </Button>
     </form>
 
     <StatusBar v-if="steps.length" :steps="steps" class="mt-6" />
 
-    <div v-if="result" class="mt-4 p-4 rounded-lg text-sm" :class="result.registered ? 'bg-green-900/20 border border-green-800 text-green-400' : 'bg-yellow-900/20 border border-yellow-800 text-yellow-400'">
-      <template v-if="result.registered">
-        Board r/{{ result.slug }} created!
-      </template>
-      <template v-else>
-        Board metadata published to Swarm (not registered on-chain yet).
-      </template>
-      <div class="mt-1 font-mono text-xs text-gray-500 break-all">{{ result.boardRef }}</div>
-    </div>
+    <Alert v-if="result" class="mt-4" :class="result.registered ? 'border-success/30' : 'border-warning/30'">
+      <AlertDescription>
+        <template v-if="result.registered">
+          Board r/{{ result.slug }} created!
+        </template>
+        <template v-else>
+          Board metadata published to Swarm (not registered on-chain yet).
+        </template>
+        <div class="mt-1 font-mono text-xs text-muted-foreground break-all">{{ result.boardRef }}</div>
+      </AlertDescription>
+    </Alert>
 
-    <div v-if="error && !result" class="mt-4 p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400 text-sm">
-      {{ error }}
-    </div>
+    <Alert v-if="error && !result" variant="destructive" class="mt-4">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
   </div>
 </template>

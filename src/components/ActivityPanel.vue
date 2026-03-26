@@ -13,9 +13,9 @@ const router = useRouter()
 
 const statusColors = {
   [STATUS.PUBLISHED]: 'text-muted-foreground',
-  [STATUS.ANNOUNCED]: 'text-yellow-600 dark:text-yellow-400',
+  [STATUS.ANNOUNCED]: 'text-warning',
   [STATUS.WAITING]: 'text-primary animate-pulse',
-  [STATUS.CURATED]: 'text-green-600 dark:text-green-400',
+  [STATUS.CURATED]: 'text-success',
   [STATUS.SETTLED]: 'text-muted-foreground/60',
 }
 

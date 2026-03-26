@@ -1,39 +1,39 @@
 <script setup>
+import { Circle, CircleDot, CircleCheck, CircleX, CircleDashed } from 'lucide-vue-next'
+
 defineProps({
-  steps: Array, // [{ name, status, detail }]
+  steps: Array,
 })
 
 const icons = {
-  pending: '○',
-  active: '◉',
-  done: '●',
-  error: '✗',
-  skipped: '◌',
+  pending: Circle,
+  active: CircleDot,
+  done: CircleCheck,
+  error: CircleX,
+  skipped: CircleDashed,
 }
 
 const colors = {
-  pending: 'text-gray-600',
-  active: 'text-orange-400',
-  done: 'text-green-500',
-  error: 'text-red-500',
-  skipped: 'text-gray-600',
+  pending: 'text-muted-foreground',
+  active: 'text-primary',
+  done: 'text-success',
+  error: 'text-destructive',
+  skipped: 'text-muted-foreground',
 }
 </script>
 
 <template>
-  <div class="space-y-1 font-mono text-sm">
+  <div class="space-y-1.5 text-sm">
     <div
       v-for="step in steps"
       :key="step.name"
-      class="flex items-baseline gap-2"
+      class="flex items-center gap-2"
     >
-      <span :class="colors[step.status] || 'text-gray-600'">
-        {{ icons[step.status] || icons.pending }}
-      </span>
-      <span :class="step.status === 'pending' ? 'text-gray-600' : 'text-gray-300'">
+      <component :is="icons[step.status] || icons.pending" class="w-4 h-4 shrink-0" :class="colors[step.status] || colors.pending" />
+      <span :class="step.status === 'pending' ? 'text-muted-foreground' : 'text-foreground'">
         {{ step.name }}
       </span>
-      <span v-if="step.detail" class="text-gray-500 text-xs break-all">
+      <span v-if="step.detail" class="text-muted-foreground text-xs break-all">
         — {{ step.detail }}
       </span>
     </div>

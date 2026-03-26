@@ -72,7 +72,7 @@ async function connectWallet() {
           Activity
         </button>
 
-        <Badge variant="outline" class="text-[10px]" :class="auth.swarmDetected ? 'text-green-600 dark:text-green-400 border-green-600/30' : 'text-destructive border-destructive/30'">
+        <Badge variant="outline" class="text-[10px]" :class="auth.swarmDetected ? 'text-success border-success/30' : 'text-destructive border-destructive/30'">
           {{ auth.swarmDetected ? 'Swarm' : 'No Swarm' }}
         </Badge>
 

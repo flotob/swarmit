@@ -9,6 +9,10 @@ import { validate } from '../protocol/objects.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { getBoardRegistrations, getSubmissionsForBoard } from '../chain/events.js'
+import { Card, CardContent } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Skeleton } from '../components/ui/skeleton'
+import { Alert, AlertDescription } from '../components/ui/alert'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,13 +24,11 @@ const { data: profile, isLoading, isError, error } = useQuery({
   queryFn: async () => {
     const addr = address.value
 
-    // Find user feed — check if current user first
     let userFeedRef = null
     if (auth.userAddress?.toLowerCase() === addr.toLowerCase() && auth.userFeed) {
       userFeedRef = auth.userFeed
     }
 
-    // Search chain submissions in parallel for the user's feed
     if (!userFeedRef) {
       const regs = await getBoardRegistrations()
       const results = await Promise.all(
@@ -49,7 +51,6 @@ const { data: profile, isLoading, isError, error } = useQuery({
 
     if (!userFeedRef) return { entries: [], feedFound: false }
 
-    // Resolve feed index
     try {
       const feedIndex = await resolveFeed(userFeedRef)
       const { valid } = validate(feedIndex)
@@ -85,53 +86,48 @@ async function goToThread(entry) {
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold">{{ truncateAddress(address) }}</h2>
-    <p class="text-xs font-mono text-gray-600 mt-1 break-all">{{ address }}</p>
+    <h1 class="text-2xl font-bold text-foreground">{{ truncateAddress(address) }}</h1>
+    <p class="text-xs font-mono text-muted-foreground mt-1 break-all">{{ address }}</p>
 
-    <!-- Loading -->
     <div v-if="isLoading" class="mt-6 space-y-2">
-      <div v-for="i in 4" :key="i" class="h-14 rounded-lg bg-gray-800 animate-pulse" />
+      <Skeleton v-for="i in 4" :key="i" class="h-14 rounded-lg" />
     </div>
 
-    <!-- Error -->
-    <div v-else-if="isError" class="mt-6 p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400">
-      {{ error?.message || 'Failed to load profile' }}
+    <Alert v-else-if="isError" variant="destructive" class="mt-6">
+      <AlertDescription>{{ error?.message || 'Failed to load profile' }}</AlertDescription>
+    </Alert>
+
+    <div v-else-if="profile && !profile.feedFound" class="mt-6 text-center py-12">
+      <p class="text-lg mb-2 text-foreground">No activity found.</p>
+      <p class="text-sm text-muted-foreground">This user hasn't published any submissions yet.</p>
     </div>
 
-    <!-- No feed found -->
-    <div v-else-if="profile && !profile.feedFound" class="mt-6 text-center py-12 text-gray-500">
-      <p class="text-lg mb-2">No activity found.</p>
-      <p class="text-sm">This user hasn't published any submissions yet.</p>
+    <div v-else-if="!profile?.entries?.length" class="mt-6 text-center py-12">
+      <p class="text-muted-foreground">No submissions yet.</p>
     </div>
 
-    <!-- Empty feed -->
-    <div v-else-if="!profile?.entries?.length" class="mt-6 text-center py-12 text-gray-500">
-      <p>No submissions yet.</p>
-    </div>
-
-    <!-- Submission history -->
     <div v-else class="mt-6 space-y-2">
-      <p class="text-sm text-gray-500 mb-3">{{ profile.entries.length }} submission{{ profile.entries.length > 1 ? 's' : '' }}</p>
+      <p class="text-sm text-muted-foreground mb-3">{{ profile.entries.length }} submission{{ profile.entries.length > 1 ? 's' : '' }}</p>
 
-      <div
+      <Card
         v-for="entry in profile.entries"
         :key="entry.submissionId || entry.submissionRef"
         @click="goToThread(entry)"
-        class="p-3 rounded-lg bg-gray-900 border border-gray-800 hover:border-gray-700 cursor-pointer transition-colors"
+        class="cursor-pointer hover:bg-accent/50 transition-colors py-0 gap-0"
       >
-        <div class="flex items-center gap-2 text-xs text-gray-500">
-          <span class="px-1.5 py-0.5 rounded text-[10px] font-medium"
-            :class="entry.kind === 'post' ? 'bg-blue-900/30 text-blue-400' : 'bg-purple-900/30 text-purple-400'"
-          >
-            {{ entry.kind }}
-          </span>
-          <span>r/{{ entry.boardId }}</span>
-          <span v-if="entry.createdAt">· {{ timeAgo(entry.createdAt) }}</span>
-        </div>
-        <div class="text-xs font-mono text-gray-600 mt-1 truncate">
-          {{ entry.submissionRef || entry.submissionId }}
-        </div>
-      </div>
+        <CardContent class="p-3">
+          <div class="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge :variant="entry.kind === 'post' ? 'default' : 'secondary'" class="text-[10px]">
+              {{ entry.kind }}
+            </Badge>
+            <span>r/{{ entry.boardId }}</span>
+            <span v-if="entry.createdAt">· {{ timeAgo(entry.createdAt) }}</span>
+          </div>
+          <div class="text-xs font-mono text-muted-foreground/60 mt-1 truncate">
+            {{ entry.submissionRef || entry.submissionId }}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>

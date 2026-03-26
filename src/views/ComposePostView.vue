@@ -114,7 +114,7 @@ async function handleSubmit() {
       <StatusBar :steps="steps" />
     </div>
 
-    <Alert v-if="result" class="mt-4 border-green-600/30 dark:border-green-400/30">
+    <Alert v-if="result" class="mt-4 border-success/30">
       <AlertDescription>
         <template v-if="result.announced">
           Post published and announced on-chain.

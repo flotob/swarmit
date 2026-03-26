@@ -45,14 +45,14 @@ const html = computed(() => {
 .prose p { margin-bottom: 0.75em; }
 .prose p:last-child { margin-bottom: 0; }
 .prose code {
-  background: rgb(31 41 55);
+  background: var(--secondary);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.875em;
 }
 .prose pre {
-  background: rgb(31 41 55);
-  border: 1px solid rgb(55 65 81);
+  background: var(--secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   overflow-x: auto;
@@ -62,15 +62,15 @@ const html = computed(() => {
   padding: 0;
 }
 .prose blockquote {
-  border-left: 3px solid rgb(75 85 99);
+  border-left: 3px solid var(--border);
   padding-left: 12px;
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
   margin: 0.75em 0;
 }
-.prose a { color: rgb(251 146 60); }
+.prose a { color: var(--primary); }
 .prose a:hover { text-decoration: underline; }
 .prose img { max-width: 100%; border-radius: 8px; }
 .prose ul, .prose ol { padding-left: 1.5em; margin: 0.5em 0; }
 .prose li { margin: 0.25em 0; }
-.prose h1, .prose h2, .prose h3, .prose h4 { color: rgb(229 231 235); margin: 1em 0 0.5em; }
+.prose h1, .prose h2, .prose h3, .prose h4 { color: var(--foreground); margin: 1em 0 0.5em; }
 </style>

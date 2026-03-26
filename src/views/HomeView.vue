@@ -1,6 +1,11 @@
 <script setup>
 import { useBoardList } from '../composables/useBoardList'
 import { useRouter } from 'vue-router'
+import { Card, CardContent } from '../components/ui/card'
+import { Skeleton } from '../components/ui/skeleton'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
 
 const router = useRouter()
 const { data: boards, isLoading, isError, error } = useBoardList()
@@ -13,49 +18,45 @@ function goToBoard(slug) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl font-bold">Boards</h2>
-      <router-link
-        to="/create-board"
-        class="px-4 py-2 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-      >
-        Create Board
-      </router-link>
+      <h1 class="text-2xl font-bold text-foreground">Boards</h1>
+      <Button as-child>
+        <router-link :to="{ name: 'create-board' }">Create Board</router-link>
+      </Button>
     </div>
 
-    <!-- Loading -->
     <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 3" :key="i" class="h-20 rounded-lg bg-gray-800 animate-pulse" />
+      <div v-for="i in 3" :key="i" class="rounded-lg border border-border p-4">
+        <Skeleton class="h-5 w-1/3 mb-2" />
+        <Skeleton class="h-3 w-2/3" />
+      </div>
     </div>
 
-    <!-- Error -->
-    <div v-else-if="isError" class="p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400">
-      {{ error?.message || 'Failed to load boards' }}
+    <Alert v-else-if="isError" variant="destructive">
+      <AlertDescription>{{ error?.message || 'Failed to load boards' }}</AlertDescription>
+    </Alert>
+
+    <div v-else-if="!boards?.length" class="text-center py-16">
+      <p class="text-lg mb-2 text-foreground">No boards registered yet.</p>
+      <p class="text-sm text-muted-foreground">Be the first — create a board to get started.</p>
     </div>
 
-    <!-- Empty -->
-    <div v-else-if="!boards?.length" class="text-center py-16 text-gray-500">
-      <p class="text-lg mb-2">No boards registered yet.</p>
-      <p class="text-sm">Be the first — create a board to get started.</p>
-    </div>
-
-    <!-- Board cards -->
     <div v-else class="space-y-2">
-      <div
+      <Card
         v-for="b in boards"
         :key="b.slug"
         @click="goToBoard(b.slug)"
-        class="p-4 rounded-lg bg-gray-900 border border-gray-800 hover:border-gray-700 cursor-pointer transition-colors"
+        class="cursor-pointer hover:bg-accent/50 transition-colors py-0 gap-0"
       >
-        <div class="text-base font-semibold text-gray-100">
-          {{ b.board?.title || `r/${b.slug}` }}
-        </div>
-        <div v-if="b.board?.description" class="text-sm text-gray-500 mt-1">
-          {{ b.board.description }}
-        </div>
-        <div class="text-xs text-gray-600 mt-2 font-mono">
-          r/{{ b.slug }}
-        </div>
-      </div>
+        <CardContent class="p-4">
+          <div class="text-base font-semibold text-card-foreground">
+            {{ b.board?.title || `r/${b.slug}` }}
+          </div>
+          <div v-if="b.board?.description" class="text-sm text-muted-foreground mt-1">
+            {{ b.board.description }}
+          </div>
+          <Badge variant="outline" class="mt-2 text-xs">r/{{ b.slug }}</Badge>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>

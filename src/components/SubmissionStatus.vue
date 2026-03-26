@@ -1,5 +1,6 @@
 <script setup>
 import { STATUS, STATUS_LABELS } from '../lib/submission-status.js'
+import { Badge } from './ui/badge'
 
 defineProps({
   status: String,
@@ -7,11 +8,11 @@ defineProps({
 })
 
 const colors = {
-  [STATUS.PUBLISHED]: 'bg-gray-800/30 border-gray-700/30 text-gray-400',
-  [STATUS.ANNOUNCED]: 'bg-yellow-900/20 border-yellow-800/30 text-yellow-500/70',
-  [STATUS.WAITING]: 'bg-orange-900/10 border-orange-800/30 text-orange-400/70',
-  [STATUS.CURATED]: 'bg-green-900/20 border-green-800/30 text-green-500/70',
-  [STATUS.SETTLED]: 'bg-gray-800/30 border-gray-700/30 text-gray-500',
+  [STATUS.PUBLISHED]: 'bg-secondary text-muted-foreground border-border',
+  [STATUS.ANNOUNCED]: 'bg-warning/10 text-warning border-warning/30',
+  [STATUS.WAITING]: 'bg-primary/10 text-primary border-primary/30',
+  [STATUS.CURATED]: 'bg-success/10 text-success border-success/30',
+  [STATUS.SETTLED]: 'bg-secondary text-muted-foreground border-border',
 }
 </script>
 

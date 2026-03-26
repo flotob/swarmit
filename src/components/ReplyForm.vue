@@ -65,7 +65,7 @@ async function handleSubmit() {
 
     <StatusBar v-if="steps.length" :steps="steps" class="mt-3" />
 
-    <p v-if="result" class="mt-2 text-xs text-green-600 dark:text-green-400">
+    <p v-if="result" class="mt-2 text-xs text-success">
       Reply published — pending curator indexing
     </p>
 
