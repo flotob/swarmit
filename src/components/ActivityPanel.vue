@@ -3,29 +3,16 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { useRouter } from 'vue-router'
 import { refToHex } from '../protocol/references.js'
 import { timeAgo } from '../lib/format.js'
+import { STATUS, STATUS_ICONS, STATUS_LABELS } from '../lib/submission-status.js'
 
 const store = useSubmissionsStore()
 const router = useRouter()
 
-const statusIcons = {
-  announced: '◉',
-  waiting: '○',
-  curated: '●',
-  settled: '●',
-}
-
 const statusColors = {
-  announced: 'text-yellow-500',
-  waiting: 'text-orange-400 animate-pulse',
-  curated: 'text-green-500',
-  settled: 'text-gray-600',
-}
-
-const statusLabels = {
-  announced: 'Announced',
-  waiting: 'Waiting for curators...',
-  curated: 'Curated',
-  settled: 'Settled',
+  [STATUS.ANNOUNCED]: 'text-yellow-500',
+  [STATUS.WAITING]: 'text-orange-400 animate-pulse',
+  [STATUS.CURATED]: 'text-green-500',
+  [STATUS.SETTLED]: 'text-gray-600',
 }
 
 function goToThread(item) {
@@ -52,7 +39,7 @@ function goToThread(item) {
       >
         <!-- Status icon -->
         <span :class="statusColors[item.status]" class="text-sm mt-0.5 shrink-0">
-          {{ statusIcons[item.status] }}
+          {{ STATUS_ICONS[item.status] }}
         </span>
 
         <div class="min-w-0 flex-1">
@@ -69,10 +56,10 @@ function goToThread(item) {
               · {{ timeAgo(item.curatorPickups[item.curatorPickups.length - 1]?.pickedUpAt || item.createdAt) }}
             </template>
             <template v-else-if="item.status === 'waiting'">
-              {{ statusLabels.waiting }}
+              {{ STATUS_LABELS.waiting }}
             </template>
             <template v-else>
-              {{ statusLabels[item.status] }} · {{ timeAgo(item.createdAt) }}
+              {{ STATUS_LABELS[item.status] }} · {{ timeAgo(item.createdAt) }}
             </template>
           </div>
         </div>
