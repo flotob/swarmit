@@ -5,6 +5,11 @@
 export const STATUS = {
   PUBLISHED: 'published',   // on Swarm but NOT announced on-chain
   ANNOUNCED: 'announced',   // chain tx sent (not necessarily confirmed)
+                             // TODO: Currently unused — nothing sets this status yet.
+                             // Currently submissions go straight from PUBLISHED to WAITING.
+                             // To use ANNOUNCED, add tx receipt polling in usePublish to
+                             // distinguish "tx sent" from "tx confirmed". This would enable
+                             // a visible "Announced on-chain (confirming...)" → "Waiting for curators" transition.
   WAITING: 'waiting',       // announced, no curator pickup yet
   CURATED: 'curated',       // at least one curator picked it up (still polling for more)
   SETTLED: 'settled',       // curated and past TTL (no more polling)
