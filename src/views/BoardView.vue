@@ -3,16 +3,15 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBoard } from '../composables/useBoard'
 import PostCard from '../components/PostCard.vue'
-import CuratorBanner from '../components/CuratorBanner.vue'
+import CuratorBar from '../components/CuratorBar.vue'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
-const { board, boardIndex, isLoading, isError, error, curatorAddress, curatorProfile } = useBoard(slug)
+const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, curatorProfile } = useBoard(slug)
 </script>
 
 <template>
   <div>
-    <!-- Board header -->
     <div class="mb-6">
       <h2 class="text-2xl font-bold">
         {{ board?.title || `r/${slug}` }}
@@ -22,7 +21,6 @@ const { board, boardIndex, isLoading, isError, error, curatorAddress, curatorPro
       </p>
     </div>
 
-    <!-- Submit post button -->
     <router-link
       :to="{ name: 'compose-post', params: { slug } }"
       class="inline-block mb-4 px-4 py-2 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
@@ -30,11 +28,12 @@ const { board, boardIndex, isLoading, isError, error, curatorAddress, curatorPro
       Submit Post
     </router-link>
 
-    <!-- Curator banner -->
-    <CuratorBanner
+    <CuratorBar
       v-if="curatorAddress"
       :curator-name="curatorProfile?.name"
       :curator-address="curatorAddress"
+      :curators="curators"
+      :context="slug"
     />
 
     <!-- Loading -->
@@ -62,6 +61,5 @@ const { board, boardIndex, isLoading, isError, error, curatorAddress, curatorPro
         :board-slug="slug"
       />
     </div>
-
   </div>
 </template>

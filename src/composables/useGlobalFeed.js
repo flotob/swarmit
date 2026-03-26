@@ -71,6 +71,7 @@ export function useGlobalFeed() {
 
   return {
     feed: globalQuery.data,
+    curators,
     isLoading: globalQuery.isLoading,
     isError: globalQuery.isError,
     error: globalQuery.error,

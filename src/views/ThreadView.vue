@@ -6,14 +6,14 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { threadIndent } from '../lib/format.js'
 import ReplyNode from '../components/ReplyNode.vue'
 import ReplyForm from '../components/ReplyForm.vue'
-import CuratorBanner from '../components/CuratorBanner.vue'
+import CuratorBar from '../components/CuratorBar.vue'
 import SubmissionStatus from '../components/SubmissionStatus.vue'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
 
-const { thread, isLoading, isError, error, rootSubRef, curatorAddress, curatorProfile } = useThread(slug, rootSubId)
+const { thread, curators, isLoading, isError, error, rootSubRef, curatorAddress, curatorProfile } = useThread(slug, rootSubId)
 const submissions = useSubmissionsStore()
 
 // Inline reply state
@@ -56,10 +56,12 @@ function pendingForNode(nodeSubmissionId) {
       &larr; r/{{ slug }}
     </router-link>
 
-    <CuratorBanner
+    <CuratorBar
       v-if="curatorAddress"
       :curator-name="curatorProfile?.name"
       :curator-address="curatorAddress"
+      :curators="curators"
+      :context="slug"
     />
 
     <!-- Loading -->

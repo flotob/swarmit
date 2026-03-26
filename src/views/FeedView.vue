@@ -1,9 +1,9 @@
 <script setup>
 import { useGlobalFeed } from '../composables/useGlobalFeed'
 import PostCard from '../components/PostCard.vue'
-import CuratorBanner from '../components/CuratorBanner.vue'
+import CuratorBar from '../components/CuratorBar.vue'
 
-const { feed, isLoading, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
+const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
 </script>
 
 <template>
@@ -18,10 +18,12 @@ const { feed, isLoading, isError, error, curatorAddress, curatorProfile } = useG
       </router-link>
     </div>
 
-    <CuratorBanner
+    <CuratorBar
       v-if="curatorAddress"
       :curator-name="curatorProfile?.name"
       :curator-address="curatorAddress"
+      :curators="curators"
+      context="_global"
     />
 
     <!-- Loading -->
