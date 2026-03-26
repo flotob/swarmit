@@ -5,10 +5,7 @@
  * Chain reads go through rpc.js instead.
  */
 
-import * as state from '../state.js';
 import { CHAIN_ID, CHAIN_ID_HEX } from '../config.js';
-
-let listenerRegistered = false;
 
 /**
  * Check if the wallet provider is available.
@@ -36,19 +33,6 @@ export async function connect() {
   // If the user rejects the chain switch, connect() throws and
   // the wallet is never marked as ready.
   await ensureGnosisChain();
-
-  state.update({ walletConnected: true, userAddress: address });
-
-  if (!listenerRegistered) {
-    listenerRegistered = true;
-    window.ethereum.on('accountsChanged', (accs) => {
-      if (accs.length === 0) {
-        state.update({ walletConnected: false, userAddress: null });
-      } else {
-        state.update({ userAddress: accs[0] });
-      }
-    });
-  }
 
   return address;
 }

@@ -4,7 +4,7 @@ import { getCuratorDeclarations } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { fetchBoardIndex } from '../swarm/feeds.js'
 import { validate } from '../protocol/objects.js'
-import { getCuratorPref, setCuratorPref } from '../state.js'
+import { useCuratorPrefsStore } from '../stores/curators.js'
 
 /**
  * Load all curator declarations from chain, deduplicated (latest per address).
@@ -27,6 +27,7 @@ export function useCuratorDeclarations() {
  * Shared by useBoard and useThread.
  */
 export function buildCandidates(slug, board, curators) {
+  const curatorPrefs = useCuratorPrefsStore()
   const seen = new Set()
   const list = []
 
@@ -38,7 +39,7 @@ export function buildCandidates(slug, board, curators) {
     list.push(addr)
   }
 
-  add(getCuratorPref(slug))
+  add(curatorPrefs.getPreference(slug))
   add(board?.defaultCurator)
   if (board?.endorsedCurators?.length === 1) add(board.endorsedCurators[0])
 
@@ -79,4 +80,6 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList) {
   return null
 }
 
-export { setCuratorPref }
+export function setCuratorPref(slug, address) {
+  useCuratorPrefsStore().setPreference(slug, address)
+}

@@ -1,17 +1,15 @@
 <script setup>
 import { reactive, watch, computed } from 'vue'
 import { useCuratorDeclarations, setCuratorPref } from '../composables/useCurators'
+import { useCuratorPrefsStore } from '../stores/curators.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { truncateAddress } from '../lib/format.js'
-import { getCuratorPref } from '../state.js'
 
 const { data: curators, isLoading, isError, error } = useCuratorDeclarations()
+const curatorPrefs = useCuratorPrefsStore()
 
 const profiles = reactive(new Map())
-
-// Track selection reactively (localStorage is not reactive)
-const selectionVersion = reactive({ v: 0 })
 
 async function loadProfiles() {
   if (!curators.value) return
@@ -37,14 +35,11 @@ function getProfile(addr) {
 }
 
 function isSelected(addr, boardSlug) {
-  // Access selectionVersion to make this reactive
-  void selectionVersion.v
-  return getCuratorPref(boardSlug)?.toLowerCase() === addr.toLowerCase()
+  return curatorPrefs.getPreference(boardSlug)?.toLowerCase() === addr.toLowerCase()
 }
 
 function selectCurator(addr, boardSlug) {
   setCuratorPref(boardSlug, addr)
-  selectionVersion.v++
 }
 </script>
 

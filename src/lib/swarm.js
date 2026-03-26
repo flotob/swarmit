@@ -3,35 +3,11 @@
  * Only module that touches window.swarm directly.
  */
 
-import * as state from '../state.js';
-
-let listenerRegistered = false;
-
 /**
  * Check if the Swarm provider is available.
  */
 export function isAvailable() {
   return !!(window.swarm && typeof window.swarm.request === 'function');
-}
-
-/**
- * Request Swarm publishing access. Shows the connection prompt.
- * @returns {Promise<Object>} { connected, origin, capabilities }
- */
-export async function connect() {
-  if (!isAvailable()) throw new Error('Swarm provider not available');
-
-  const result = await window.swarm.requestAccess();
-  state.update({ swarmConnected: true });
-
-  if (!listenerRegistered) {
-    listenerRegistered = true;
-    window.swarm.on('disconnect', () => {
-      state.update({ swarmConnected: false });
-    });
-  }
-
-  return result;
 }
 
 /**
