@@ -35,7 +35,7 @@ export const useSubmissionsStore = defineStore('submissions', () => {
       createdAt: Date.now(),
       lastCheckedAt: null,
       curatorPickups: [],
-      status: entry.announced ? STATUS.WAITING : STATUS.ANNOUNCED,
+      status: entry.announced ? STATUS.WAITING : STATUS.PUBLISHED,
     })
     persist()
   }
@@ -71,8 +71,9 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     if (changed) persist()
   }
 
+  // Items that need polling — includes CURATED so we can detect additional curator pickups
   const pending = computed(() =>
-    items.value.filter((i) => i.status === STATUS.WAITING || i.status === STATUS.ANNOUNCED)
+    items.value.filter((i) => i.status === STATUS.WAITING || i.status === STATUS.ANNOUNCED || i.status === STATUS.CURATED)
   )
 
   const recent = computed(() =>

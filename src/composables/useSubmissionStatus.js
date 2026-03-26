@@ -44,6 +44,11 @@ export function useSubmissionStatus() {
             return null
           }
           const boardIndex = await fetchBoardIndex(profile, boardSlug)
+          const { valid: idxValid } = validate(boardIndex || {})
+          if (!idxValid) {
+            boardIndexCache.set(key, null)
+            return null
+          }
           boardIndexCache.set(key, { boardIndex, profile })
           return { boardIndex, profile }
         } catch {
@@ -108,6 +113,8 @@ export function useSubmissionStatus() {
       try {
         const threadIndex = await resolveFeed(rootEntry.threadIndexFeed)
         if (!threadIndex?.nodes) continue
+        const { valid: threadValid } = validate(threadIndex)
+        if (!threadValid) continue
 
         const found = threadIndex.nodes.some((n) => n.submissionId === item.submissionRef)
         if (found) {

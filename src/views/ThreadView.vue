@@ -19,10 +19,16 @@ const submissions = useSubmissionsStore()
 // Inline reply state
 const replyingTo = ref(null)
 
-// Pending replies from the submissions store for this thread
-const pendingReplies = computed(() =>
-  rootSubRef.value ? submissions.pendingForThread(rootSubRef.value) : []
-)
+// Pending replies — exclude any that already appear in the curator's thread nodes
+const pendingReplies = computed(() => {
+  if (!rootSubRef.value) return []
+  const tracked = submissions.pendingForThread(rootSubRef.value)
+  const curatorNodeRefs = new Set(
+    (thread.value?.nodes || []).map((n) => n.submissionId)
+  )
+  // Once a reply appears in the curator's tree, don't show the pending badge
+  return tracked.filter((t) => !curatorNodeRefs.has(t.submissionRef))
+})
 
 function handleReply(node) {
   replyingTo.value = node

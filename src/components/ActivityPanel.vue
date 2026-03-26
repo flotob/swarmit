@@ -9,6 +9,7 @@ const store = useSubmissionsStore()
 const router = useRouter()
 
 const statusColors = {
+  [STATUS.PUBLISHED]: 'text-gray-500',
   [STATUS.ANNOUNCED]: 'text-yellow-500',
   [STATUS.WAITING]: 'text-orange-400 animate-pulse',
   [STATUS.CURATED]: 'text-green-500',
