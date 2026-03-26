@@ -1,6 +1,8 @@
 <script setup>
 import { ChevronRight, Search } from 'lucide-vue-next'
 import { Input } from './ui/input'
+
+const actionClass = 'flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium text-primary-foreground bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring transition-all'
 </script>
 
 <template>
@@ -11,30 +13,22 @@ import { Input } from './ui/input'
         type="text"
         placeholder="search"
         disabled
+        title="Search coming soon"
         class="pl-8 cursor-not-allowed"
       />
     </div>
 
-    <router-link
-      :to="{ name: 'boards' }"
-      class="flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium text-primary-foreground bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary/90 transition-all"
-    >
+    <router-link :to="{ name: 'boards' }" :class="actionClass">
       Submit a new link
       <ChevronRight class="w-4 h-4" />
     </router-link>
 
-    <router-link
-      :to="{ name: 'boards' }"
-      class="flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium text-primary-foreground bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary/90 transition-all"
-    >
+    <router-link :to="{ name: 'boards' }" :class="actionClass">
       Submit a new text post
       <ChevronRight class="w-4 h-4" />
     </router-link>
 
-    <router-link
-      :to="{ name: 'create-board' }"
-      class="flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium text-primary-foreground bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary/90 transition-all"
-    >
+    <router-link :to="{ name: 'create-board' }" :class="actionClass">
       Create your own hive
       <ChevronRight class="w-4 h-4" />
     </router-link>
