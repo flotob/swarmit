@@ -429,6 +429,44 @@ Tests are written alongside each UP, not as a separate phase:
 }
 ```
 
+## Status (as of 2026-03-26)
+
+### Completed
+- **UP1**: Vite + Vue scaffold + compatibility spike (board read from Swarm confirmed)
+- **UP2**: Layout + navigation (AppHeader, wallet connect, Swarm detection)
+- **UP3**: Data layer (all composables: useBoard, useThread, useCurators, usePublish, useSwarm, useWallet, useBoardList)
+- **UP4**: Home page (board cards from chain, cached)
+- **UP5**: Board view + PostCard (bulk fetch, curator fallthrough, banner)
+- **UP6**: Thread view + ReplyNode (depth indentation, curator fallthrough)
+- **UP7**: Markdown rendering (marked + DOMPurify, bzz:// image URLs, scoped Marked instance)
+- **UP8**: Compose post (usePublish pipeline, StatusBar progress, partial success)
+- **UP9**: Inline reply (ReplyForm in thread, pending reply indicator — stub, not final UP15 design)
+- **UP11**: Create board (slug validation, publish + register, redirect)
+- **UP12**: Curator picker (profile cards, per-board selection, persisted)
+- **UP13**: User profile (feed resolution, submission history, reply navigation)
+
+### Also completed (not in original plan)
+- Read-side protocol validation at every Swarm trust boundary
+- Wallet chain check (boot + chainChanged listener)
+- IndexedDB query cache persistence (idb-keyval + TanStack Query persister)
+- 35 automated protocol tests (Vitest)
+- Curator service bugs fixed (profile publish loop, boardIndex ordering, bee-js v11 API)
+
+### Remaining
+- **UP10**: Image/media support — Tiptap editor, image upload via window.swarm, attachment descriptors
+- **UP15**: Submission lifecycle & activity feed — the "mempool" UX, curator polling, persistent tracker
+- **UP14**: Mobile polish — responsive Tailwind breakpoints, collapsible sidebar, touch-friendly forms
+
+### Recommended order
+1. **UP15** — solves the "I posted but where is it?" pain point observed during testing
+2. **UP10** — Tiptap editor + image upload (biggest technical lift, not blocking anyone)
+3. **UP14** — mobile polish (last)
+
+### Additional work identified during testing
+- Compose post UX: multi-step approval flow in Freedom Browser is clunky (needs browser-side permission trust model, not SPA fix)
+- Curator service: consider lowering CONFIRMATIONS for faster pickup during development
+- Test coverage: composable tests and wallet boot logic tests still needed
+
 ## Regression Smoke Tests
 
 After each UP, verify all of these still work:
