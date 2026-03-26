@@ -21,11 +21,9 @@ const props = defineProps({
 const otherCurators = computed(() => {
   if (!props.curators || !props.curatorAddress) return []
   return props.curators.filter(
-    (c) => c.curator.toLowerCase() !== props.curatorAddress.toLowerCase()
+    (c) => c.curator?.toLowerCase() !== props.curatorAddress?.toLowerCase()
   )
 })
-
-const hasAlternatives = computed(() => otherCurators.value.length > 0)
 
 function selectCurator(address) {
   setCuratorPref(props.context, address)
@@ -39,7 +37,7 @@ function selectCurator(address) {
       <span class="text-gray-200 font-medium">{{ curatorName || truncateAddress(curatorAddress) }}</span>
     </span>
 
-    <DropdownMenu v-if="hasAlternatives">
+    <DropdownMenu v-if="otherCurators.length">
       <DropdownMenuTrigger class="text-orange-400 hover:text-orange-300 text-xs cursor-pointer outline-none">
         Change curator
       </DropdownMenuTrigger>
