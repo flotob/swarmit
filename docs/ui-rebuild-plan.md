@@ -455,6 +455,8 @@ Tests are written alongside each UP, not as a separate phase:
 - Curator service bugs fixed (profile publish loop, boardIndex ordering, bee-js v11 API)
 - Activity sidebar with mobile bottom drawer (toggle, auto-show on publish)
 - `bzzToGatewayUrl` utility in references.js for consistent bzz:// rendering
+- Migrated state.js to Pinia: curator prefs in stores/curators.js, deleted legacy state.js and removed dead state.update() calls from lib/ethereum.js and lib/swarm.js
+- 61 automated tests (Vitest): protocol objects, references, image upload, curator prefs store
 
 ### Remaining
 - **UP14**: Mobile polish — responsive Tailwind breakpoints, touch-friendly forms
@@ -466,7 +468,7 @@ Tests are written alongside each UP, not as a separate phase:
 - Curator service: consider lowering CONFIRMATIONS for faster pickup during development
 - Test coverage: composable tests and wallet boot logic tests still needed
 - Retry chain announcement: button in SubmissionDetailView for posts published to Swarm but not announced on-chain
-- Migrate state.js to Pinia: old curator preference storage still uses vanilla state.js shim
+- Delete or consolidate lib/ethereum.js and lib/swarm.js — most functionality now lives in useWallet/useSwarm composables, these files are thin wrappers with overlap
 
 ## Regression Smoke Tests
 
