@@ -43,7 +43,7 @@ function share() {
 <template>
   <div
     @click="goToThread"
-    class="flex items-start gap-0 border-b border-border py-2 hover:bg-accent/30 transition-colors cursor-pointer"
+    class="flex items-start gap-0 py-2 hover:bg-accent/30 transition-colors cursor-pointer"
   >
     <!-- Rank -->
     <div v-if="rank" class="w-8 shrink-0 text-right pr-1 pt-3 text-sm text-muted-foreground font-medium">

@@ -4,20 +4,12 @@ import PostCard from '../components/PostCard.vue'
 import CuratorBar from '../components/CuratorBar.vue'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
-import { Button } from '../components/ui/button'
 
 const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
 </script>
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-foreground">Feed</h1>
-      <Button variant="ghost" size="sm" as-child>
-        <router-link :to="{ name: 'boards' }">Browse boards</router-link>
-      </Button>
-    </div>
-
     <CuratorBar
       v-if="curatorAddress"
       :curator-name="curatorProfile?.name"
