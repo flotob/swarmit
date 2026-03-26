@@ -7,6 +7,7 @@ import { isAvailable as isWalletAvailable } from './lib/ethereum.js'
 import { CHAIN_ID } from './config'
 import { useSubmissionStatus } from './composables/useSubmissionStatus'
 import { useAutoShowSidebar } from './composables/useAutoShowSidebar'
+import { useColorMode } from './composables/useColorMode'
 import AppHeader from './components/AppHeader.vue'
 import ActivityPanel from './components/ActivityPanel.vue'
 import MobileBottomBar from './components/MobileBottomBar.vue'
@@ -17,6 +18,7 @@ const ui = useUiStore()
 
 useSubmissionStatus()
 useAutoShowSidebar()
+useColorMode()
 
 async function checkWalletState() {
   if (!isWalletAvailable()) {
@@ -80,7 +82,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-gray-200 flex flex-col">
+  <div class="min-h-screen flex flex-col">
     <AppHeader />
 
     <div class="flex-1 flex justify-center px-4">
@@ -89,23 +91,21 @@ onUnmounted(() => {
           <router-view />
         </main>
 
-        <!-- Desktop sidebar (hidden below lg by CSS) -->
         <aside
           v-if="ui.sidebarOpen"
-          class="hidden lg:block w-56 shrink-0 border-l border-gray-800 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3"
+          class="hidden lg:block w-56 shrink-0 border-l border-border sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-3"
         >
           <ActivityPanel />
         </aside>
       </div>
     </div>
 
-    <footer class="px-4 py-8 text-center text-sm text-gray-600">
+    <footer class="px-4 py-8 text-center text-sm text-muted-foreground">
       Swarmit — decentralized message board on Swarm + Gnosis Chain
     </footer>
 
     <MobileBottomBar />
 
-    <!-- Mobile drawer (hidden at lg+ by internal lg:hidden) -->
     <MobileDrawer :open="ui.sidebarOpen" @close="ui.closeSidebar()">
       <ActivityPanel />
     </MobileDrawer>
