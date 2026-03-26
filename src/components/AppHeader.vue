@@ -13,12 +13,11 @@ const auth = useAuthStore()
 const ui = useUiStore()
 const submissions = useSubmissionsStore()
 const wallet = useWallet()
-const { preference, setMode } = useColorMode()
+const { preference } = useColorMode()
 
 function cycleColorMode() {
   const modes = ['light', 'dark', 'auto']
-  const next = modes[(modes.indexOf(preference.value) + 1) % modes.length]
-  setMode(next)
+  preference.value = modes[(modes.indexOf(preference.value) + 1) % modes.length]
 }
 
 async function connectWallet() {
