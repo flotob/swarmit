@@ -31,6 +31,11 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+  --color-header-border: var(--header-border);
+  --color-board-bar: var(--board-bar);
+  --color-link: var(--link);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -85,6 +90,17 @@
 
   /* Warning = pending, attention */
   --warning: oklch(75% 0.15 85);
+
+  /* Header = main nav bar */
+  --header: oklch(95% 0.04 55);
+  --header-foreground: oklch(25% 0.02 55);
+
+  /* Board bar = top strip above header */
+  --board-bar: oklch(94% 0.03 50);
+  --header-border: oklch(70.5% 0.213 47.604);
+
+  /* Link = classic blue for clickable titles */
+  --link: oklch(45% 0.31 264);
 
   /* Borders & inputs */
   --border: oklch(90% 0.005 60);
@@ -143,6 +159,17 @@
 
   /* Warning */
   --warning: oklch(85% 0.18 85);
+
+  /* Header */
+  --header: oklch(35% 0.1 45);
+  --header-foreground: oklch(93% 0.02 55);
+
+  /* Board bar */
+  --board-bar: oklch(20% 0.05 45);
+  --header-border: oklch(50% 0.12 45);
+
+  /* Link */
+  --link: oklch(72% 0.15 260);
 
   /* Borders & inputs */
   --border: oklch(25% 0.015 260);

@@ -2,15 +2,15 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo } from '../lib/format.js'
-import { refToHex } from '../protocol/references.js'
-import { Card, CardContent } from './ui/card'
-import { Badge } from './ui/badge'
+import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { Skeleton } from './ui/skeleton'
+import { ChevronUp, ChevronDown, FileText, Share2, MessageSquare } from 'lucide-vue-next'
 
 const props = defineProps({
   entry: Object,
   boardSlug: String,
   showBoard: Boolean,
+  rank: Number,
 })
 
 const router = useRouter()
@@ -18,52 +18,96 @@ const router = useRouter()
 const authorAddress = computed(() => props.entry.content?.author?.address || props.entry.submission?.author?.address)
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
 
-function goToThread() {
-  const ref = refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef)
-  if (ref) {
-    router.push({ name: 'thread', params: { slug: props.boardSlug, rootSubId: ref } })
+const thumbnail = computed(() => {
+  const att = props.entry.content?.attachments?.find((a) => a.kind === 'image')
+  return att ? bzzToGatewayUrl(att.reference) : null
+})
+
+const threadRef = computed(() => refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef))
+
+const threadRoute = computed(() => {
+  if (!threadRef.value) return null
+  return { name: 'thread', params: { slug: props.boardSlug, rootSubId: threadRef.value } }
+})
+
+function share() {
+  if (threadRef.value) {
+    const resolved = router.resolve(threadRoute.value)
+    const url = `${window.location.origin}${window.location.pathname}${resolved.href}`
+    navigator.clipboard?.writeText(url)
   }
 }
 </script>
 
 <template>
-  <Card
-    @click="goToThread"
-    class="cursor-pointer hover:bg-accent/50 transition-colors py-0 gap-0"
-  >
-    <CardContent class="p-4">
-      <!-- Loading -->
+  <div class="flex items-start gap-0 py-2 hover:bg-accent/30 transition-colors">
+    <!-- Rank (vertically centered via items-center on parent) -->
+    <div v-if="rank" class="w-8 shrink-0 text-right pr-1 pt-2 text-sm text-muted-foreground font-medium">
+      {{ rank }}
+    </div>
+
+    <!-- Vote placeholder -->
+    <div class="w-10 shrink-0 flex flex-col items-center gap-0">
+      <button class="text-muted-foreground/30 cursor-not-allowed p-0.5" title="Voting coming soon">
+        <ChevronUp class="w-5 h-5" />
+      </button>
+      <span class="text-xs text-muted-foreground/40 font-medium">&mdash;</span>
+      <button class="text-muted-foreground/30 cursor-not-allowed p-0.5" title="Voting coming soon">
+        <ChevronDown class="w-5 h-5" />
+      </button>
+    </div>
+
+    <!-- Thumbnail -->
+    <router-link v-if="threadRoute" :to="threadRoute" class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
+      <img v-if="thumbnail" :src="thumbnail" class="w-full h-full object-cover" alt="" />
+      <FileText v-else class="w-6 h-6 text-muted-foreground/30" />
+    </router-link>
+    <div v-else class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
+      <FileText class="w-6 h-6 text-muted-foreground/30" />
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 min-w-0 py-1">
       <template v-if="!entry.content && !entry.submission">
-        <Skeleton class="h-5 w-3/4 mb-2" />
+        <Skeleton class="h-4 w-3/4 mb-2" />
         <Skeleton class="h-3 w-1/2" />
       </template>
 
-      <!-- Content -->
       <template v-else>
-        <div v-if="showBoard && boardSlug" class="mb-1.5">
-          <router-link
-            :to="{ name: 'board', params: { slug: boardSlug } }"
-            @click.stop
-          >
-            <Badge variant="secondary" class="text-xs hover:bg-accent transition-colors">
+        <router-link v-if="threadRoute" :to="threadRoute" class="text-link hover:underline font-medium leading-snug">
+          {{ entry.content?.title || '(untitled)' }}
+        </router-link>
+        <span v-else class="text-link font-medium leading-snug">
+          {{ entry.content?.title || '(untitled)' }}
+        </span>
+
+        <div class="text-xs text-muted-foreground mt-0.5">
+          submitted {{ createdAt ? timeAgo(createdAt) : '' }}
+          <template v-if="authorAddress">
+            by
+            <router-link :to="`/u/${authorAddress}`" class="hover:underline">
+              {{ truncateAddress(authorAddress) }}
+            </router-link>
+          </template>
+          <template v-if="showBoard && boardSlug">
+            to
+            <router-link :to="{ name: 'board', params: { slug: boardSlug } }" class="hover:underline font-medium">
               r/{{ boardSlug }}
-            </Badge>
-          </router-link>
+            </router-link>
+          </template>
         </div>
 
-        <h3 class="text-base font-semibold text-card-foreground mb-1">
-          {{ entry.content?.title || '(untitled)' }}
-        </h3>
-
-        <p v-if="entry.content?.body?.text" class="text-sm text-muted-foreground mb-2 line-clamp-2">
-          {{ entry.content.body.text }}
-        </p>
-
-        <div class="flex items-center gap-2 text-xs text-muted-foreground">
-          <span v-if="authorAddress">{{ truncateAddress(authorAddress) }}</span>
-          <span v-if="createdAt">&middot; {{ timeAgo(createdAt) }}</span>
+        <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
+          <router-link v-if="threadRoute" :to="threadRoute" class="hover:underline flex items-center gap-1">
+            <MessageSquare class="w-3 h-3" />
+            discuss
+          </router-link>
+          <button @click="share" class="hover:underline flex items-center gap-1">
+            <Share2 class="w-3 h-3" />
+            share
+          </button>
         </div>
       </template>
-    </CardContent>
-  </Card>
+    </div>
+  </div>
 </template>

@@ -39,7 +39,7 @@ function selectCurator(address) {
 </script>
 
 <template>
-  <div class="px-3 py-2 mb-4 rounded-md bg-secondary border border-border text-sm text-muted-foreground">
+  <div class="inline-block px-3 py-1.5 mb-4 rounded-md bg-secondary border border-border text-sm text-muted-foreground">
     <span>Showing view from </span>
 
     <DropdownMenu v-if="allCurators.length > 1">
@@ -47,7 +47,7 @@ function selectCurator(address) {
         {{ displayName }}
         <ChevronDown class="w-3.5 h-3.5 opacity-60" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" class="w-72">
+      <DropdownMenuContent align="start" class="min-w-[8rem]">
         <DropdownMenuItem
           v-for="c in allCurators"
           :key="c.address"

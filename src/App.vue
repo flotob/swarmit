@@ -8,6 +8,7 @@ import { CHAIN_ID } from './config'
 import { useSubmissionStatus } from './composables/useSubmissionStatus'
 import { useAutoShowSidebar } from './composables/useAutoShowSidebar'
 import { useColorMode } from './composables/useColorMode'
+import BoardBar from './components/BoardBar.vue'
 import AppHeader from './components/AppHeader.vue'
 import ActivityPanel from './components/ActivityPanel.vue'
 import MobileBottomBar from './components/MobileBottomBar.vue'
@@ -83,18 +84,17 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen flex flex-col">
+    <BoardBar />
     <AppHeader />
 
     <div class="flex-1 flex">
-      <main class="flex-1 min-w-0 px-4 py-6 pb-16 lg:pb-6">
-        <div class="mx-auto max-w-3xl">
-          <router-view />
-        </div>
+      <main class="flex-1 min-w-0 px-4 py-4 pb-16 lg:pb-4">
+        <router-view />
       </main>
 
       <aside
         v-if="ui.sidebarOpen"
-        class="hidden lg:block w-72 shrink-0 border-l border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-4"
+        class="hidden lg:block w-72 shrink-0 border-l border-border bg-card sticky top-[4.75rem] h-[calc(100vh-4.75rem)] overflow-y-auto p-4"
       >
         <ActivityPanel />
       </aside>
