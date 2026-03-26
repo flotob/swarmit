@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { usePublish } from '../composables/usePublish'
 import StatusBar from './StatusBar.vue'
+import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
 
 const props = defineProps({
   boardSlug: String,
@@ -32,45 +34,43 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="mt-2 mb-4 p-3 rounded-md bg-gray-800/50 border border-gray-700">
+  <div class="mt-2 mb-4 p-3 rounded-md bg-secondary border border-border">
     <form @submit.prevent="handleSubmit">
-      <textarea
+      <Textarea
         v-model="body"
         placeholder="Write a reply..."
         rows="3"
         :disabled="isPublishing"
-        class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-600 font-mono text-sm resize-y focus:outline-none focus:border-orange-500 disabled:opacity-50"
+        class="resize-y text-sm"
       />
       <div class="flex items-center gap-2 mt-2">
-        <button
+        <Button
           type="submit"
+          size="sm"
           :disabled="isPublishing || !body.trim()"
-          class="px-3 py-1.5 text-xs font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isPublishing ? 'Replying...' : result ? 'Replied' : 'Reply' }}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           @click="$emit('cancel')"
           :disabled="isPublishing"
-          class="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
 
-    <!-- Progress -->
     <StatusBar v-if="steps.length" :steps="steps" class="mt-3" />
 
-    <!-- Pending reply indicator -->
-    <div v-if="result" class="mt-2 text-xs text-green-500">
+    <p v-if="result" class="mt-2 text-xs text-green-600 dark:text-green-400">
       Reply published — pending curator indexing
-    </div>
+    </p>
 
-    <!-- Error -->
-    <div v-if="error && !result" class="mt-2 text-xs text-red-400">
+    <p v-if="error && !result" class="mt-2 text-xs text-destructive">
       {{ error }}
-    </div>
+    </p>
   </div>
 </template>

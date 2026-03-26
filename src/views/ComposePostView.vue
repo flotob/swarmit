@@ -4,6 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePublish } from '../composables/usePublish'
 import StatusBar from '../components/StatusBar.vue'
 import ImageUpload from '../components/ImageUpload.vue'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Textarea } from '../components/ui/textarea'
+import { Alert, AlertDescription } from '../components/ui/alert'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +23,7 @@ const { publishPost, steps, isPublishing, result, error } = usePublish()
 function onImageUploaded(descriptor) {
   attachments.value.push(descriptor)
 
-  // Insert markdown image syntax at cursor position
-  const textarea = bodyEl.value
+  const textarea = bodyEl.value?.$el || bodyEl.value
   if (textarea) {
     const name = descriptor.name || 'image'
     const syntax = `![${name}](${descriptor.reference})`
@@ -29,7 +32,6 @@ function onImageUploaded(descriptor) {
     const text = body.value
     body.value = text.slice(0, start) + syntax + text.slice(end)
 
-    // Move cursor after inserted text
     const newPos = start + syntax.length
     requestAnimationFrame(() => {
       textarea.selectionStart = newPos
@@ -61,38 +63,36 @@ async function handleSubmit() {
 
 <template>
   <div>
-    <router-link
-      :to="{ name: 'board', params: { slug } }"
-      class="text-sm text-gray-500 hover:text-gray-300 mb-4 inline-block"
-    >
-      &larr; r/{{ slug }}
-    </router-link>
+    <Button variant="ghost" size="sm" as-child class="mb-4">
+      <router-link :to="{ name: 'board', params: { slug } }">
+        &larr; r/{{ slug }}
+      </router-link>
+    </Button>
 
-    <h2 class="text-2xl font-bold mb-6">Submit to r/{{ slug }}</h2>
+    <h1 class="text-2xl font-bold text-foreground mb-6">Submit to r/{{ slug }}</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
-        <label class="block text-sm text-gray-400 mb-1">Title</label>
-        <input
+        <label class="block text-sm text-muted-foreground mb-1">Title</label>
+        <Input
           v-model="title"
           type="text"
           placeholder="Post title"
           required
           :disabled="isPublishing"
-          class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label class="block text-sm text-gray-400 mb-1">Body (markdown)</label>
-        <textarea
+        <label class="block text-sm text-muted-foreground mb-1">Body (markdown)</label>
+        <Textarea
           ref="bodyEl"
           v-model="body"
           placeholder="Write your post..."
           required
           rows="8"
           :disabled="isPublishing"
-          class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-200 placeholder-gray-600 font-mono text-sm resize-y focus:outline-none focus:border-orange-500 disabled:opacity-50"
+          class="resize-y text-sm"
         />
       </div>
 
@@ -102,38 +102,35 @@ async function handleSubmit() {
         @removed="onImageRemoved"
       />
 
-      <button
+      <Button
         type="submit"
         :disabled="isPublishing || !title.trim() || !body.trim()"
-        class="px-4 py-2 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {{ isPublishing ? 'Publishing...' : result ? 'Published' : 'Publish Post' }}
-      </button>
+      </Button>
     </form>
 
-    <!-- Progress -->
     <div v-if="steps.length" class="mt-6">
       <StatusBar :steps="steps" />
     </div>
 
-    <!-- Result -->
-    <div v-if="result" class="mt-4 p-4 rounded-lg bg-green-900/20 border border-green-800 text-green-400 text-sm">
-      <template v-if="result.announced">
-        Post published and announced on-chain.
-      </template>
-      <template v-else>
-        Post published to Swarm (not announced on-chain yet).
-        On-chain announcement will be available once the contract is deployed.
-      </template>
-      <div class="mt-2 font-mono text-xs text-gray-500 break-all">
-        Post: {{ result.contentRef }}<br />
-        Submission: {{ result.submissionRef }}
-      </div>
-    </div>
+    <Alert v-if="result" class="mt-4 border-green-600/30 dark:border-green-400/30">
+      <AlertDescription>
+        <template v-if="result.announced">
+          Post published and announced on-chain.
+        </template>
+        <template v-else>
+          Post published to Swarm (not announced on-chain yet).
+        </template>
+        <div class="mt-2 font-mono text-xs text-muted-foreground break-all">
+          Post: {{ result.contentRef }}<br />
+          Submission: {{ result.submissionRef }}
+        </div>
+      </AlertDescription>
+    </Alert>
 
-    <!-- Error -->
-    <div v-if="error && !result" class="mt-4 p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400 text-sm">
-      {{ error }}
-    </div>
+    <Alert v-if="error && !result" variant="destructive" class="mt-4">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
   </div>
 </template>

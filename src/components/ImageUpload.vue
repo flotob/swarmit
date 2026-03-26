@@ -3,6 +3,8 @@ import { ref, onUnmounted } from 'vue'
 import { useSwarm } from '../composables/useSwarm'
 import { useAuthStore } from '../stores/auth'
 import { validateImage, buildAttachmentDescriptor, ALLOWED_TYPES } from '../lib/image-upload.js'
+import { Button } from './ui/button'
+import { ImagePlus, X } from 'lucide-vue-next'
 
 const emit = defineEmits(['uploaded', 'removed'])
 
@@ -22,7 +24,6 @@ async function handleFileSelect(event) {
   const file = event.target.files?.[0]
   if (!file) return
 
-  // Reset the input so the same file can be re-selected
   event.target.value = ''
 
   error.value = null
@@ -68,7 +69,6 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <!-- Uploaded images preview -->
     <div v-if="uploads.length" class="flex flex-wrap gap-2 mb-2">
       <div
         v-for="(upload, i) in uploads"
@@ -78,34 +78,37 @@ onUnmounted(() => {
         <img
           :src="upload.previewUrl"
           :alt="upload.descriptor.name || 'Uploaded image'"
-          class="h-20 w-20 object-cover rounded-md border border-gray-700"
+          class="h-20 w-20 object-cover rounded-md border border-border"
         />
         <button
           @click="removeUpload(i)"
-          class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
           type="button"
         >
-          &times;
+          <X class="w-3 h-3" />
         </button>
       </div>
     </div>
 
-    <!-- Upload button -->
-    <label
-      class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-gray-700 text-gray-400 hover:text-gray-200 hover:border-gray-500 cursor-pointer transition-colors"
-      :class="{ 'opacity-50 pointer-events-none': disabled || uploading }"
+    <Button
+      variant="outline"
+      size="sm"
+      :disabled="disabled || uploading"
+      as-child
     >
-      <input
-        type="file"
-        :accept="acceptTypes"
-        class="hidden"
-        :disabled="disabled || uploading"
-        @change="handleFileSelect"
-      />
-      {{ uploading ? 'Uploading...' : 'Attach image' }}
-    </label>
+      <label class="cursor-pointer">
+        <input
+          type="file"
+          :accept="acceptTypes"
+          class="hidden"
+          :disabled="disabled || uploading"
+          @change="handleFileSelect"
+        />
+        <ImagePlus class="w-4 h-4 mr-1.5" />
+        {{ uploading ? 'Uploading...' : 'Attach image' }}
+      </label>
+    </Button>
 
-    <!-- Error -->
-    <p v-if="error" class="text-xs text-red-400 mt-1">{{ error }}</p>
+    <p v-if="error" class="text-xs text-destructive mt-1">{{ error }}</p>
   </div>
 </template>

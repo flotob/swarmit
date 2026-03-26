@@ -2,9 +2,11 @@
 import { truncateAddress, timeAgo, threadIndent } from '../lib/format.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import AttachmentGallery from './AttachmentGallery.vue'
+import { Button } from './ui/button'
+import { MessageSquare } from 'lucide-vue-next'
 
 defineProps({
-  node: Object,        // { submissionId, parentSubmissionId, depth, submission, content }
+  node: Object,
   isRoot: Boolean,
 })
 
@@ -14,14 +16,13 @@ defineEmits(['reply'])
 <template>
   <div
     :style="{ marginLeft: threadIndent(node.depth) }"
-    class="py-3 border-b border-gray-800"
+    class="py-3 border-b border-border"
   >
-    <!-- Header -->
-    <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+    <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
       <router-link
         v-if="node.content?.author?.address"
         :to="`/u/${node.content.author.address}`"
-        class="hover:text-gray-300"
+        class="hover:text-foreground transition-colors"
       >
         {{ truncateAddress(node.content?.author?.address || node.submission?.author?.address) }}
       </router-link>
@@ -30,35 +31,33 @@ defineEmits(['reply'])
       </span>
     </div>
 
-    <!-- Title (root post only) -->
-    <h2 v-if="isRoot && node.content?.title" class="text-xl font-bold mb-2">
+    <h2 v-if="isRoot && node.content?.title" class="text-xl font-bold text-foreground mb-2">
       {{ node.content.title }}
     </h2>
 
-    <!-- Body -->
     <MarkdownRenderer
       v-if="node.content?.body?.text"
       :text="node.content.body.text"
     />
 
-    <!-- Attachment fallback (posts only — replies don't have attachments per v1 spec) -->
     <AttachmentGallery
       v-if="node.content?.title && node.content?.attachments?.length"
       :attachments="node.content.attachments"
       :body-text="node.content.body?.text || ''"
     />
 
-    <!-- Failed to load -->
-    <div v-else-if="!node.content" class="text-sm text-gray-600 italic">
+    <div v-else-if="!node.content" class="text-sm text-muted-foreground italic">
       Content unavailable
     </div>
 
-    <!-- Reply button -->
-    <button
-      class="mt-2 text-xs text-gray-500 hover:text-orange-400 transition-colors"
+    <Button
+      variant="ghost"
+      size="sm"
+      class="mt-2 h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
       @click="$emit('reply', node)"
     >
+      <MessageSquare class="w-3.5 h-3.5 mr-1" />
       Reply
-    </button>
+    </Button>
   </div>
 </template>

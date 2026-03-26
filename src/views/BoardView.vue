@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router'
 import { useBoard } from '../composables/useBoard'
 import PostCard from '../components/PostCard.vue'
 import CuratorBar from '../components/CuratorBar.vue'
+import { Skeleton } from '../components/ui/skeleton'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { Button } from '../components/ui/button'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
@@ -13,20 +16,19 @@ const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, 
 <template>
   <div>
     <div class="mb-6">
-      <h2 class="text-2xl font-bold">
+      <h1 class="text-2xl font-bold text-foreground">
         {{ board?.title || `r/${slug}` }}
-      </h2>
-      <p v-if="board?.description" class="text-gray-500 mt-1">
+      </h1>
+      <p v-if="board?.description" class="text-muted-foreground mt-1">
         {{ board.description }}
       </p>
     </div>
 
-    <router-link
-      :to="{ name: 'compose-post', params: { slug } }"
-      class="inline-block mb-4 px-4 py-2 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-    >
-      Submit Post
-    </router-link>
+    <Button as-child class="mb-4">
+      <router-link :to="{ name: 'compose-post', params: { slug } }">
+        Submit Post
+      </router-link>
+    </Button>
 
     <CuratorBar
       v-if="curatorAddress"
@@ -36,23 +38,23 @@ const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, 
       :context="slug"
     />
 
-    <!-- Loading -->
-    <div v-if="isLoading" class="space-y-2">
-      <div v-for="i in 3" :key="i" class="h-24 rounded-lg bg-gray-800 animate-pulse" />
+    <div v-if="isLoading" class="space-y-3">
+      <div v-for="i in 3" :key="i" class="rounded-lg border border-border p-4">
+        <Skeleton class="h-4 w-3/4 mb-3" />
+        <Skeleton class="h-3 w-full mb-2" />
+        <Skeleton class="h-3 w-1/2" />
+      </div>
     </div>
 
-    <!-- Error -->
-    <div v-else-if="isError" class="p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400">
-      {{ error?.message || 'Failed to load board' }}
+    <Alert v-else-if="isError" variant="destructive">
+      <AlertDescription>{{ error?.message || 'Failed to load board' }}</AlertDescription>
+    </Alert>
+
+    <div v-else-if="!boardIndex?.entries?.length" class="text-center py-16">
+      <p class="text-lg mb-2 text-foreground">No posts yet.</p>
+      <p class="text-sm text-muted-foreground">Be the first — submit a post to get the conversation started.</p>
     </div>
 
-    <!-- Empty -->
-    <div v-else-if="!boardIndex?.entries?.length" class="text-center py-16 text-gray-500">
-      <p class="text-lg mb-2">No posts yet.</p>
-      <p class="text-sm">Be the first — submit a post to get the conversation started.</p>
-    </div>
-
-    <!-- Post list -->
     <div v-else class="space-y-2">
       <PostCard
         v-for="entry in boardIndex.entries"
