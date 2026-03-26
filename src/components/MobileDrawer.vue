@@ -29,9 +29,9 @@ onBeforeUnmount(() => {
     <Transition name="drawer-slide-up">
       <div
         v-if="open"
-        class="fixed bottom-0 inset-x-0 z-50 lg:hidden max-h-[70vh] overflow-y-auto rounded-t-xl bg-gray-900 border-t border-gray-800 p-4"
+        class="fixed bottom-0 inset-x-0 z-50 lg:hidden max-h-[70vh] overflow-y-auto rounded-t-xl bg-card border-t border-border p-4"
       >
-        <div class="w-10 h-1 bg-gray-700 rounded-full mx-auto mb-3" />
+        <div class="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-3" />
         <slot />
       </div>
     </Transition>

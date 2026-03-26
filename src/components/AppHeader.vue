@@ -4,6 +4,8 @@ import { useUiStore } from '../stores/ui'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useWallet } from '../composables/useWallet'
 import { truncateAddress } from '../lib/format.js'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -20,51 +22,72 @@ async function connectWallet() {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 bg-gray-900 border-b border-gray-800">
+  <header class="sticky top-0 z-50 bg-card border-b border-border">
     <div class="px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-6">
-        <router-link to="/" class="text-lg font-bold text-orange-400 hover:text-orange-300">
+        <router-link to="/" class="text-lg font-bold text-primary hover:text-primary/80 transition-colors">
           swarmit
         </router-link>
-        <nav class="hidden sm:flex items-center gap-4 text-sm">
-          <router-link :to="{ name: 'boards' }" class="text-gray-400 hover:text-gray-200">Boards</router-link>
-          <router-link :to="{ name: 'curators' }" class="text-gray-400 hover:text-gray-200">Curators</router-link>
-          <router-link :to="{ name: 'create-board' }" class="text-gray-400 hover:text-gray-200">Create Board</router-link>
+        <nav class="hidden sm:flex items-center gap-1 text-sm">
+          <router-link
+            :to="{ name: 'boards' }"
+            class="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            Boards
+          </router-link>
+          <router-link
+            :to="{ name: 'curators' }"
+            class="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            Curators
+          </router-link>
+          <router-link
+            :to="{ name: 'create-board' }"
+            class="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            Create Board
+          </router-link>
         </nav>
       </div>
+
       <div class="flex items-center gap-3">
-        <!-- Desktop activity toggle -->
         <button
           @click="ui.toggleSidebar()"
-          class="hidden lg:inline-flex items-center gap-1.5 text-xs transition-colors"
-          :class="ui.sidebarOpen ? 'text-orange-400' : 'text-gray-500 hover:text-gray-300'"
+          class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors"
+          :class="ui.sidebarOpen
+            ? 'text-primary bg-primary/10'
+            : 'text-muted-foreground hover:text-foreground hover:bg-accent'"
           :title="ui.sidebarOpen ? 'Hide activity' : 'Show activity'"
         >
           <span class="relative">
-            &#9679;
-            <span
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+            </svg>
+            <Badge
               v-if="submissions.pending.length"
-              class="absolute -top-1.5 -right-2.5 min-w-3.5 h-3.5 flex items-center justify-center rounded-full bg-orange-500 text-white text-[9px] font-bold px-0.5"
+              class="absolute -top-2 -right-2.5 h-4 min-w-4 px-1 text-[9px] justify-center"
             >
               {{ submissions.pending.length }}
-            </span>
+            </Badge>
           </span>
           Activity
         </button>
 
-        <span v-if="auth.swarmDetected" class="text-xs text-green-500">Swarm</span>
-        <span v-else class="text-xs text-red-500">No Swarm</span>
-        <button
+        <Badge variant="outline" class="text-[10px]" :class="auth.swarmDetected ? 'text-green-600 dark:text-green-400 border-green-600/30' : 'text-destructive border-destructive/30'">
+          {{ auth.swarmDetected ? 'Swarm' : 'No Swarm' }}
+        </Badge>
+
+        <Button
           v-if="!auth.walletConnected"
+          size="sm"
           @click="connectWallet"
-          class="px-3 py-1.5 text-sm font-medium rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
         >
           Connect
-        </button>
+        </Button>
         <router-link
           v-else
           :to="`/u/${auth.userAddress}`"
-          class="text-xs font-mono text-gray-400 hover:text-gray-200"
+          class="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
         >
           {{ truncateAddress(auth.userAddress) }}
         </router-link>

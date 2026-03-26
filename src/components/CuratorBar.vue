@@ -60,11 +60,11 @@ function selectCurator(address) {
 </script>
 
 <template>
-  <div class="px-3 py-2 mb-4 rounded-md bg-gray-800/50 border border-gray-700 text-sm text-gray-400">
+  <div class="px-3 py-2 mb-4 rounded-md bg-secondary border border-border text-sm text-muted-foreground">
     <span>Showing view from </span>
 
     <DropdownMenu v-if="allCurators.length > 1">
-      <DropdownMenuTrigger class="inline-flex items-center gap-1 text-gray-200 font-medium hover:text-orange-400 cursor-pointer outline-none transition-colors">
+      <DropdownMenuTrigger class="inline-flex items-center gap-1 text-foreground font-medium hover:text-primary cursor-pointer outline-none transition-colors">
         {{ displayName }}
         <svg class="w-3.5 h-3.5 opacity-60" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
       </DropdownMenuTrigger>
@@ -76,11 +76,11 @@ function selectCurator(address) {
           class="cursor-pointer flex items-center justify-between"
         >
           <span class="truncate">{{ c.name }}</span>
-          <span v-if="c.active" class="text-green-500 text-xs shrink-0 ml-2">&#10003;</span>
+          <svg v-if="c.active" class="w-4 h-4 text-primary shrink-0 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" /></svg>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
 
-    <span v-else class="text-gray-200 font-medium">{{ displayName }}</span>
+    <span v-else class="text-foreground font-medium">{{ displayName }}</span>
   </div>
 </template>

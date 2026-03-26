@@ -3,9 +3,12 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { refToHex } from '../protocol/references.js'
+import { Card, CardContent } from './ui/card'
+import { Badge } from './ui/badge'
+import { Skeleton } from './ui/skeleton'
 
 const props = defineProps({
-  entry: Object,       // { submissionId, submissionRef, submission, content, threadIndexFeed }
+  entry: Object,
   boardSlug: String,
   showBoard: Boolean,
 })
@@ -24,37 +27,43 @@ function goToThread() {
 </script>
 
 <template>
-  <div
+  <Card
     @click="goToThread"
-    class="p-4 rounded-lg bg-gray-900 border border-gray-800 hover:border-gray-700 cursor-pointer transition-colors"
+    class="cursor-pointer hover:bg-accent/50 transition-colors"
   >
-    <!-- Loading (content not yet resolved) -->
-    <template v-if="!entry.content && !entry.submission">
-      <div class="h-5 w-3/4 bg-gray-800 rounded animate-pulse mb-2" />
-      <div class="h-3 w-1/2 bg-gray-800 rounded animate-pulse" />
-    </template>
+    <CardContent class="p-4">
+      <!-- Loading -->
+      <template v-if="!entry.content && !entry.submission">
+        <Skeleton class="h-5 w-3/4 mb-2" />
+        <Skeleton class="h-3 w-1/2" />
+      </template>
 
-    <!-- Content -->
-    <template v-else>
-      <div v-if="showBoard && boardSlug" class="text-xs text-gray-500 mb-1">
-        <router-link
-          :to="{ name: 'board', params: { slug: boardSlug } }"
-          class="hover:text-orange-400"
-          @click.stop
-        >
-          r/{{ boardSlug }}
-        </router-link>
-      </div>
-      <h3 class="text-base font-semibold text-gray-100 mb-1">
-        {{ entry.content?.title || '(untitled)' }}
-      </h3>
-      <p v-if="entry.content?.body?.text" class="text-sm text-gray-400 mb-2 line-clamp-2">
-        {{ entry.content.body.text }}
-      </p>
-      <div class="flex items-center gap-2 text-xs text-gray-500">
-        <span v-if="authorAddress">{{ truncateAddress(authorAddress) }}</span>
-        <span v-if="createdAt">&middot; {{ timeAgo(createdAt) }}</span>
-      </div>
-    </template>
-  </div>
+      <!-- Content -->
+      <template v-else>
+        <div v-if="showBoard && boardSlug" class="mb-1.5">
+          <router-link
+            :to="{ name: 'board', params: { slug: boardSlug } }"
+            @click.stop
+          >
+            <Badge variant="secondary" class="text-xs hover:bg-accent transition-colors">
+              r/{{ boardSlug }}
+            </Badge>
+          </router-link>
+        </div>
+
+        <h3 class="text-base font-semibold text-card-foreground mb-1">
+          {{ entry.content?.title || '(untitled)' }}
+        </h3>
+
+        <p v-if="entry.content?.body?.text" class="text-sm text-muted-foreground mb-2 line-clamp-2">
+          {{ entry.content.body.text }}
+        </p>
+
+        <div class="flex items-center gap-2 text-xs text-muted-foreground">
+          <span v-if="authorAddress">{{ truncateAddress(authorAddress) }}</span>
+          <span v-if="createdAt">&middot; {{ timeAgo(createdAt) }}</span>
+        </div>
+      </template>
+    </CardContent>
+  </Card>
 </template>

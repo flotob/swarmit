@@ -2,6 +2,9 @@
 import { useGlobalFeed } from '../composables/useGlobalFeed'
 import PostCard from '../components/PostCard.vue'
 import CuratorBar from '../components/CuratorBar.vue'
+import { Skeleton } from '../components/ui/skeleton'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { Button } from '../components/ui/button'
 
 const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
 </script>
@@ -9,12 +12,9 @@ const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfil
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl font-bold">Feed</h2>
-      <router-link
-        :to="{ name: 'boards' }"
-        class="text-sm text-gray-500 hover:text-gray-300"
-      >
-        Browse boards
+      <h1 class="text-2xl font-bold text-foreground">Feed</h1>
+      <router-link :to="{ name: 'boards' }">
+        <Button variant="ghost" size="sm">Browse boards</Button>
       </router-link>
     </div>
 
@@ -28,23 +28,24 @@ const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfil
 
     <!-- Loading -->
     <div v-if="isLoading" class="space-y-3">
-      <div v-for="i in 5" :key="i" class="h-24 rounded-lg bg-gray-800 animate-pulse" />
+      <div v-for="i in 5" :key="i" class="rounded-lg border border-border p-4">
+        <Skeleton class="h-4 w-3/4 mb-3" />
+        <Skeleton class="h-3 w-full mb-2" />
+        <Skeleton class="h-3 w-1/2" />
+      </div>
     </div>
 
     <!-- Error -->
-    <div v-else-if="isError" class="p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400">
-      {{ error?.message || 'Failed to load feed' }}
-    </div>
+    <Alert v-else-if="isError" variant="destructive">
+      <AlertDescription>{{ error?.message || 'Failed to load feed' }}</AlertDescription>
+    </Alert>
 
     <!-- No feed available -->
-    <div v-else-if="!feed?.entries?.length" class="text-center py-16 text-gray-500">
-      <p class="text-lg mb-2">No curated feed available yet.</p>
-      <p class="text-sm mb-4">Curators haven't published a cross-board feed, or no posts exist.</p>
-      <router-link
-        :to="{ name: 'boards' }"
-        class="text-orange-400 hover:text-orange-300 text-sm"
-      >
-        Browse boards instead
+    <div v-else-if="!feed?.entries?.length" class="text-center py-16">
+      <p class="text-lg mb-2 text-foreground">No curated feed available yet.</p>
+      <p class="text-sm mb-4 text-muted-foreground">Curators haven't published a cross-board feed, or no posts exist.</p>
+      <router-link :to="{ name: 'boards' }">
+        <Button variant="outline">Browse boards instead</Button>
       </router-link>
     </div>
 
