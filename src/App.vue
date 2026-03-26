@@ -87,17 +87,18 @@ onUnmounted(() => {
     <BoardBar />
     <AppHeader />
 
-    <main class="flex-1 px-4 py-4 pb-16 lg:pb-4">
-      <router-view />
-    </main>
+    <div class="flex-1 flex">
+      <main class="flex-1 min-w-0 px-4 py-4 pb-16 lg:pb-4">
+        <router-view />
+      </main>
 
-    <!-- Desktop sidebar: fixed overlay on right edge -->
-    <aside
-      v-if="ui.sidebarOpen"
-      class="hidden lg:block fixed right-0 top-[4.75rem] w-72 h-[calc(100vh-4.75rem)] border-l border-border bg-card overflow-y-auto p-4 shadow-lg z-40"
-    >
-      <ActivityPanel />
-    </aside>
+      <aside
+        v-if="ui.sidebarOpen"
+        class="hidden lg:block w-72 shrink-0 border-l border-border bg-card sticky top-[4.75rem] h-[calc(100vh-4.75rem)] overflow-y-auto p-4"
+      >
+        <ActivityPanel />
+      </aside>
+    </div>
 
     <footer class="px-4 py-8 text-center text-sm text-muted-foreground">
       Swarmit — decentralized message board on Swarm + Gnosis Chain

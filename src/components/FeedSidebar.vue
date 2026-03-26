@@ -1,26 +1,37 @@
 <script setup>
 import { Button } from './ui/button'
-import { Card, CardContent } from './ui/card'
-import { Separator } from './ui/separator'
+import { ChevronRight } from 'lucide-vue-next'
 </script>
 
 <template>
-  <Card class="py-0 gap-0">
-    <CardContent class="p-0">
-      <Button as-child class="w-full rounded-none rounded-t-xl justify-center">
-        <router-link :to="{ name: 'boards' }">Submit a new post</router-link>
-      </Button>
-      <Button as-child variant="outline" class="w-full rounded-none border-x-0 justify-center">
-        <router-link :to="{ name: 'create-board' }">Create your own swarm</router-link>
-      </Button>
-    </CardContent>
-    <Separator />
-    <CardContent class="p-4 text-center">
-      <div class="text-3xl mb-2">🐝</div>
-      <p class="text-sm text-muted-foreground italic">
+  <div class="space-y-2">
+    <Button as-child variant="outline" class="w-full justify-between">
+      <router-link :to="{ name: 'boards' }">
+        Submit a new link
+        <ChevronRight class="w-4 h-4" />
+      </router-link>
+    </Button>
+
+    <Button as-child variant="outline" class="w-full justify-between">
+      <router-link :to="{ name: 'boards' }">
+        Submit a new text post
+        <ChevronRight class="w-4 h-4" />
+      </router-link>
+    </Button>
+
+    <Button as-child variant="outline" class="w-full justify-between">
+      <router-link :to="{ name: 'create-board' }">
+        Create your own hive
+        <ChevronRight class="w-4 h-4" />
+      </router-link>
+    </Button>
+
+    <div class="flex items-center gap-2 pt-2 px-1">
+      <span class="text-xl">🐝</span>
+      <p class="text-xs text-muted-foreground italic leading-tight">
         ...for your community.<br />
         ...for your fave niche.
       </p>
-    </CardContent>
-  </Card>
+    </div>
+  </div>
 </template>
