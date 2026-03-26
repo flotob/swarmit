@@ -2,7 +2,7 @@
 import { ChevronRight, Search } from 'lucide-vue-next'
 import { Input } from './ui/input'
 
-const actionClass = 'flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium text-primary-foreground bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring transition-all'
+const actionClass = 'flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium border border-border text-foreground bg-gradient-to-b from-primary/15 to-primary/5 hover:from-primary/25 hover:to-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring transition-all'
 </script>
 
 <template>
