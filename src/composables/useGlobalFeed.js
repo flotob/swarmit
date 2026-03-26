@@ -18,9 +18,10 @@ export function useGlobalFeed() {
   const curatorKey = computed(() =>
     (curators.value || []).map((c) => c.curator.toLowerCase()).sort()
   )
+  const globalPrefKey = computed(() => getCuratorPref('_global') || '_auto')
 
   const globalQuery = useQuery({
-    queryKey: ['globalFeed', curatorKey],
+    queryKey: ['globalFeed', curatorKey, globalPrefKey],
     queryFn: async () => {
       const curatorList = curators.value || []
       if (!curatorList.length) return null
@@ -72,17 +73,11 @@ export function useGlobalFeed() {
     return { address: data.curatorAddress, profile: data.curatorProfile }
   })
 
-  const showCuratorBanner = computed(() => {
-    const data = globalQuery.data.value
-    return !!data && !data.wasPreferred
-  })
-
   return {
     feed: globalQuery.data,
     isLoading: globalQuery.isLoading,
     isError: globalQuery.isError,
     error: globalQuery.error,
     selectedCurator,
-    showCuratorBanner,
   }
 }

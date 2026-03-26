@@ -1,25 +1,24 @@
 import { useQuery } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { hexToBzz } from '../protocol/references.js'
 import { validate } from '../protocol/objects.js'
-import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
+import { useCuratorDeclarations, resolveCuratorBoardIndex, getCuratorPref } from './useCurators.js'
 
 export function useThread(slugRef, rootSubIdRef) {
   const { data: curators } = useCuratorDeclarations()
-
-  const selectedCurator = ref(null)
-  const showCuratorBanner = ref(false)
 
   const rootSubRef = computed(() => {
     const id = rootSubIdRef.value
     return id ? hexToBzz(id) : null
   })
 
+  const curatorPrefKey = computed(() => getCuratorPref(slugRef.value) || '_auto')
+
   const threadQuery = useQuery({
-    queryKey: ['thread', slugRef, rootSubIdRef],
+    queryKey: ['thread', slugRef, rootSubIdRef, curatorPrefKey],
     queryFn: async () => {
       const slug = slugRef.value
       const rootRef = rootSubRef.value
@@ -27,7 +26,6 @@ export function useThread(slugRef, rootSubIdRef) {
 
       if (!rootRef || !curatorList.length) return null
 
-      // Load board metadata for curator selection (defaultCurator, endorsedCurators)
       let board = null
       try {
         const meta = await getLatestBoardMetadata(slug)
@@ -41,7 +39,7 @@ export function useThread(slugRef, rootSubIdRef) {
       const resolved = await resolveCuratorBoardIndex(slug, board, curatorList)
       if (!resolved) return null
 
-      const { boardIndex, curator, candidates } = resolved
+      const { boardIndex, curator } = resolved
 
       const rootEntry = boardIndex.entries.find(
         (e) => e.submissionId === rootRef || e.submissionRef === rootRef
@@ -51,7 +49,6 @@ export function useThread(slugRef, rootSubIdRef) {
       const threadIndex = await resolveFeed(rootEntry.threadIndexFeed)
       if (!threadIndex?.nodes?.length) return null
 
-      // Validate threadIndex at the trust boundary
       const { valid } = validate(threadIndex)
       if (!valid) {
         console.warn('[useThread] Invalid threadIndex, ignoring')
@@ -60,13 +57,16 @@ export function useThread(slugRef, rootSubIdRef) {
 
       const nodes = await resolveEntries(threadIndex.nodes, { refKey: 'submissionId' })
 
-      selectedCurator.value = curator
-      showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())
-
-      return { threadIndex, nodes, rootRef }
+      return { threadIndex, nodes, rootRef, curatorAddress: curator.address, curatorProfile: curator.profile }
     },
     enabled: computed(() => !!slugRef.value && !!rootSubIdRef.value && !!curators.value?.length),
     staleTime: 30_000,
+  })
+
+  const selectedCurator = computed(() => {
+    const data = threadQuery.data.value
+    if (!data) return null
+    return { address: data.curatorAddress, profile: data.curatorProfile }
   })
 
   return {
@@ -76,6 +76,5 @@ export function useThread(slugRef, rootSubIdRef) {
     error: threadQuery.error,
     rootSubRef,
     selectedCurator,
-    showCuratorBanner,
   }
 }

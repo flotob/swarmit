@@ -2,13 +2,12 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBoard } from '../composables/useBoard'
-import { truncateAddress } from '../lib/format.js'
 import PostCard from '../components/PostCard.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
-const { board, boardIndex, isLoading, isError, error, selectedCurator, showCuratorBanner } = useBoard(slug)
+const { board, boardIndex, isLoading, isError, error, selectedCurator } = useBoard(slug)
 </script>
 
 <template>
@@ -33,7 +32,7 @@ const { board, boardIndex, isLoading, isError, error, selectedCurator, showCurat
 
     <!-- Curator banner -->
     <CuratorBanner
-      v-if="showCuratorBanner && selectedCurator"
+      v-if="selectedCurator"
       :curator-name="selectedCurator.profile?.name"
       :curator-address="selectedCurator.address"
     />
@@ -64,9 +63,5 @@ const { board, boardIndex, isLoading, isError, error, selectedCurator, showCurat
       />
     </div>
 
-    <!-- Curator info -->
-    <div v-if="selectedCurator && !isLoading" class="mt-6 text-xs text-gray-600">
-      Curated by {{ selectedCurator.profile?.name || truncateAddress(selectedCurator.address) }}
-    </div>
   </div>
 </template>

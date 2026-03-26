@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThread } from '../composables/useThread'
 import { useSubmissionsStore } from '../stores/submissions'
-import { truncateAddress, threadIndent } from '../lib/format.js'
+import { threadIndent } from '../lib/format.js'
 import ReplyNode from '../components/ReplyNode.vue'
 import ReplyForm from '../components/ReplyForm.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
@@ -13,7 +13,7 @@ const route = useRoute()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
 
-const { thread, isLoading, isError, error, rootSubRef, selectedCurator, showCuratorBanner } = useThread(slug, rootSubId)
+const { thread, isLoading, isError, error, rootSubRef, selectedCurator } = useThread(slug, rootSubId)
 const submissions = useSubmissionsStore()
 
 // Inline reply state
@@ -57,7 +57,7 @@ function pendingForNode(nodeSubmissionId) {
     </router-link>
 
     <CuratorBanner
-      v-if="showCuratorBanner && selectedCurator"
+      v-if="selectedCurator"
       :curator-name="selectedCurator.profile?.name"
       :curator-address="selectedCurator.address"
     />
@@ -112,9 +112,6 @@ function pendingForNode(nodeSubmissionId) {
         </div>
       </template>
 
-      <div v-if="selectedCurator" class="mt-6 text-xs text-gray-600">
-        Curated by {{ selectedCurator.profile?.name || truncateAddress(selectedCurator.address) }}
-      </div>
     </div>
   </div>
 </template>

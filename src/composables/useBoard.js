@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
-import { useCuratorDeclarations, resolveCuratorBoardIndex } from './useCurators.js'
+import { useCuratorDeclarations, resolveCuratorBoardIndex, getCuratorPref } from './useCurators.js'
 
 function useBoardMetadata(slug) {
   return useQuery({
@@ -12,7 +12,6 @@ function useBoardMetadata(slug) {
       const meta = await getLatestBoardMetadata(slug.value)
       if (!meta?.boardRef) return null
       const board = await fetchObject(meta.boardRef)
-      // Validate board object at the trust boundary
       const { valid } = validate(board)
       if (!valid) {
         console.warn('[useBoard] Invalid board object, ignoring')
@@ -29,18 +28,16 @@ export function useBoard(slugRef) {
   const { data: board } = useBoardMetadata(slugRef)
   const { data: curators } = useCuratorDeclarations()
 
-  const selectedCurator = ref(null)
-  const showCuratorBanner = ref(false)
-
-  // Depend on selection-relevant board metadata, not just boardId
   const boardMetaKey = computed(() => {
     const b = board.value
     if (!b) return '_none'
     return `${b.boardId}:${b.defaultCurator || ''}:${(b.endorsedCurators || []).join(',')}`
   })
 
+  const curatorPrefKey = computed(() => getCuratorPref(slugRef.value) || '_auto')
+
   const boardQuery = useQuery({
-    queryKey: ['boardIndex', slugRef, boardMetaKey],
+    queryKey: ['boardIndex', slugRef, boardMetaKey, curatorPrefKey],
     queryFn: async () => {
       const slug = slugRef.value
       const boardObj = board.value
@@ -51,11 +48,8 @@ export function useBoard(slugRef) {
       const result = await resolveCuratorBoardIndex(slug, boardObj, curatorList)
       if (!result) return null
 
-      const { boardIndex, curator, candidates } = result
-      selectedCurator.value = curator
-      showCuratorBanner.value = candidates.needsPrompt || (candidates.preferred && candidates.preferred.toLowerCase() !== curator.address.toLowerCase())
+      const { boardIndex, curator } = result
 
-      // Validate boardIndex at the trust boundary
       const { valid } = validate(boardIndex)
       if (!valid) {
         console.warn('[useBoard] Invalid boardIndex, ignoring')
@@ -64,10 +58,16 @@ export function useBoard(slugRef) {
 
       const entries = await resolveEntries(boardIndex.entries)
 
-      return { ...boardIndex, entries }
+      return { ...boardIndex, entries, curatorAddress: curator.address, curatorProfile: curator.profile }
     },
     enabled: computed(() => !!slugRef.value && !!curators.value?.length),
     staleTime: 30_000,
+  })
+
+  const selectedCurator = computed(() => {
+    const data = boardQuery.data.value
+    if (!data) return null
+    return { address: data.curatorAddress, profile: data.curatorProfile }
   })
 
   return {
@@ -78,6 +78,5 @@ export function useBoard(slugRef) {
     isError: boardQuery.isError,
     error: boardQuery.error,
     selectedCurator,
-    showCuratorBanner,
   }
 }
