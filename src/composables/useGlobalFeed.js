@@ -53,7 +53,6 @@ export function useGlobalFeed() {
             entries,
             curatorAddress: addr,
             curatorProfile: profile,
-            wasPreferred: preferred?.toLowerCase() === addr.toLowerCase(),
             updatedAt: globalIndex.updatedAt,
           }
         } catch {
@@ -67,17 +66,15 @@ export function useGlobalFeed() {
     staleTime: 30_000,
   })
 
-  const selectedCurator = computed(() => {
-    const data = globalQuery.data.value
-    if (!data) return null
-    return { address: data.curatorAddress, profile: data.curatorProfile }
-  })
+  const curatorAddress = computed(() => globalQuery.data.value?.curatorAddress ?? null)
+  const curatorProfile = computed(() => globalQuery.data.value?.curatorProfile ?? null)
 
   return {
     feed: globalQuery.data,
     isLoading: globalQuery.isLoading,
     isError: globalQuery.isError,
     error: globalQuery.error,
-    selectedCurator,
+    curatorAddress,
+    curatorProfile,
   }
 }

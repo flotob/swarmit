@@ -63,11 +63,8 @@ export function useThread(slugRef, rootSubIdRef) {
     staleTime: 30_000,
   })
 
-  const selectedCurator = computed(() => {
-    const data = threadQuery.data.value
-    if (!data) return null
-    return { address: data.curatorAddress, profile: data.curatorProfile }
-  })
+  const curatorAddress = computed(() => threadQuery.data.value?.curatorAddress ?? null)
+  const curatorProfile = computed(() => threadQuery.data.value?.curatorProfile ?? null)
 
   return {
     thread: threadQuery.data,
@@ -75,6 +72,7 @@ export function useThread(slugRef, rootSubIdRef) {
     isError: threadQuery.isError,
     error: threadQuery.error,
     rootSubRef,
-    selectedCurator,
+    curatorAddress,
+    curatorProfile,
   }
 }

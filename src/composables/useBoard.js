@@ -64,11 +64,8 @@ export function useBoard(slugRef) {
     staleTime: 30_000,
   })
 
-  const selectedCurator = computed(() => {
-    const data = boardQuery.data.value
-    if (!data) return null
-    return { address: data.curatorAddress, profile: data.curatorProfile }
-  })
+  const curatorAddress = computed(() => boardQuery.data.value?.curatorAddress ?? null)
+  const curatorProfile = computed(() => boardQuery.data.value?.curatorProfile ?? null)
 
   return {
     board,
@@ -77,6 +74,7 @@ export function useBoard(slugRef) {
     isLoading: boardQuery.isLoading,
     isError: boardQuery.isError,
     error: boardQuery.error,
-    selectedCurator,
+    curatorAddress,
+    curatorProfile,
   }
 }

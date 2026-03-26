@@ -13,7 +13,7 @@ const route = useRoute()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
 
-const { thread, isLoading, isError, error, rootSubRef, selectedCurator } = useThread(slug, rootSubId)
+const { thread, isLoading, isError, error, rootSubRef, curatorAddress, curatorProfile } = useThread(slug, rootSubId)
 const submissions = useSubmissionsStore()
 
 // Inline reply state
@@ -57,9 +57,9 @@ function pendingForNode(nodeSubmissionId) {
     </router-link>
 
     <CuratorBanner
-      v-if="selectedCurator"
-      :curator-name="selectedCurator.profile?.name"
-      :curator-address="selectedCurator.address"
+      v-if="curatorAddress"
+      :curator-name="curatorProfile?.name"
+      :curator-address="curatorAddress"
     />
 
     <!-- Loading -->

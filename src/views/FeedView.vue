@@ -3,7 +3,7 @@ import { useGlobalFeed } from '../composables/useGlobalFeed'
 import PostCard from '../components/PostCard.vue'
 import CuratorBanner from '../components/CuratorBanner.vue'
 
-const { feed, isLoading, isError, error, selectedCurator } = useGlobalFeed()
+const { feed, isLoading, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
 </script>
 
 <template>
@@ -19,9 +19,9 @@ const { feed, isLoading, isError, error, selectedCurator } = useGlobalFeed()
     </div>
 
     <CuratorBanner
-      v-if="selectedCurator"
-      :curator-name="selectedCurator.profile?.name"
-      :curator-address="selectedCurator.address"
+      v-if="curatorAddress"
+      :curator-name="curatorProfile?.name"
+      :curator-address="curatorAddress"
     />
 
     <!-- Loading -->

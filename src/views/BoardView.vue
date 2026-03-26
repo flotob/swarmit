@@ -7,7 +7,7 @@ import CuratorBanner from '../components/CuratorBanner.vue'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
-const { board, boardIndex, isLoading, isError, error, selectedCurator } = useBoard(slug)
+const { board, boardIndex, isLoading, isError, error, curatorAddress, curatorProfile } = useBoard(slug)
 </script>
 
 <template>
@@ -32,9 +32,9 @@ const { board, boardIndex, isLoading, isError, error, selectedCurator } = useBoa
 
     <!-- Curator banner -->
     <CuratorBanner
-      v-if="selectedCurator"
-      :curator-name="selectedCurator.profile?.name"
-      :curator-address="selectedCurator.address"
+      v-if="curatorAddress"
+      :curator-name="curatorProfile?.name"
+      :curator-address="curatorAddress"
     />
 
     <!-- Loading -->
