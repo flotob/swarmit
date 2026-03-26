@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onUnmounted } from 'vue'
 import { useSwarm } from '../composables/useSwarm'
+import { useAuthStore } from '../stores/auth'
 import { validateImage, buildAttachmentDescriptor, ALLOWED_TYPES } from '../lib/image-upload.js'
 
 const emit = defineEmits(['uploaded', 'removed'])
@@ -10,7 +11,8 @@ defineProps({
 })
 
 const swarm = useSwarm()
-const uploads = ref([]) // { descriptor, previewUrl }
+const auth = useAuthStore()
+const uploads = ref([])
 const uploading = ref(false)
 const error = ref(null)
 
@@ -32,6 +34,8 @@ async function handleFileSelect(event) {
 
   uploading.value = true
   try {
+    if (!auth.swarmConnected) await swarm.connect()
+
     const arrayBuffer = await file.arrayBuffer()
     const data = new Uint8Array(arrayBuffer)
     const result = await swarm.publishData(data, file.type, file.name)
