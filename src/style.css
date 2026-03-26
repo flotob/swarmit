@@ -31,6 +31,9 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+  --color-link: var(--link);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -85,6 +88,13 @@
 
   /* Warning = pending, attention */
   --warning: oklch(75% 0.15 85);
+
+  /* Header = orange-tinted nav bar */
+  --header: oklch(90% 0.06 55);
+  --header-foreground: oklch(25% 0.02 55);
+
+  /* Link = classic blue for clickable titles */
+  --link: oklch(45% 0.31 264);
 
   /* Borders & inputs */
   --border: oklch(90% 0.005 60);
@@ -143,6 +153,13 @@
 
   /* Warning */
   --warning: oklch(85% 0.18 85);
+
+  /* Header */
+  --header: oklch(25% 0.04 50);
+  --header-foreground: oklch(90% 0.02 55);
+
+  /* Link */
+  --link: oklch(72% 0.15 260);
 
   /* Borders & inputs */
   --border: oklch(25% 0.015 260);

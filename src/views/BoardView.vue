@@ -55,12 +55,13 @@ const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, 
       <p class="text-sm text-muted-foreground">Be the first — submit a post to get the conversation started.</p>
     </div>
 
-    <div v-else class="space-y-2">
+    <div v-else>
       <PostCard
-        v-for="entry in boardIndex.entries"
+        v-for="(entry, i) in boardIndex.entries"
         :key="entry.submissionId"
         :entry="entry"
         :board-slug="slug"
+        :rank="i + 1"
       />
     </div>
   </div>

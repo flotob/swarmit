@@ -50,12 +50,13 @@ const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfil
     </div>
 
     <!-- Feed entries -->
-    <div v-else class="space-y-2">
+    <div v-else>
       <PostCard
-        v-for="entry in feed.entries"
+        v-for="(entry, i) in feed.entries"
         :key="entry.submissionRef"
         :entry="entry"
         :board-slug="entry.boardId"
+        :rank="i + 1"
         show-board
       />
     </div>
