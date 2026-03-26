@@ -1,46 +1,20 @@
-import { ref, watch, onMounted } from 'vue'
-
-const STORAGE_KEY = 'swarmit-color-mode'
-
-// Shared state across all component instances
-const mode = ref(load()) // 'light', 'dark', or 'system'
-
-function load() {
-  try { return localStorage.getItem(STORAGE_KEY) || 'system' }
-  catch { return 'system' }
-}
-
-function resolvedMode() {
-  if (mode.value === 'system') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-  return mode.value
-}
-
-function apply() {
-  const resolved = resolvedMode()
-  document.documentElement.classList.toggle('dark', resolved === 'dark')
-}
+import { useColorMode as _useColorMode } from '@vueuse/core'
 
 /**
  * Color mode composable.
- * Manages light/dark/system preference with localStorage persistence.
- * Call once in App.vue to initialize; use anywhere to read/write mode.
+ * Thin wrapper around VueUse's useColorMode with our defaults.
+ * Supports 'light', 'dark', or 'auto' (follows OS preference).
+ * Persisted to localStorage. Toggles .dark class on <html>.
  */
 export function useColorMode() {
-  function setMode(newMode) {
-    mode.value = newMode
-    localStorage.setItem(STORAGE_KEY, newMode)
-    apply()
-  }
-
-  // Listen for system preference changes when mode is 'system'
-  onMounted(() => {
-    apply()
-    const mql = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = () => { if (mode.value === 'system') apply() }
-    mql.addEventListener('change', onChange)
+  const { store, state } = _useColorMode({
+    storageKey: 'swarmit-color-mode',
+    initialValue: 'auto',
+    attribute: 'class',
+    modes: { light: '', dark: 'dark', auto: '' },
   })
 
-  return { mode, setMode, resolvedMode }
+  // store = user preference ('light', 'dark', 'auto')
+  // state = resolved mode ('light' or 'dark') — reactive to OS changes
+  return { preference: store, resolved: state }
 }
