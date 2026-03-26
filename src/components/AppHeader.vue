@@ -27,9 +27,9 @@ async function connectWallet() {
           swarmit
         </router-link>
         <nav class="hidden sm:flex items-center gap-4 text-sm">
-          <router-link to="/" class="text-gray-400 hover:text-gray-200">Boards</router-link>
-          <router-link to="/curators" class="text-gray-400 hover:text-gray-200">Curators</router-link>
-          <router-link to="/create-board" class="text-gray-400 hover:text-gray-200">Create Board</router-link>
+          <router-link :to="{ name: 'boards' }" class="text-gray-400 hover:text-gray-200">Boards</router-link>
+          <router-link :to="{ name: 'curators' }" class="text-gray-400 hover:text-gray-200">Curators</router-link>
+          <router-link :to="{ name: 'create-board' }" class="text-gray-400 hover:text-gray-200">Create Board</router-link>
         </nav>
       </div>
       <div class="flex items-center gap-3">

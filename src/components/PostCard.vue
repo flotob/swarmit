@@ -7,6 +7,7 @@ import { refToHex } from '../protocol/references.js'
 const props = defineProps({
   entry: Object,       // { submissionId, submissionRef, submission, content, threadIndexFeed }
   boardSlug: String,
+  showBoard: Boolean,
 })
 
 const router = useRouter()
@@ -35,6 +36,15 @@ function goToThread() {
 
     <!-- Content -->
     <template v-else>
+      <div v-if="showBoard && boardSlug" class="text-xs text-gray-500 mb-1">
+        <router-link
+          :to="{ name: 'board', params: { slug: boardSlug } }"
+          class="hover:text-orange-400"
+          @click.stop
+        >
+          r/{{ boardSlug }}
+        </router-link>
+      </div>
       <h3 class="text-base font-semibold text-gray-100 mb-1">
         {{ entry.content?.title || '(untitled)' }}
       </h3>

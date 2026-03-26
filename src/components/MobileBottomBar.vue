@@ -10,8 +10,8 @@ const submissions = useSubmissionsStore()
   <div class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-gray-900 border-t border-gray-800">
     <div class="flex items-center justify-around h-12">
       <router-link :to="{ name: 'home' }" class="text-gray-500 hover:text-gray-300 text-xs flex flex-col items-center gap-0.5">
-        <span class="text-base" aria-hidden="true">&#9776;</span>
-        <span>Boards</span>
+        <span class="text-base" aria-hidden="true">&#9679;</span>
+        <span>Feed</span>
       </router-link>
 
       <button

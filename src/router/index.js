@@ -3,7 +3,8 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
+    { path: '/', name: 'home', component: () => import('../views/FeedView.vue') },
+    { path: '/boards', name: 'boards', component: () => import('../views/HomeView.vue') },
     { path: '/r/:slug', name: 'board', component: () => import('../views/BoardView.vue') },
     { path: '/r/:slug/submit', name: 'compose-post', component: () => import('../views/ComposePostView.vue') },
     { path: '/r/:slug/comments/:rootSubId', name: 'thread', component: () => import('../views/ThreadView.vue') },
