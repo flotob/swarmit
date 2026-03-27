@@ -141,7 +141,7 @@ function share() {
         </div>
 
         <!-- Expanded content (thread view only) -->
-        <div v-if="expanded && hasExpandableContent" class="mt-3 mb-2 py-3 border-t border-border">
+        <div v-if="expanded && hasExpandableContent" class="mt-3 mb-2 p-4 rounded-md bg-secondary/50 max-w-3xl">
           <a
             v-if="entry.content.link?.url"
             :href="entry.content.link.url"

@@ -35,7 +35,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="mt-2 mb-4 p-3 rounded-md bg-secondary border border-border">
+  <div class="mt-2 mb-4 max-w-3xl">
     <form @submit.prevent="handleSubmit">
       <Textarea
         v-model="body"
