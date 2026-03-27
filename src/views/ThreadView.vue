@@ -252,17 +252,6 @@ function pendingForNode(nodeSubmissionId) {
             />
           </div>
 
-          <div
-            v-for="pending in pendingForNode(node.submissionId)"
-            :key="pending.submissionRef"
-            :style="{ marginLeft: threadIndent((node.depth || 0) + 1) }"
-          >
-            <SubmissionStatus
-              :status="pending.status"
-              :curator-count="pending.curatorPickups.length"
-              :is-refreshing="pending.status === STATUS.CURATED && isFetching"
-            />
-          </div>
         </template>
       </div>
     </div>
