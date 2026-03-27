@@ -144,7 +144,7 @@ function goToThread() {
         </a>
         <MarkdownRenderer v-if="content.body?.text" :text="content.body.text" />
         <AttachmentGallery
-          v-if="content.title && content.attachments?.length"
+          v-if="content.attachments?.length"
           :attachments="content.attachments"
           :body-text="content.body?.text || ''"
         />

@@ -126,7 +126,7 @@ function pendingForNode(nodeSubmissionId) {
           />
 
           <AttachmentGallery
-            v-if="rootNode.content.title && rootNode.content.attachments?.length"
+            v-if="rootNode.content.attachments?.length"
             :attachments="rootNode.content.attachments"
             :body-text="rootNode.content.body?.text || ''"
           />
@@ -150,8 +150,9 @@ function pendingForNode(nodeSubmissionId) {
         </div>
 
         <!-- Pending replies to root -->
+        <template v-if="rootNode">
         <div
-          v-for="pending in pendingForNode(rootNode?.submissionId)"
+          v-for="pending in pendingForNode(rootNode.submissionId)"
           :key="pending.submissionRef"
         >
           <SubmissionStatus
@@ -159,6 +160,7 @@ function pendingForNode(nodeSubmissionId) {
             :curator-count="pending.curatorPickups.length"
           />
         </div>
+        </template>
 
         <!-- Reply tree (non-root nodes only) -->
         <template v-for="node in replyNodes" :key="node.submissionId">
