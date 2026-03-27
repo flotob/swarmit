@@ -3,14 +3,17 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo, formatLinkDisplay } from '../lib/format.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
+import MarkdownRenderer from './MarkdownRenderer.vue'
+import AttachmentGallery from './AttachmentGallery.vue'
 import { Skeleton } from './ui/skeleton'
-import { ChevronUp, ChevronDown, FileText, Link as LinkIcon, Share2, MessageSquare, ExternalLink } from 'lucide-vue-next'
+import { ChevronUp, ChevronDown, FileText, Link as LinkIcon, Share2, MessageSquare, ExternalLink, Repeat2 } from 'lucide-vue-next'
 
 const props = defineProps({
   entry: Object,
   boardSlug: String,
   showBoard: Boolean,
   rank: Number,
+  expanded: Boolean,
 })
 
 const router = useRouter()
@@ -18,6 +21,9 @@ const router = useRouter()
 const authorAddress = computed(() => props.entry.content?.author?.address || props.entry.submission?.author?.address)
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
 const isLinkPost = computed(() => !!props.entry.content?.link?.url)
+const hasExpandableContent = computed(() =>
+  !!(props.entry.content?.body?.text || props.entry.content?.attachments?.length)
+)
 
 const thumbnail = computed(() => {
   const att = props.entry.content?.attachments?.find((a) => a.kind === 'image')
@@ -25,7 +31,6 @@ const thumbnail = computed(() => {
 })
 
 const threadRef = computed(() => refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef))
-
 const linkDisplay = computed(() => formatLinkDisplay(props.entry.content?.link?.url))
 
 const threadRoute = computed(() => {
@@ -33,7 +38,6 @@ const threadRoute = computed(() => {
   return { name: 'thread', params: { slug: props.boardSlug, rootSubId: threadRef.value } }
 })
 
-// For link posts, title goes to the external URL; for text posts, to the thread
 const titleHref = computed(() => {
   if (isLinkPost.value) return props.entry.content.link.url
   return null
@@ -64,7 +68,7 @@ function share() {
       </button>
     </div>
 
-    <!-- Thumbnail: link icon for link posts, file icon for text posts -->
+    <!-- Thumbnail -->
     <router-link v-if="threadRoute" :to="threadRoute" class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
       <img v-if="thumbnail" :src="thumbnail" class="w-full h-full object-cover" alt="" />
       <LinkIcon v-else-if="isLinkPost" class="w-6 h-6 text-muted-foreground/30" />
@@ -75,6 +79,7 @@ function share() {
       <FileText v-else class="w-6 h-6 text-muted-foreground/30" />
     </div>
 
+    <!-- Content -->
     <div class="flex-1 min-w-0 py-1">
       <template v-if="!entry.content && !entry.submission">
         <Skeleton class="h-4 w-3/4 mb-2" />
@@ -82,7 +87,7 @@ function share() {
       </template>
 
       <template v-else>
-        <!-- Link post title → external URL; text post title → thread -->
+        <!-- Title -->
         <a
           v-if="titleHref"
           :href="titleHref"
@@ -99,6 +104,7 @@ function share() {
           {{ entry.content?.title || '(untitled)' }}
         </span>
 
+        <!-- Domain / self indicator -->
         <a
           v-if="entry.content?.link?.url"
           :href="entry.content.link.url"
@@ -117,6 +123,7 @@ function share() {
           (self.{{ boardSlug }})
         </router-link>
 
+        <!-- Meta line -->
         <div class="text-xs text-muted-foreground mt-0.5">
           submitted {{ createdAt ? timeAgo(createdAt) : '' }}
           <template v-if="authorAddress">
@@ -133,6 +140,32 @@ function share() {
           </template>
         </div>
 
+        <!-- Expanded content (thread view only) -->
+        <div v-if="expanded && hasExpandableContent" class="mt-3 mb-2 py-3 border-t border-border">
+          <a
+            v-if="entry.content.link?.url"
+            :href="entry.content.link.url"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center gap-1 text-sm text-link hover:underline mb-2"
+          >
+            {{ entry.content.link.url }}
+            <ExternalLink class="w-3.5 h-3.5" />
+          </a>
+
+          <MarkdownRenderer
+            v-if="entry.content.body?.text"
+            :text="entry.content.body.text"
+          />
+
+          <AttachmentGallery
+            v-if="entry.content.attachments?.length"
+            :attachments="entry.content.attachments"
+            :body-text="entry.content.body?.text || ''"
+          />
+        </div>
+
+        <!-- Action line -->
         <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
           <router-link v-if="threadRoute" :to="threadRoute" class="hover:underline flex items-center gap-1">
             <MessageSquare class="w-3 h-3" />
@@ -141,6 +174,10 @@ function share() {
           <button @click="share" class="hover:underline flex items-center gap-1">
             <Share2 class="w-3 h-3" />
             share
+          </button>
+          <button class="hover:underline flex items-center gap-1 cursor-not-allowed text-muted-foreground/50" title="Crosspost coming soon">
+            <Repeat2 class="w-3 h-3" />
+            crosspost
           </button>
         </div>
       </template>
