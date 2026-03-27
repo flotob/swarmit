@@ -50,7 +50,7 @@ function onImageRemoved(descriptor) {
 
 const canSubmit = computed(() => {
   if (!title.value.trim()) return false
-  if (postType.value === 'text') return !!body.value.trim()
+  if (postType.value === 'text') return !!body.value.trim() || attachments.value.length > 0
   if (postType.value === 'link') return !!linkUrl.value.trim()
   return false
 })
