@@ -175,7 +175,7 @@ function share() {
             <Share2 class="w-3 h-3" />
             share
           </button>
-          <button class="hover:underline flex items-center gap-1 cursor-not-allowed text-muted-foreground/50" title="Crosspost coming soon">
+          <button disabled class="flex items-center gap-1 cursor-not-allowed text-muted-foreground/50" title="Crosspost coming soon">
             <Repeat2 class="w-3 h-3" />
             crosspost
           </button>

@@ -9,6 +9,7 @@ const props = defineProps({
   boardSlug: String,
   parentSubmissionId: String,
   rootSubmissionId: String,
+  showCancel: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['published', 'cancel'])
@@ -52,6 +53,7 @@ async function handleSubmit() {
           {{ isPublishing ? 'Replying...' : result ? 'Replied' : 'Reply' }}
         </Button>
         <Button
+          v-if="showCancel"
           type="button"
           variant="ghost"
           size="sm"

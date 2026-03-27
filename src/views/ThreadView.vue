@@ -110,8 +110,8 @@ function pendingForNode(nodeSubmissionId) {
             :board-slug="slug"
             :parent-submission-id="rootNode.submissionId"
             :root-submission-id="rootSubRef"
+            :show-cancel="false"
             @published="onReplyPublished"
-            @cancel="cancelReply"
           />
         </div>
 
