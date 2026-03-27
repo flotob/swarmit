@@ -2,13 +2,12 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePublish } from '../composables/usePublish'
-import StatusBar from '../components/StatusBar.vue'
+import PublishProgress from '../components/PublishProgress.vue'
 import ImageUpload from '../components/ImageUpload.vue'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs'
-import { Alert, AlertDescription } from '../components/ui/alert'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,27 +150,11 @@ async function handleSubmit() {
       </Button>
     </form>
 
-    <div v-if="steps.length" class="mt-6">
-      <StatusBar :steps="steps" />
-    </div>
-
-    <Alert v-if="result" class="mt-4 border-success/30">
-      <AlertDescription>
-        <template v-if="result.announced">
-          Post published and announced on-chain.
-        </template>
-        <template v-else>
-          Post published to Swarm (not announced on-chain yet).
-        </template>
-        <div class="mt-2 font-mono text-xs text-muted-foreground break-all">
-          Post: {{ result.contentRef }}<br />
-          Submission: {{ result.submissionRef }}
-        </div>
-      </AlertDescription>
-    </Alert>
-
-    <Alert v-if="error && !result" variant="destructive" class="mt-4">
-      <AlertDescription>{{ error }}</AlertDescription>
-    </Alert>
+    <PublishProgress
+      :steps="steps"
+      :result="result"
+      :error="error"
+      :board-slug="slug"
+    />
   </div>
 </template>

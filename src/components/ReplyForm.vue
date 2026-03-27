@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { usePublish } from '../composables/usePublish'
-import StatusBar from './StatusBar.vue'
+import PublishProgress from './PublishProgress.vue'
 import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 
@@ -65,14 +65,11 @@ async function handleSubmit() {
       </div>
     </form>
 
-    <StatusBar v-if="steps.length" :steps="steps" class="mt-3" />
-
-    <p v-if="result" class="mt-2 text-xs text-success">
-      Reply published — pending curator indexing
-    </p>
-
-    <p v-if="error && !result" class="mt-2 text-xs text-destructive">
-      {{ error }}
-    </p>
+    <PublishProgress
+      :steps="steps"
+      :result="result"
+      :error="error"
+      :board-slug="boardSlug"
+    />
   </div>
 </template>
