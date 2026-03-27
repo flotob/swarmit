@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { Skeleton } from './ui/skeleton'
-import { ChevronUp, ChevronDown, FileText, Share2, MessageSquare, ExternalLink } from 'lucide-vue-next'
+import { ChevronUp, ChevronDown, FileText, Link as LinkIcon, Share2, MessageSquare, ExternalLink } from 'lucide-vue-next'
 
 const props = defineProps({
   entry: Object,
@@ -17,6 +17,7 @@ const router = useRouter()
 
 const authorAddress = computed(() => props.entry.content?.author?.address || props.entry.submission?.author?.address)
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
+const isLinkPost = computed(() => !!props.entry.content?.link?.url)
 
 const thumbnail = computed(() => {
   const att = props.entry.content?.attachments?.find((a) => a.kind === 'image')
@@ -25,15 +26,36 @@ const thumbnail = computed(() => {
 
 const threadRef = computed(() => refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef))
 
-const linkHostname = computed(() => {
+const linkDisplay = computed(() => {
   const url = props.entry.content?.link?.url
   if (!url) return null
-  try { return new URL(url).hostname } catch { return url }
+  try {
+    const parsed = new URL(url)
+    // For http/https with www, show just the hostname without www
+    if (/^https?:$/.test(parsed.protocol)) {
+      return parsed.hostname.replace(/^www\./, '')
+    }
+    // For bzz/ipfs/etc, show scheme + truncated path
+    const scheme = parsed.protocol.replace(':', '')
+    const path = url.slice(parsed.protocol.length + 2) // after ://
+    if (path.length > 20) {
+      return `${scheme}://${path.slice(0, 8)}...${path.slice(-6)}`
+    }
+    return `${scheme}://${path}`
+  } catch {
+    return url.length > 30 ? url.slice(0, 15) + '...' + url.slice(-10) : url
+  }
 })
 
 const threadRoute = computed(() => {
   if (!threadRef.value) return null
   return { name: 'thread', params: { slug: props.boardSlug, rootSubId: threadRef.value } }
+})
+
+// For link posts, title goes to the external URL; for text posts, to the thread
+const titleHref = computed(() => {
+  if (isLinkPost.value) return props.entry.content.link.url
+  return null
 })
 
 function share() {
@@ -47,12 +69,10 @@ function share() {
 
 <template>
   <div class="flex items-start gap-0 py-2 hover:bg-accent/30 transition-colors">
-    <!-- Rank (vertically centered via items-center on parent) -->
     <div v-if="rank" class="w-8 shrink-0 text-right pr-1 pt-2 text-sm text-muted-foreground font-medium">
       {{ rank }}
     </div>
 
-    <!-- Vote placeholder -->
     <div class="w-10 shrink-0 flex flex-col items-center gap-0">
       <button class="text-muted-foreground/30 cursor-not-allowed p-0.5" title="Voting coming soon">
         <ChevronUp class="w-5 h-5" />
@@ -63,16 +83,17 @@ function share() {
       </button>
     </div>
 
-    <!-- Thumbnail -->
+    <!-- Thumbnail: link icon for link posts, file icon for text posts -->
     <router-link v-if="threadRoute" :to="threadRoute" class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
       <img v-if="thumbnail" :src="thumbnail" class="w-full h-full object-cover" alt="" />
+      <LinkIcon v-else-if="isLinkPost" class="w-6 h-6 text-muted-foreground/30" />
       <FileText v-else class="w-6 h-6 text-muted-foreground/30" />
     </router-link>
     <div v-else class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
-      <FileText class="w-6 h-6 text-muted-foreground/30" />
+      <LinkIcon v-if="isLinkPost" class="w-6 h-6 text-muted-foreground/30" />
+      <FileText v-else class="w-6 h-6 text-muted-foreground/30" />
     </div>
 
-    <!-- Content -->
     <div class="flex-1 min-w-0 py-1">
       <template v-if="!entry.content && !entry.submission">
         <Skeleton class="h-4 w-3/4 mb-2" />
@@ -80,12 +101,24 @@ function share() {
       </template>
 
       <template v-else>
-        <router-link v-if="threadRoute" :to="threadRoute" class="text-link hover:underline font-medium leading-snug">
+        <!-- Link post title → external URL; text post title → thread -->
+        <a
+          v-if="titleHref"
+          :href="titleHref"
+          target="_blank"
+          rel="noopener"
+          class="text-link hover:underline font-medium leading-snug"
+        >
+          {{ entry.content?.title || '(untitled)' }}
+        </a>
+        <router-link v-else-if="threadRoute" :to="threadRoute" class="text-link hover:underline font-medium leading-snug">
           {{ entry.content?.title || '(untitled)' }}
         </router-link>
         <span v-else class="text-link font-medium leading-snug">
           {{ entry.content?.title || '(untitled)' }}
         </span>
+
+        <!-- Link domain/scheme display -->
         <a
           v-if="entry.content?.link?.url"
           :href="entry.content.link.url"
@@ -93,7 +126,7 @@ function share() {
           rel="noopener"
           class="inline-flex items-center gap-0.5 ml-1.5 text-xs text-muted-foreground hover:text-link"
         >
-          ({{ linkHostname }})
+          ({{ linkDisplay }})
           <ExternalLink class="w-3 h-3" />
         </a>
 
@@ -116,7 +149,7 @@ function share() {
         <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
           <router-link v-if="threadRoute" :to="threadRoute" class="hover:underline flex items-center gap-1">
             <MessageSquare class="w-3 h-3" />
-            discuss
+            {{ isLinkPost ? 'comments' : 'discuss' }}
           </router-link>
           <button @click="share" class="hover:underline flex items-center gap-1">
             <Share2 class="w-3 h-3" />

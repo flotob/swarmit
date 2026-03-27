@@ -7,9 +7,14 @@ const props = defineProps({
 
 defineEmits(['close'])
 
-watch(() => props.open, (val) => {
-  document.body.style.overflow = val ? 'hidden' : ''
-})
+const mql = window.matchMedia('(max-width: 1023px)')
+
+function updateBodyScroll(drawerOpen) {
+  // Only lock body scroll on mobile — desktop sidebar doesn't need it
+  document.body.style.overflow = drawerOpen && mql.matches ? 'hidden' : ''
+}
+
+watch(() => props.open, updateBodyScroll)
 
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
