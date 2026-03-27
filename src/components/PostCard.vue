@@ -92,7 +92,6 @@ function share() {
           target="_blank"
           rel="noopener"
           class="inline-flex items-center gap-0.5 ml-1.5 text-xs text-muted-foreground hover:text-link"
-          @click.stop
         >
           ({{ linkHostname }})
           <ExternalLink class="w-3 h-3" />

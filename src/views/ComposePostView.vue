@@ -59,12 +59,15 @@ const canSubmit = computed(() => {
 async function handleSubmit() {
   if (!canSubmit.value) return
 
+  const tab = activeTab.value
   const trimmedTitle = title.value.trim()
   const trimmedBody = body.value.trim() || undefined
-  const link = activeTab.value === 'link' && linkUrl.value.trim()
+  const link = tab === 'link' && linkUrl.value.trim()
     ? { url: linkUrl.value.trim() }
     : undefined
-  const atts = attachments.value.length > 0 ? attachments.value : undefined
+  const atts = tab === 'image' && attachments.value.length > 0
+    ? attachments.value
+    : undefined
 
   try {
     await publishPost({
