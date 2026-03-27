@@ -9,14 +9,15 @@ defineEmits(['close'])
 
 const mql = window.matchMedia('(max-width: 1023px)')
 
-function updateBodyScroll(drawerOpen) {
-  // Only lock body scroll on mobile — desktop sidebar doesn't need it
-  document.body.style.overflow = drawerOpen && mql.matches ? 'hidden' : ''
+function updateBodyScroll() {
+  document.body.style.overflow = props.open && mql.matches ? 'hidden' : ''
 }
 
 watch(() => props.open, updateBodyScroll)
+mql.addEventListener('change', updateBodyScroll)
 
 onBeforeUnmount(() => {
+  mql.removeEventListener('change', updateBodyScroll)
   document.body.style.overflow = ''
 })
 </script>

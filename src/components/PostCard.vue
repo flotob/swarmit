@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { truncateAddress, timeAgo } from '../lib/format.js'
+import { truncateAddress, timeAgo, formatLinkDisplay } from '../lib/format.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { Skeleton } from './ui/skeleton'
 import { ChevronUp, ChevronDown, FileText, Link as LinkIcon, Share2, MessageSquare, ExternalLink } from 'lucide-vue-next'
@@ -26,26 +26,7 @@ const thumbnail = computed(() => {
 
 const threadRef = computed(() => refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef))
 
-const linkDisplay = computed(() => {
-  const url = props.entry.content?.link?.url
-  if (!url) return null
-  try {
-    const parsed = new URL(url)
-    // For http/https with www, show just the hostname without www
-    if (/^https?:$/.test(parsed.protocol)) {
-      return parsed.hostname.replace(/^www\./, '')
-    }
-    // For bzz/ipfs/etc, show scheme + truncated path
-    const scheme = parsed.protocol.replace(':', '')
-    const path = url.slice(parsed.protocol.length + 2) // after ://
-    if (path.length > 20) {
-      return `${scheme}://${path.slice(0, 8)}...${path.slice(-6)}`
-    }
-    return `${scheme}://${path}`
-  } catch {
-    return url.length > 30 ? url.slice(0, 15) + '...' + url.slice(-10) : url
-  }
-})
+const linkDisplay = computed(() => formatLinkDisplay(props.entry.content?.link?.url))
 
 const threadRoute = computed(() => {
   if (!threadRef.value) return null
