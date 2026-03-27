@@ -1,10 +1,11 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useThread } from '../composables/useThread'
 import { useBoardMetadata } from '../composables/useBoard'
 import { useSubmissionsStore } from '../stores/submissions'
+import { STATUS } from '../lib/submission-status.js'
 import { threadIndent } from '../lib/format.js'
 import PostCard from '../components/PostCard.vue'
 import ReplyNode from '../components/ReplyNode.vue'
@@ -30,9 +31,38 @@ const rootNode = computed(() =>
   thread.value?.nodes?.find((n) => n.parentSubmissionId === null) || null
 )
 
-const replyNodes = computed(() =>
-  thread.value?.nodes?.filter((n) => n.parentSubmissionId !== null) || []
-)
+// Re-order flat chronological nodes into depth-first tree traversal order
+const replyNodes = computed(() => {
+  const nodes = thread.value?.nodes?.filter((n) => n.parentSubmissionId !== null) || []
+  if (!nodes.length) return []
+
+  // Build children map: parentId → [children in original order]
+  const childrenOf = new Map()
+  for (const node of nodes) {
+    const pid = node.parentSubmissionId
+    if (!childrenOf.has(pid)) childrenOf.set(pid, [])
+    childrenOf.get(pid).push(node)
+  }
+
+  // Depth-first traversal starting from root's children
+  const rootId = rootNode.value?.submissionId
+  if (!rootId) return nodes
+
+  const ordered = []
+  const stack = [...(childrenOf.get(rootId) || [])].reverse()
+  while (stack.length) {
+    const node = stack.pop()
+    ordered.push(node)
+    const children = childrenOf.get(node.submissionId)
+    if (children) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        stack.push(children[i])
+      }
+    }
+  }
+
+  return ordered
+})
 
 const rootEntry = computed(() => {
   if (!rootNode.value) return null
@@ -53,17 +83,27 @@ const pendingReplies = computed(() => {
   return tracked.filter((t) => !curatorNodeRefs.has(t.submissionRef))
 })
 
+// Watch for any pending reply in this thread transitioning to CURATED
+// This works for both top-level and inline replies, even after the
+// ReplyForm is unmounted
+const curatedCount = computed(() =>
+  submissions.pendingForThread(rootSubRef.value)
+    .filter((i) => i.status === STATUS.CURATED || i.status === STATUS.SETTLED)
+    .length
+)
+
+watch(curatedCount, (newCount, oldCount) => {
+  if (newCount > oldCount) {
+    queryClient.invalidateQueries({ queryKey: ['thread', slug, rootSubId] })
+  }
+})
+
 function handleReply(node) { replyingTo.value = node }
 function cancelReply() { replyingTo.value = null }
 function onReplyPublished() { replyingTo.value = null }
 
 function pendingForNode(nodeSubmissionId) {
   return pendingReplies.value.filter((p) => p.parentSubmissionId === nodeSubmissionId)
-}
-
-function onReplyCurated() {
-  // Invalidate thread query to refetch — the curator's tree now includes the reply
-  queryClient.invalidateQueries({ queryKey: ['thread', slug, rootSubId] })
 }
 </script>
 
@@ -110,7 +150,6 @@ function onReplyCurated() {
             :root-submission-id="rootSubRef"
             :show-cancel="false"
             @published="onReplyPublished"
-            @curated="onReplyCurated"
           />
         </div>
 
@@ -127,7 +166,7 @@ function onReplyCurated() {
           </div>
         </template>
 
-        <!-- Reply tree -->
+        <!-- Reply tree (depth-first ordered) -->
         <template v-for="node in replyNodes" :key="node.submissionId">
           <ReplyNode
             :node="node"
@@ -141,7 +180,6 @@ function onReplyCurated() {
               :root-submission-id="rootSubRef"
               @published="onReplyPublished"
               @cancel="cancelReply"
-              @curated="onReplyCurated"
             />
           </div>
 

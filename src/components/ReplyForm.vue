@@ -12,7 +12,7 @@ const props = defineProps({
   showCancel: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['published', 'cancel', 'curated'])
+const emit = defineEmits(['published', 'cancel'])
 
 const body = ref('')
 const { publishReply, steps, isPublishing, result, error } = usePublish()
@@ -71,7 +71,6 @@ async function handleSubmit() {
       :result="result"
       :error="error"
       :board-slug="boardSlug"
-      @curated="$emit('curated')"
     />
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useSubmissionsStore } from '../stores/submissions'
 import { STATUS } from '../lib/submission-status.js'
 import { Check, Loader2, AlertCircle } from 'lucide-vue-next'
@@ -10,8 +10,6 @@ const props = defineProps({
   error: String,
   boardSlug: String,
 })
-
-const emit = defineEmits(['curated'])
 
 const submissions = useSubmissionsStore()
 
@@ -70,10 +68,6 @@ const curatorName = computed(() =>
   trackedSubmission.value?.curatorPickups?.[0]?.curatorName || null
 )
 
-// Emit 'curated' when curator picks up the submission
-watch(isCurated, (val) => {
-  if (val) emit('curated')
-})
 </script>
 
 <template>
