@@ -1,9 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useSubmissionsStore } from '../stores/submissions'
 import { refToHex } from '../protocol/references.js'
 import { STATUS } from '../lib/submission-status.js'
-import { Check, Loader2, AlertCircle } from 'lucide-vue-next'
+import { Check, Loader2, AlertCircle, RefreshCw } from 'lucide-vue-next'
 
 const props = defineProps({
   steps: Array,
@@ -11,6 +11,8 @@ const props = defineProps({
   error: String,
   boardSlug: String,
 })
+
+const emit = defineEmits(['curated'])
 
 const submissions = useSubmissionsStore()
 
@@ -49,11 +51,9 @@ const hasFailed = computed(() => !!failedStep.value)
 const statusLabel = computed(() => {
   if (hasFailed.value) return failedStep.value.detail || 'Something went wrong'
   if (activeStep.value) return STEP_LABELS[activeStep.value.name] || activeStep.value.name
-  if (isComplete.value) return null
   return null
 })
 
-// Watch submissions store for curator pickup after publish
 const trackedSubmission = computed(() => {
   if (!props.result?.submissionRef) return null
   return submissions.items.find((i) => i.submissionRef === props.result.submissionRef)
@@ -71,16 +71,9 @@ const curatorName = computed(() =>
   trackedSubmission.value?.curatorPickups?.[0]?.curatorName || null
 )
 
-const threadRoute = computed(() => {
-  if (!props.result?.submissionRef || !props.boardSlug) return null
-  const hex = refToHex(props.result.submissionRef)
-  if (!hex) return null
-  const rootRef = trackedSubmission.value?.kind === 'post'
-    ? props.result.submissionRef
-    : trackedSubmission.value?.rootSubmissionId
-  const rootHex = refToHex(rootRef)
-  if (!rootHex) return null
-  return { name: 'thread', params: { slug: props.boardSlug, rootSubId: rootHex } }
+// Emit 'curated' when curator picks up the submission
+watch(isCurated, (val) => {
+  if (val) emit('curated')
 })
 </script>
 
@@ -90,7 +83,7 @@ const threadRoute = computed(() => {
     <div class="w-full h-2 bg-secondary rounded-full overflow-hidden">
       <div
         class="h-full rounded-full transition-all duration-500"
-        :class="hasFailed ? 'bg-destructive' : 'bg-primary'"
+        :class="hasFailed ? 'bg-destructive' : isCurated ? 'bg-success' : 'bg-primary'"
         :style="{ width: `${progressPercent}%` }"
       />
     </div>
@@ -113,18 +106,10 @@ const threadRoute = computed(() => {
       Published! Waiting for curators to pick this up...
     </div>
 
-    <!-- Curated -->
+    <!-- Curated — refreshing thread -->
     <div v-else-if="isComplete && isCurated" class="mt-2 flex items-center gap-2 text-sm text-success">
-      <Check class="w-4 h-4" />
-      <span>
-        Picked up{{ curatorName ? ` by ${curatorName}` : '' }}
-        <template v-if="threadRoute">
-          —
-          <router-link :to="threadRoute" class="underline hover:text-foreground">
-            view in thread
-          </router-link>
-        </template>
-      </span>
+      <RefreshCw class="w-4 h-4 animate-spin" />
+      Picked up{{ curatorName ? ` by ${curatorName}` : '' }} — refreshing thread...
     </div>
 
     <!-- Published but not announced (no curator polling) -->

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useThread } from '../composables/useThread'
 import { useBoardMetadata } from '../composables/useBoard'
 import { useSubmissionsStore } from '../stores/submissions'
@@ -15,6 +16,7 @@ import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
 
 const route = useRoute()
+const queryClient = useQueryClient()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
 
@@ -58,6 +60,11 @@ function onReplyPublished() { replyingTo.value = null }
 function pendingForNode(nodeSubmissionId) {
   return pendingReplies.value.filter((p) => p.parentSubmissionId === nodeSubmissionId)
 }
+
+function onReplyCurated() {
+  // Invalidate thread query to refetch — the curator's tree now includes the reply
+  queryClient.invalidateQueries({ queryKey: ['thread', slug, rootSubId] })
+}
 </script>
 
 <template>
@@ -78,7 +85,6 @@ function pendingForNode(nodeSubmissionId) {
       </div>
 
       <div v-else>
-        <!-- Root post (expanded — shows body/link/attachments inside the card) -->
         <PostCard
           v-if="rootEntry"
           :entry="rootEntry"
@@ -87,7 +93,6 @@ function pendingForNode(nodeSubmissionId) {
           expanded
         />
 
-        <!-- Curator bar (about the curation of comments) -->
         <CuratorBar
           v-if="curatorAddress"
           :curator-name="curatorProfile?.name"
@@ -97,7 +102,7 @@ function pendingForNode(nodeSubmissionId) {
           class="mt-3"
         />
 
-        <!-- Top-level reply form (always visible) -->
+        <!-- Top-level reply form -->
         <div v-if="rootNode" class="mt-3 mb-4">
           <ReplyForm
             :board-slug="slug"
@@ -105,6 +110,7 @@ function pendingForNode(nodeSubmissionId) {
             :root-submission-id="rootSubRef"
             :show-cancel="false"
             @published="onReplyPublished"
+            @curated="onReplyCurated"
           />
         </div>
 
@@ -135,6 +141,7 @@ function pendingForNode(nodeSubmissionId) {
               :root-submission-id="rootSubRef"
               @published="onReplyPublished"
               @cancel="cancelReply"
+              @curated="onReplyCurated"
             />
           </div>
 
