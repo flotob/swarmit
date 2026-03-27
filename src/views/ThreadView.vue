@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useThread } from '../composables/useThread'
@@ -21,22 +21,26 @@ const queryClient = useQueryClient()
 const slug = computed(() => route.params.slug)
 const rootSubId = computed(() => route.params.rootSubId)
 
-const { thread, curators, isLoading, isError, error, rootSubRef, curatorAddress, curatorProfile } = useThread(slug, rootSubId)
+const { thread, curators, isLoading, isFetching, isError, error, rootSubRef, curatorAddress, curatorProfile } = useThread(slug, rootSubId)
 const { data: board } = useBoardMetadata(slug)
 const submissions = useSubmissionsStore()
 
 const replyingTo = ref(null)
 
+// Set of submissionIds currently visible in the curator's tree
+const visibleNodeRefs = computed(() =>
+  new Set((thread.value?.nodes || []).map((n) => n.submissionId))
+)
+
 const rootNode = computed(() =>
   thread.value?.nodes?.find((n) => n.parentSubmissionId === null) || null
 )
 
-// Re-order flat chronological nodes into depth-first tree traversal order
+// Depth-first tree ordering of reply nodes
 const replyNodes = computed(() => {
   const nodes = thread.value?.nodes?.filter((n) => n.parentSubmissionId !== null) || []
   if (!nodes.length) return []
 
-  // Build children map: parentId → [children in original order]
   const childrenOf = new Map()
   for (const node of nodes) {
     const pid = node.parentSubmissionId
@@ -44,7 +48,6 @@ const replyNodes = computed(() => {
     childrenOf.get(pid).push(node)
   }
 
-  // Depth-first traversal starting from root's children
   const rootId = rootNode.value?.submissionId
   if (!rootId) return nodes
 
@@ -63,7 +66,6 @@ const replyNodes = computed(() => {
     }
   }
 
-  // Append orphan nodes whose parent wasn't in the tree (partial curator indexing)
   for (const node of nodes) {
     if (!visited.has(node.submissionId)) ordered.push(node)
   }
@@ -84,15 +86,50 @@ const rootEntry = computed(() => {
 const pendingReplies = computed(() => {
   if (!rootSubRef.value) return []
   const tracked = submissions.pendingForThread(rootSubRef.value)
-  const curatorNodeRefs = new Set(
-    (thread.value?.nodes || []).map((n) => n.submissionId)
-  )
-  return tracked.filter((t) => !curatorNodeRefs.has(t.submissionRef))
+  return tracked.filter((t) => !visibleNodeRefs.value.has(t.submissionRef))
 })
 
-// Watch for any pending reply in this thread transitioning to CURATED
-// This works for both top-level and inline replies, even after the
-// ReplyForm is unmounted
+// Track which submission just resolved from pending → visible, for scroll+highlight
+const previousPendingRefs = ref(new Set())
+
+watch(pendingReplies, (current, previous) => {
+  if (!previous) return
+  const currentRefs = new Set(current.map((p) => p.submissionRef))
+  const prevRefs = new Set(previous.map((p) => p.submissionRef))
+
+  // Find submissions that just left the pending list (now in curator tree)
+  for (const ref of prevRefs) {
+    if (!currentRefs.has(ref) && visibleNodeRefs.value.has(ref)) {
+      scrollToAndHighlight(ref)
+    }
+  }
+})
+
+function scrollToAndHighlight(submissionId) {
+  nextTick(() => {
+    const el = document.querySelector(`[data-submission-id="${submissionId}"]`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('bg-primary/10')
+      setTimeout(() => el.classList.remove('bg-primary/10'), 3000)
+    }
+  })
+}
+
+// Hide top-level PublishProgress once the reply appears in the curator tree
+const topLevelReplyVisible = computed(() => {
+  if (!topLevelResult.value?.submissionRef) return false
+  return visibleNodeRefs.value.has(topLevelResult.value.submissionRef)
+})
+
+// Track the top-level form's publish result
+const topLevelResult = ref(null)
+
+function onTopLevelPublished(result) {
+  topLevelResult.value = result
+}
+
+// Auto-refetch when curator picks up any reply in this thread
 const curatedCount = computed(() =>
   submissions.pendingForThread(rootSubRef.value)
     .filter((i) => i.status === STATUS.CURATED)
@@ -156,7 +193,8 @@ function pendingForNode(nodeSubmissionId) {
             :parent-submission-id="rootNode.submissionId"
             :root-submission-id="rootSubRef"
             :show-cancel="false"
-            @published="onReplyPublished"
+            :hide-progress="topLevelReplyVisible"
+            @published="onTopLevelPublished"
           />
         </div>
 
@@ -169,6 +207,7 @@ function pendingForNode(nodeSubmissionId) {
             <SubmissionStatus
               :status="pending.status"
               :curator-count="pending.curatorPickups.length"
+              :is-refreshing="pending.status === STATUS.CURATED && isFetching"
             />
           </div>
         </template>
@@ -198,6 +237,7 @@ function pendingForNode(nodeSubmissionId) {
             <SubmissionStatus
               :status="pending.status"
               :curator-count="pending.curatorPickups.length"
+              :is-refreshing="pending.status === STATUS.CURATED && isFetching"
             />
           </div>
         </template>

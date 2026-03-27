@@ -13,8 +13,9 @@ defineEmits(['reply'])
 
 <template>
   <div
+    :data-submission-id="node.submissionId"
     :style="{ marginLeft: threadIndent(node.depth) }"
-    class="py-3 border-b border-border"
+    class="py-3 border-b border-border transition-colors duration-1000"
   >
     <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
       <router-link

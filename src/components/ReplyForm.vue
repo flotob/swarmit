@@ -10,6 +10,7 @@ const props = defineProps({
   parentSubmissionId: String,
   rootSubmissionId: String,
   showCancel: { type: Boolean, default: true },
+  hideProgress: Boolean,
 })
 
 const emit = defineEmits(['published', 'cancel'])
@@ -67,6 +68,7 @@ async function handleSubmit() {
     </form>
 
     <PublishProgress
+      v-if="!hideProgress"
       :steps="steps"
       :result="result"
       :error="error"

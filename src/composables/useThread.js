@@ -70,6 +70,7 @@ export function useThread(slugRef, rootSubIdRef) {
     thread: threadQuery.data,
     curators,
     isLoading: threadQuery.isLoading,
+    isFetching: threadQuery.isFetching,
     isError: threadQuery.isError,
     error: threadQuery.error,
     rootSubRef,
