@@ -1,9 +1,8 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useSubmissionsStore } from '../stores/submissions'
-import { refToHex } from '../protocol/references.js'
 import { STATUS } from '../lib/submission-status.js'
-import { Check, Loader2, AlertCircle, RefreshCw } from 'lucide-vue-next'
+import { Check, Loader2, AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps({
   steps: Array,
@@ -106,10 +105,10 @@ watch(isCurated, (val) => {
       Published! Waiting for curators to pick this up...
     </div>
 
-    <!-- Curated — refreshing thread -->
+    <!-- Curated -->
     <div v-else-if="isComplete && isCurated" class="mt-2 flex items-center gap-2 text-sm text-success">
-      <RefreshCw class="w-4 h-4 animate-spin" />
-      Picked up{{ curatorName ? ` by ${curatorName}` : '' }} — refreshing thread...
+      <Check class="w-4 h-4" />
+      Picked up{{ curatorName ? ` by ${curatorName}` : '' }}
     </div>
 
     <!-- Published but not announced (no curator polling) -->

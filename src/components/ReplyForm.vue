@@ -49,7 +49,7 @@ async function handleSubmit() {
         <Button
           type="submit"
           size="sm"
-          :disabled="isPublishing || !body.trim()"
+          :disabled="isPublishing || !body.value.trim()"
         >
           {{ isPublishing ? 'Replying...' : result ? 'Replied' : 'Reply' }}
         </Button>
