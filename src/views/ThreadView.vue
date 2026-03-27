@@ -49,16 +49,23 @@ const replyNodes = computed(() => {
   if (!rootId) return nodes
 
   const ordered = []
+  const visited = new Set()
   const stack = [...(childrenOf.get(rootId) || [])].reverse()
   while (stack.length) {
     const node = stack.pop()
     ordered.push(node)
+    visited.add(node.submissionId)
     const children = childrenOf.get(node.submissionId)
     if (children) {
       for (let i = children.length - 1; i >= 0; i--) {
         stack.push(children[i])
       }
     }
+  }
+
+  // Append orphan nodes whose parent wasn't in the tree (partial curator indexing)
+  for (const node of nodes) {
+    if (!visited.has(node.submissionId)) ordered.push(node)
   }
 
   return ordered
@@ -88,7 +95,7 @@ const pendingReplies = computed(() => {
 // ReplyForm is unmounted
 const curatedCount = computed(() =>
   submissions.pendingForThread(rootSubRef.value)
-    .filter((i) => i.status === STATUS.CURATED || i.status === STATUS.SETTLED)
+    .filter((i) => i.status === STATUS.CURATED)
     .length
 )
 
