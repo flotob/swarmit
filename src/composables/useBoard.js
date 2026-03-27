@@ -5,7 +5,7 @@ import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex, getCuratorPref } from './useCurators.js'
 
-function useBoardMetadata(slug) {
+export function useBoardMetadata(slug) {
   return useQuery({
     queryKey: ['boardMeta', slug],
     queryFn: async () => {
