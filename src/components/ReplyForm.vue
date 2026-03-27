@@ -35,7 +35,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="mt-2 mb-4 max-w-3xl">
+  <div class="mt-2 mb-4 max-w-xl">
     <form @submit.prevent="handleSubmit">
       <Textarea
         v-model="body"
