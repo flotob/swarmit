@@ -8,6 +8,7 @@ import { refToHex } from '../protocol/references.js'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS, STATUS_PANEL_COLORS } from '../lib/submission-status.js'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
+import { ExternalLink } from 'lucide-vue-next'
 import AttachmentGallery from '../components/AttachmentGallery.vue'
 import { Button } from '../components/ui/button'
 import { Skeleton } from '../components/ui/skeleton'
@@ -131,6 +132,16 @@ function goToThread() {
 
       <div v-else-if="content" class="mb-6">
         <h2 v-if="content.title" class="text-xl font-bold text-foreground mb-3">{{ content.title }}</h2>
+        <a
+          v-if="content.link?.url"
+          :href="content.link.url"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1 text-sm text-link hover:underline mb-2"
+        >
+          {{ content.link.url }}
+          <ExternalLink class="w-3.5 h-3.5" />
+        </a>
         <MarkdownRenderer v-if="content.body?.text" :text="content.body.text" />
         <AttachmentGallery
           v-if="content.title && content.attachments?.length"

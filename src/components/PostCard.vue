@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { Skeleton } from './ui/skeleton'
-import { ChevronUp, ChevronDown, FileText, Share2, MessageSquare } from 'lucide-vue-next'
+import { ChevronUp, ChevronDown, FileText, Share2, MessageSquare, ExternalLink } from 'lucide-vue-next'
 
 const props = defineProps({
   entry: Object,
@@ -24,6 +24,12 @@ const thumbnail = computed(() => {
 })
 
 const threadRef = computed(() => refToHex(props.entry.submissionId) || refToHex(props.entry.submissionRef))
+
+const linkHostname = computed(() => {
+  const url = props.entry.content?.link?.url
+  if (!url) return null
+  try { return new URL(url).hostname } catch { return url }
+})
 
 const threadRoute = computed(() => {
   if (!threadRef.value) return null
@@ -80,6 +86,17 @@ function share() {
         <span v-else class="text-link font-medium leading-snug">
           {{ entry.content?.title || '(untitled)' }}
         </span>
+        <a
+          v-if="entry.content?.link?.url"
+          :href="entry.content.link.url"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-0.5 ml-1.5 text-xs text-muted-foreground hover:text-link"
+          @click.stop
+        >
+          ({{ linkHostname }})
+          <ExternalLink class="w-3 h-3" />
+        </a>
 
         <div class="text-xs text-muted-foreground mt-0.5">
           submitted {{ createdAt ? timeAgo(createdAt) : '' }}

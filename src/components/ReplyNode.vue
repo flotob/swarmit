@@ -3,7 +3,7 @@ import { truncateAddress, timeAgo, threadIndent } from '../lib/format.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import AttachmentGallery from './AttachmentGallery.vue'
 import { Button } from './ui/button'
-import { MessageSquare } from 'lucide-vue-next'
+import { MessageSquare, ExternalLink } from 'lucide-vue-next'
 
 defineProps({
   node: Object,
@@ -34,6 +34,18 @@ defineEmits(['reply'])
     <h2 v-if="isRoot && node.content?.title" class="text-xl font-bold text-foreground mb-2">
       {{ node.content.title }}
     </h2>
+
+    <!-- Link post: show external URL -->
+    <a
+      v-if="node.content?.link?.url"
+      :href="node.content.link.url"
+      target="_blank"
+      rel="noopener"
+      class="inline-flex items-center gap-1 text-sm text-link hover:underline mb-2"
+    >
+      {{ node.content.link.url }}
+      <ExternalLink class="w-3.5 h-3.5" />
+    </a>
 
     <MarkdownRenderer
       v-if="node.content?.body?.text"
