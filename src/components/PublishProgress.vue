@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { refToHex } from '../protocol/references.js'
 import { STATUS } from '../lib/submission-status.js'
@@ -13,7 +12,6 @@ const props = defineProps({
   boardSlug: String,
 })
 
-const router = useRouter()
 const submissions = useSubmissionsStore()
 
 const STEP_LABELS = {
