@@ -224,7 +224,27 @@ describe('validation catches errors', () => {
     expect(errors.some(e => e.includes('at least one of'))).toBe(true)
   })
 
-  it('rejects link post with invalid URL', () => {
+  it('validates bzz:// link post', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Swarm link',
+      link: { url: `bzz://${'a'.repeat(64)}` },
+    })
+    const { valid } = validate(post)
+    expect(valid).toBe(true)
+  })
+
+  it('validates ipfs:// link post', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'IPFS link',
+      link: { url: 'ipfs://QmSomeHash' },
+    })
+    const { valid } = validate(post)
+    expect(valid).toBe(true)
+  })
+
+  it('rejects link post with unsupported scheme', () => {
     const post = buildPost({
       author: AUTHOR,
       title: 'Bad link',
@@ -232,7 +252,7 @@ describe('validation catches errors', () => {
     })
     const { valid, errors } = validate(post)
     expect(valid).toBe(false)
-    expect(errors.some(e => e.includes('http'))).toBe(true)
+    expect(errors.some(e => e.includes('supported scheme'))).toBe(true)
   })
 
   it('rejects link post with missing URL', () => {
