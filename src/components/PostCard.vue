@@ -99,7 +99,6 @@ function share() {
           {{ entry.content?.title || '(untitled)' }}
         </span>
 
-        <!-- Link domain/scheme display -->
         <a
           v-if="entry.content?.link?.url"
           :href="entry.content.link.url"
@@ -110,6 +109,13 @@ function share() {
           ({{ linkDisplay }})
           <ExternalLink class="w-3 h-3" />
         </a>
+        <router-link
+          v-else-if="threadRoute && boardSlug"
+          :to="threadRoute"
+          class="ml-1.5 text-xs text-muted-foreground hover:text-link"
+        >
+          (self.{{ boardSlug }})
+        </router-link>
 
         <div class="text-xs text-muted-foreground mt-0.5">
           submitted {{ createdAt ? timeAgo(createdAt) : '' }}
