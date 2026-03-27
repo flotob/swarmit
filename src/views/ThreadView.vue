@@ -89,9 +89,6 @@ const pendingReplies = computed(() => {
   return tracked.filter((t) => !visibleNodeRefs.value.has(t.submissionRef))
 })
 
-// Track which submission just resolved from pending → visible, for scroll+highlight
-const previousPendingRefs = ref(new Set())
-
 watch(pendingReplies, (current, previous) => {
   if (!previous) return
   const currentRefs = new Set(current.map((p) => p.submissionRef))
@@ -110,8 +107,8 @@ function scrollToAndHighlight(submissionId) {
     const el = document.querySelector(`[data-submission-id="${submissionId}"]`)
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      el.classList.add('bg-primary/10')
-      setTimeout(() => el.classList.remove('bg-primary/10'), 3000)
+      el.classList.add('reply-highlight')
+      setTimeout(() => el.classList.remove('reply-highlight'), 3000)
     }
   })
 }
@@ -255,3 +252,10 @@ function pendingForNode(nodeSubmissionId) {
     </div>
   </div>
 </template>
+
+<style>
+.reply-highlight {
+  background-color: var(--primary) !important;
+  background-color: color-mix(in oklch, var(--primary) 10%, transparent) !important;
+}
+</style>
