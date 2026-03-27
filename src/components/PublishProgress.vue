@@ -9,6 +9,7 @@ const props = defineProps({
   result: Object,
   error: String,
   boardSlug: String,
+  isFetching: Boolean,
 })
 
 const submissions = useSubmissionsStore()
@@ -101,8 +102,9 @@ const curatorName = computed(() =>
 
     <!-- Curated -->
     <div v-else-if="isComplete && isCurated" class="mt-2 flex items-center gap-2 text-sm text-success">
-      <Check class="w-4 h-4" />
-      Picked up{{ curatorName ? ` by ${curatorName}` : '' }}
+      <Loader2 v-if="isFetching" class="w-4 h-4 animate-spin" />
+      <Check v-else class="w-4 h-4" />
+      Picked up{{ curatorName ? ` by ${curatorName}` : '' }}{{ isFetching ? '. Refreshing thread...' : '' }}
     </div>
 
     <!-- Published but not announced (no curator polling) -->

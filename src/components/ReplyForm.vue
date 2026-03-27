@@ -11,15 +11,17 @@ const props = defineProps({
   rootSubmissionId: String,
   showCancel: { type: Boolean, default: true },
   hideProgress: Boolean,
+  isFetching: Boolean,
 })
 
-const emit = defineEmits(['published', 'cancel'])
+const emit = defineEmits(['published', 'cancel', 'submitting'])
 
 const body = ref('')
 const { publishReply, steps, isPublishing, result, error } = usePublish()
 
 async function handleSubmit() {
   if (!body.value.trim()) return
+  emit('submitting')
 
   try {
     await publishReply({
@@ -73,6 +75,7 @@ async function handleSubmit() {
       :result="result"
       :error="error"
       :board-slug="boardSlug"
+      :is-fetching="isFetching"
     />
   </div>
 </template>

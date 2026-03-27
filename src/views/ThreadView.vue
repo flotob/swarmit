@@ -191,6 +191,8 @@ function pendingForNode(nodeSubmissionId) {
             :root-submission-id="rootSubRef"
             :show-cancel="false"
             :hide-progress="topLevelReplyVisible"
+            :is-fetching="isFetching"
+            @submitting="topLevelResult = null"
             @published="onTopLevelPublished"
           />
         </div>
