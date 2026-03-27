@@ -13,7 +13,6 @@ import BoardSidebar from '../components/BoardSidebar.vue'
 import SubmissionStatus from '../components/SubmissionStatus.vue'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
-import { Button } from '../components/ui/button'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
@@ -64,12 +63,6 @@ function pendingForNode(nodeSubmissionId) {
 <template>
   <div class="lg:grid lg:grid-cols-[1fr_18rem] lg:gap-6">
     <div>
-      <Button variant="ghost" size="sm" as-child class="mb-4">
-        <router-link :to="{ name: 'board', params: { slug } }">
-          &larr; r/{{ slug }}
-        </router-link>
-      </Button>
-
       <div v-if="isLoading" class="space-y-3 mt-4">
         <Skeleton class="h-32 rounded-lg" />
         <Skeleton v-for="i in 3" :key="i" class="h-16 rounded-lg" />
