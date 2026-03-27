@@ -158,7 +158,10 @@ watch(curatedCount, (newCount, oldCount) => {
   }
 })
 
-function handleReply(node) { replyingTo.value = node }
+function handleReply(node) {
+  inlineResult.value = null
+  replyingTo.value = node
+}
 function cancelReply() { replyingTo.value = null }
 
 function pendingForNode(nodeSubmissionId) {
