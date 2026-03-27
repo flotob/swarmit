@@ -7,14 +7,14 @@ import ImageUpload from '../components/ImageUpload.vue'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Alert, AlertDescription } from '../components/ui/alert'
 
 const route = useRoute()
 const router = useRouter()
 const slug = computed(() => route.params.slug)
 
-const activeTab = ref('text')
+const postType = ref('text')
 const title = ref('')
 const body = ref('')
 const linkUrl = ref('')
@@ -50,29 +50,25 @@ function onImageRemoved(descriptor) {
 
 const canSubmit = computed(() => {
   if (!title.value.trim()) return false
-  if (activeTab.value === 'text') return !!body.value.trim()
-  if (activeTab.value === 'link') return !!linkUrl.value.trim()
-  if (activeTab.value === 'image') return attachments.value.length > 0
+  if (postType.value === 'text') return !!body.value.trim()
+  if (postType.value === 'link') return !!linkUrl.value.trim()
   return false
 })
 
 async function handleSubmit() {
   if (!canSubmit.value) return
 
-  const tab = activeTab.value
-  const trimmedTitle = title.value.trim()
+  const isLink = postType.value === 'link'
   const trimmedBody = body.value.trim() || undefined
-  const link = tab === 'link' && linkUrl.value.trim()
+  const link = isLink && linkUrl.value.trim()
     ? { url: linkUrl.value.trim() }
     : undefined
-  const atts = tab === 'image' && attachments.value.length > 0
-    ? attachments.value
-    : undefined
+  const atts = attachments.value.length > 0 ? attachments.value : undefined
 
   try {
     await publishPost({
       boardSlug: slug.value,
-      title: trimmedTitle,
+      title: title.value.trim(),
       bodyText: trimmedBody,
       link,
       attachments: atts,
@@ -91,9 +87,18 @@ async function handleSubmit() {
       </router-link>
     </Button>
 
-    <h1 class="text-2xl font-bold text-foreground mb-6">Submit to r/{{ slug }}</h1>
+    <h1 class="text-2xl font-bold text-foreground mb-4">Submit to r/{{ slug }}</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
+      <!-- Post type selection -->
+      <Tabs v-model="postType" class="w-full">
+        <TabsList>
+          <TabsTrigger value="text">Text</TabsTrigger>
+          <TabsTrigger value="link">Link</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <!-- Title (always) -->
       <div>
         <label class="block text-sm text-muted-foreground mb-1">Title</label>
         <Input
@@ -105,67 +110,38 @@ async function handleSubmit() {
         />
       </div>
 
-      <Tabs v-model="activeTab" class="w-full">
-        <TabsList>
-          <TabsTrigger value="text">Text</TabsTrigger>
-          <TabsTrigger value="link">Link</TabsTrigger>
-          <TabsTrigger value="image">Image/Video</TabsTrigger>
-        </TabsList>
+      <!-- URL (link posts only) -->
+      <div v-if="postType === 'link'">
+        <label class="block text-sm text-muted-foreground mb-1">URL</label>
+        <Input
+          v-model="linkUrl"
+          type="url"
+          placeholder="https://... or bzz://..."
+          :disabled="isPublishing"
+        />
+      </div>
 
-        <TabsContent value="text" class="space-y-4 mt-4">
-          <div>
-            <label class="block text-sm text-muted-foreground mb-1">Body (markdown)</label>
-            <Textarea
-              ref="bodyEl"
-              v-model="body"
-              placeholder="Write your post..."
-              rows="8"
-              :disabled="isPublishing"
-              class="resize-y text-sm"
-            />
-          </div>
-        </TabsContent>
+      <!-- Image upload (both types) -->
+      <ImageUpload
+        :disabled="isPublishing"
+        @uploaded="onImageUploaded"
+        @removed="onImageRemoved"
+      />
 
-        <TabsContent value="link" class="space-y-4 mt-4">
-          <div>
-            <label class="block text-sm text-muted-foreground mb-1">URL</label>
-            <Input
-              v-model="linkUrl"
-              type="url"
-              placeholder="https://..."
-              :disabled="isPublishing"
-            />
-          </div>
-          <div>
-            <label class="block text-sm text-muted-foreground mb-1">Commentary (optional)</label>
-            <Textarea
-              v-model="body"
-              placeholder="Add your thoughts..."
-              rows="4"
-              :disabled="isPublishing"
-              class="resize-y text-sm"
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="image" class="space-y-4 mt-4">
-          <ImageUpload
-            :disabled="isPublishing"
-            @uploaded="onImageUploaded"
-            @removed="onImageRemoved"
-          />
-          <div>
-            <label class="block text-sm text-muted-foreground mb-1">Caption (optional)</label>
-            <Textarea
-              v-model="body"
-              placeholder="Add a caption..."
-              rows="3"
-              :disabled="isPublishing"
-              class="resize-y text-sm"
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <!-- Body text -->
+      <div>
+        <label class="block text-sm text-muted-foreground mb-1">
+          {{ postType === 'link' ? 'Text (optional)' : 'Text' }}
+        </label>
+        <Textarea
+          ref="bodyEl"
+          v-model="body"
+          :placeholder="postType === 'link' ? 'Add your thoughts...' : 'Write your post...'"
+          :rows="postType === 'link' ? 4 : 8"
+          :disabled="isPublishing"
+          class="resize-y text-sm"
+        />
+      </div>
 
       <Button
         type="submit"
