@@ -12,7 +12,6 @@ import ReplyNode from '../components/ReplyNode.vue'
 import ReplyForm from '../components/ReplyForm.vue'
 import CuratorBar from '../components/CuratorBar.vue'
 import BoardSidebar from '../components/BoardSidebar.vue'
-import SubmissionStatus from '../components/SubmissionStatus.vue'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
 
@@ -164,9 +163,6 @@ function handleReply(node) {
 }
 function cancelReply() { replyingTo.value = null }
 
-function pendingForNode(nodeSubmissionId) {
-  return pendingReplies.value.filter((p) => p.parentSubmissionId === nodeSubmissionId)
-}
 </script>
 
 <template>
@@ -217,20 +213,6 @@ function pendingForNode(nodeSubmissionId) {
             @published="onTopLevelPublished"
           />
         </div>
-
-        <!-- Pending replies to root -->
-        <template v-if="rootNode">
-          <div
-            v-for="pending in pendingForNode(rootNode.submissionId)"
-            :key="pending.submissionRef"
-          >
-            <SubmissionStatus
-              :status="pending.status"
-              :curator-count="pending.curatorPickups.length"
-              :is-refreshing="pending.status === STATUS.CURATED && isFetching"
-            />
-          </div>
-        </template>
 
         <!-- Reply tree (depth-first ordered) -->
         <template v-for="node in replyNodes" :key="node.submissionId">
