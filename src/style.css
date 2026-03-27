@@ -96,7 +96,7 @@
   --header-foreground: oklch(25% 0.02 55);
 
   /* Board bar = top strip above header */
-  --board-bar: oklch(94% 0.03 50);
+  --board-bar: #FBF4EF;
   --header-border: oklch(70.5% 0.213 47.604);
 
   /* Link = classic blue for clickable titles */
