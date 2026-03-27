@@ -165,4 +165,101 @@ describe('validation catches errors', () => {
     const { valid } = validate(post)
     expect(valid).toBe(true)
   })
+
+  // Link post tests
+  it('validates link-only post', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Link post',
+      link: { url: 'https://example.com/article' },
+    })
+    const { valid, errors } = validate(post)
+    expect(errors).toEqual([])
+    expect(valid).toBe(true)
+    expect(post.body).toBeUndefined()
+  })
+
+  it('validates link+body post', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Link with commentary',
+      link: { url: 'https://example.com' },
+      body: { kind: 'markdown', text: 'My thoughts on this' },
+    })
+    const { valid } = validate(post)
+    expect(valid).toBe(true)
+  })
+
+  it('validates link post with preview hints', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'With preview',
+      link: {
+        url: 'https://example.com',
+        title: 'Example',
+        description: 'A description',
+        siteName: 'Example.com',
+        thumbnailRef: VALID_REF,
+      },
+    })
+    const { valid } = validate(post)
+    expect(valid).toBe(true)
+  })
+
+  it('validates attachment-only post (no body)', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Media only',
+      attachments: [{ reference: VALID_REF, contentType: 'image/png', kind: 'image' }],
+    })
+    const { valid } = validate(post)
+    expect(valid).toBe(true)
+    expect(post.body).toBeUndefined()
+  })
+
+  it('rejects post with none of body/link/attachments', () => {
+    const post = buildPost({ author: AUTHOR, title: 'Empty post' })
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('at least one of'))).toBe(true)
+  })
+
+  it('rejects link post with invalid URL', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Bad link',
+      link: { url: 'ftp://example.com' },
+    })
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('http'))).toBe(true)
+  })
+
+  it('rejects link post with missing URL', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'No URL',
+      link: { title: 'Something' },
+    })
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('link.url'))).toBe(true)
+  })
+
+  it('rejects link post with invalid thumbnailRef', () => {
+    const post = buildPost({
+      author: AUTHOR,
+      title: 'Bad thumbnail',
+      link: { url: 'https://example.com', thumbnailRef: 'not-a-ref' },
+    })
+    const { valid, errors } = validate(post)
+    expect(valid).toBe(false)
+    expect(errors.some(e => e.includes('thumbnailRef'))).toBe(true)
+  })
+
+  it('reply without body is still invalid', () => {
+    const reply = { protocol: 'freedom-board/reply/v1', author: AUTHOR, createdAt: Date.now() }
+    const { valid } = validate(reply)
+    expect(valid).toBe(false)
+  })
 })
