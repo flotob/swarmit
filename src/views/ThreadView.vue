@@ -113,17 +113,36 @@ function scrollToAndHighlight(submissionId) {
   })
 }
 
-// Hide top-level PublishProgress once the reply appears in the curator tree
+// Track publish results for top-level and inline forms
+const topLevelResult = ref(null)
+const inlineResult = ref(null)
+
+// Hide PublishProgress once the reply appears in the curator tree
 const topLevelReplyVisible = computed(() => {
   if (!topLevelResult.value?.submissionRef) return false
   return visibleNodeRefs.value.has(topLevelResult.value.submissionRef)
 })
 
-// Track the top-level form's publish result
-const topLevelResult = ref(null)
+const inlineReplyVisible = computed(() => {
+  if (!inlineResult.value?.submissionRef) return false
+  return visibleNodeRefs.value.has(inlineResult.value.submissionRef)
+})
+
+// When inline reply resolves into the tree, unmount the form
+watch(inlineReplyVisible, (visible) => {
+  if (visible) {
+    replyingTo.value = null
+    inlineResult.value = null
+  }
+})
 
 function onTopLevelPublished(result) {
   topLevelResult.value = result
+}
+
+function onInlinePublished(result) {
+  inlineResult.value = result
+  // Don't set replyingTo = null — keep form mounted for progress display
 }
 
 // Auto-refetch when curator picks up any reply in this thread
@@ -141,7 +160,6 @@ watch(curatedCount, (newCount, oldCount) => {
 
 function handleReply(node) { replyingTo.value = node }
 function cancelReply() { replyingTo.value = null }
-function onReplyPublished() { replyingTo.value = null }
 
 function pendingForNode(nodeSubmissionId) {
   return pendingReplies.value.filter((p) => p.parentSubmissionId === nodeSubmissionId)
@@ -223,7 +241,10 @@ function pendingForNode(nodeSubmissionId) {
               :board-slug="slug"
               :parent-submission-id="node.submissionId"
               :root-submission-id="rootSubRef"
-              @published="onReplyPublished"
+              :hide-progress="inlineReplyVisible"
+              :is-fetching="isFetching"
+              @submitting="inlineResult = null"
+              @published="onInlinePublished"
               @cancel="cancelReply"
             />
           </div>
