@@ -87,18 +87,32 @@ onUnmounted(() => {
     <BoardBar />
     <AppHeader />
 
-    <div class="flex-1 flex">
-      <main class="flex-1 min-w-0 px-4 py-4 pb-16 lg:pb-4">
+    <div class="flex-1">
+      <main class="px-4 py-4 pb-16 lg:pb-4">
         <router-view />
       </main>
-
-      <aside
-        v-if="ui.sidebarOpen"
-        class="hidden lg:block w-72 shrink-0 border-l border-border bg-card sticky top-[4.75rem] h-[calc(100vh-4.75rem)] overflow-y-auto p-4"
-      >
-        <ActivityPanel />
-      </aside>
     </div>
+
+    <Teleport to="body">
+      <Transition name="backdrop-fade">
+        <div
+          v-if="ui.sidebarOpen"
+          class="hidden lg:block fixed inset-0 z-40 bg-black/20"
+          @click="ui.closeSidebar()"
+        />
+      </Transition>
+
+      <Transition name="panel-slide">
+        <aside
+          v-if="ui.sidebarOpen"
+          class="hidden lg:flex fixed z-50 right-4 top-1/2 -translate-y-1/2 w-80 h-[80vh] flex-col rounded-xl border border-border bg-card shadow-xl overflow-hidden"
+        >
+          <div class="flex-1 overflow-y-auto p-4">
+            <ActivityPanel />
+          </div>
+        </aside>
+      </Transition>
+    </Teleport>
 
     <footer class="px-4 py-8 text-center text-sm text-muted-foreground">
       Swarmit — decentralized message board on Swarm + Gnosis Chain
@@ -111,3 +125,24 @@ onUnmounted(() => {
     </MobileDrawer>
   </div>
 </template>
+
+<style>
+.backdrop-fade-enter-active,
+.backdrop-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.backdrop-fade-enter-from,
+.backdrop-fade-leave-to {
+  opacity: 0;
+}
+
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.panel-slide-enter-from,
+.panel-slide-leave-to {
+  transform: translateX(2rem);
+  opacity: 0;
+}
+</style>
