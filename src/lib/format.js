@@ -18,12 +18,8 @@ export function timeAgo(timestamp) {
   return `${days}d ago`;
 }
 
-const MAX_THREAD_DEPTH = 6;
-const PX_PER_DEPTH = 24;
-
-export function threadIndent(depth) {
-  return `${Math.min(depth || 0, MAX_THREAD_DEPTH) * PX_PER_DEPTH}px`;
-}
+export const MAX_THREAD_DEPTH = 6;
+export const PX_PER_DEPTH = 24;
 
 export function formatLinkDisplay(url) {
   if (!url) return null;

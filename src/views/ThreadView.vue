@@ -1,12 +1,12 @@
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, reactive, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useThread } from '../composables/useThread'
 import { useBoardMetadata } from '../composables/useBoard'
 import { useSubmissionsStore } from '../stores/submissions'
 import { STATUS } from '../lib/submission-status.js'
-import { threadIndent } from '../lib/format.js'
+import { PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
 import PostCard from '../components/PostCard.vue'
 import ReplyNode from '../components/ReplyNode.vue'
 import ReplyForm from '../components/ReplyForm.vue'
@@ -26,7 +26,6 @@ const submissions = useSubmissionsStore()
 
 const replyingTo = ref(null)
 
-// Set of submissionIds currently visible in the curator's tree
 const visibleNodeRefs = computed(() =>
   new Set((thread.value?.nodes || []).map((n) => n.submissionId))
 )
@@ -35,7 +34,6 @@ const rootNode = computed(() =>
   thread.value?.nodes?.find((n) => n.parentSubmissionId === null) || null
 )
 
-// Depth-first tree ordering of reply nodes
 const replyNodes = computed(() => {
   const nodes = thread.value?.nodes?.filter((n) => n.parentSubmissionId !== null) || []
   if (!nodes.length) return []
@@ -72,6 +70,49 @@ const replyNodes = computed(() => {
   return ordered
 })
 
+const collapsedNodes = reactive(new Set())
+
+const visibleReplyNodes = computed(() => {
+  const result = []
+  let skipUntilDepth = Infinity
+
+  for (const node of replyNodes.value) {
+    if (node.depth > skipUntilDepth) continue
+    skipUntilDepth = Infinity
+
+    result.push(node)
+
+    if (collapsedNodes.has(node.submissionId)) {
+      skipUntilDepth = node.depth
+    }
+  }
+
+  return result
+})
+
+const childrenCounts = computed(() => {
+  const counts = new Map()
+  const nodes = replyNodes.value
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    let count = 0
+    for (let j = i + 1; j < nodes.length && nodes[j].depth > nodes[i].depth;) {
+      const childCount = counts.get(nodes[j].submissionId) || 0
+      count += 1 + childCount
+      j += 1 + childCount
+    }
+    counts.set(nodes[i].submissionId, count)
+  }
+  return counts
+})
+
+function toggleCollapse(submissionId) {
+  if (collapsedNodes.has(submissionId)) {
+    collapsedNodes.delete(submissionId)
+  } else {
+    collapsedNodes.add(submissionId)
+  }
+}
+
 const rootEntry = computed(() => {
   if (!rootNode.value) return null
   return {
@@ -93,7 +134,6 @@ watch(pendingReplies, (current, previous) => {
   const currentRefs = new Set(current.map((p) => p.submissionRef))
   const prevRefs = new Set(previous.map((p) => p.submissionRef))
 
-  // Find submissions that just left the pending list (now in curator tree)
   for (const ref of prevRefs) {
     if (!currentRefs.has(ref) && visibleNodeRefs.value.has(ref)) {
       scrollToAndHighlight(ref)
@@ -112,11 +152,9 @@ function scrollToAndHighlight(submissionId) {
   })
 }
 
-// Track publish results for top-level and inline forms
 const topLevelResult = ref(null)
 const inlineResult = ref(null)
 
-// Hide PublishProgress once the reply appears in the curator tree
 const topLevelReplyVisible = computed(() => {
   if (!topLevelResult.value?.submissionRef) return false
   return visibleNodeRefs.value.has(topLevelResult.value.submissionRef)
@@ -127,7 +165,6 @@ const inlineReplyVisible = computed(() => {
   return visibleNodeRefs.value.has(inlineResult.value.submissionRef)
 })
 
-// When inline reply resolves into the tree, unmount the form
 watch(inlineReplyVisible, (visible) => {
   if (visible) {
     replyingTo.value = null
@@ -200,7 +237,6 @@ function cancelReply() { replyingTo.value = null }
           class="mt-3"
         />
 
-        <!-- Top-level reply form -->
         <div v-if="rootNode" class="mt-3 mb-4">
           <ReplyForm
             :board-slug="slug"
@@ -214,26 +250,40 @@ function cancelReply() { replyingTo.value = null }
           />
         </div>
 
-        <!-- Reply tree (depth-first ordered) -->
-        <template v-for="node in replyNodes" :key="node.submissionId">
+        <template v-for="node in visibleReplyNodes" :key="node.submissionId">
           <ReplyNode
             :node="node"
+            :collapsed="collapsedNodes.has(node.submissionId)"
+            :child-count="childrenCounts.get(node.submissionId) || 0"
             @reply="handleReply"
+            @toggle-collapse="toggleCollapse"
           />
 
-          <div v-if="replyingTo?.submissionId === node.submissionId" :style="{ marginLeft: threadIndent((node.depth || 0) + 1) }">
-            <ReplyForm
-              :board-slug="slug"
-              :parent-submission-id="node.submissionId"
-              :root-submission-id="rootSubRef"
-              :hide-progress="inlineReplyVisible"
-              :is-fetching="isFetching"
-              @submitting="inlineResult = null"
-              @published="onInlinePublished"
-              @cancel="cancelReply"
-            />
+          <div
+            v-if="replyingTo?.submissionId === node.submissionId && !collapsedNodes.has(node.submissionId)"
+            class="flex"
+          >
+            <div
+              v-for="d in Math.min(node.depth || 0, MAX_THREAD_DEPTH)"
+              :key="d"
+              class="shrink-0 relative"
+              :style="{ width: PX_PER_DEPTH + 'px' }"
+            >
+              <div class="absolute left-3 top-0 bottom-0 w-px bg-border" />
+            </div>
+            <div class="flex-1 min-w-0 pl-7">
+              <ReplyForm
+                :board-slug="slug"
+                :parent-submission-id="node.submissionId"
+                :root-submission-id="rootSubRef"
+                :hide-progress="inlineReplyVisible"
+                :is-fetching="isFetching"
+                @submitting="inlineResult = null"
+                @published="onInlinePublished"
+                @cancel="cancelReply"
+              />
+            </div>
           </div>
-
         </template>
       </div>
     </div>
