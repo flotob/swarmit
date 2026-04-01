@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { truncateAddress, timeAgo, formatLinkDisplay } from '../lib/format.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
+import { useVotes } from '../composables/useVotes.js'
+import { useAuthStore } from '../stores/auth'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import AttachmentGallery from './AttachmentGallery.vue'
 import { Skeleton } from './ui/skeleton'
@@ -17,6 +19,10 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const auth = useAuthStore()
+
+const voteRef = computed(() => props.entry.submissionId || props.entry.submissionRef)
+const { score, myVote, isVoting, upvote, downvote } = useVotes(voteRef)
 
 const authorAddress = computed(() => props.entry.content?.author?.address || props.entry.submission?.author?.address)
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
@@ -59,11 +65,23 @@ function share() {
     </div>
 
     <div class="w-10 shrink-0 flex flex-col items-center gap-0">
-      <button class="text-muted-foreground/30 cursor-not-allowed p-0.5" title="Voting coming soon">
+      <button
+        class="p-0.5 transition-colors"
+        :class="myVote === 1 ? 'text-primary' : 'text-muted-foreground/30 hover:text-primary/60'"
+        :disabled="isVoting || !auth.walletConnected"
+        @click="upvote"
+      >
         <ChevronUp class="w-5 h-5" />
       </button>
-      <span class="text-xs text-muted-foreground/40 font-medium">&mdash;</span>
-      <button class="text-muted-foreground/30 cursor-not-allowed p-0.5" title="Voting coming soon">
+      <span class="text-xs font-medium" :class="myVote === 1 ? 'text-primary' : myVote === -1 ? 'text-destructive' : 'text-muted-foreground/40'">
+        {{ score }}
+      </span>
+      <button
+        class="p-0.5 transition-colors"
+        :class="myVote === -1 ? 'text-destructive' : 'text-muted-foreground/30 hover:text-destructive/60'"
+        :disabled="isVoting || !auth.walletConnected"
+        @click="downvote"
+      >
         <ChevronDown class="w-5 h-5" />
       </button>
     </div>

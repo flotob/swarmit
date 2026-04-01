@@ -5,8 +5,8 @@
  */
 
 import { getLogs } from '../lib/rpc.js';
-import { CONTRACT_ADDRESS, CONTRACT_DEPLOY_BLOCK, TOPICS, iface, isZeroBytes32, assertContractConfigured } from './contract.js';
-import { slugToBoardId, bytes32ToRef } from '../protocol/references.js';
+import { CONTRACT_ADDRESS, CONTRACT_DEPLOY_BLOCK, TOPICS, iface, isZeroBytes32, assertContractConfigured, contractRead } from './contract.js';
+import { slugToBoardId, bytes32ToRef, refToBytes32 } from '../protocol/references.js';
 
 /**
  * Decode a raw log using the contract ABI.
@@ -148,10 +148,10 @@ export async function getSubmissionsForBoard(slug, opts = {}) {
     const parsed = decodeLog(log);
     return {
       boardId: parsed.args.boardId,
-      submissionId: bytes32ToRef(parsed.args.submissionId),
-      submissionRef: parsed.args.submissionRef,
+      submissionRef: bytes32ToRef(parsed.args.submissionId),
+      submissionIdBytes32: parsed.args.submissionId,
       parentSubmissionId: submissionBytes32ToRef(parsed.args.parentSubmissionId),
-      rootSubmissionId: submissionBytes32ToRef(parsed.args.rootSubmissionId),  // equals submissionId for top-level posts
+      rootSubmissionId: submissionBytes32ToRef(parsed.args.rootSubmissionId),
       author: parsed.args.author,
       blockNumber: log.blockNumber,
     };
@@ -183,4 +183,33 @@ export async function getCuratorDeclarations(opts = {}) {
       blockNumber: log.blockNumber,
     };
   });
+}
+
+// ============================================
+// Vote reads (direct contract calls, no wallet)
+// ============================================
+
+/**
+ * Get vote totals for a submission.
+ * @param {string} submissionRef - bzz:// ref or hex string
+ * @returns {Promise<{ upvotes: number, downvotes: number }>}
+ */
+export async function getVoteTotals(submissionRef) {
+  const submissionId = refToBytes32(submissionRef);
+  const [[upvotes], [downvotes]] = await Promise.all([
+    contractRead('upvoteCount', [submissionId]),
+    contractRead('downvoteCount', [submissionId]),
+  ]);
+  return { upvotes: Number(upvotes), downvotes: Number(downvotes) };
+}
+
+/**
+ * Get a specific voter's current vote for a submission.
+ * @param {string} submissionRef - bzz:// ref or hex string
+ * @param {string} voterAddress - Ethereum address
+ * @returns {Promise<number>} -1, 0, or 1
+ */
+export async function getUserVote(submissionRef, voterAddress) {
+  const [direction] = await contractRead('voteOf', [refToBytes32(submissionRef), voterAddress]);
+  return Number(direction);
 }

@@ -60,7 +60,22 @@ export async function announceSubmission({ boardSlug, submissionRef, parentSubmi
   const parentBytes32 = parentSubmissionId ? refToBytes32(parentSubmissionId) : BYTES32_ZERO;
   const rootBytes32 = rootSubmissionId ? refToBytes32(rootSubmissionId) : submissionId;
 
-  return send('announceSubmission', [boardId, submissionId, submissionRef, parentBytes32, rootBytes32]);
+  return send('announceSubmission', [boardId, submissionId, parentBytes32, rootBytes32]);
+}
+
+/**
+ * Set, flip, or clear a vote on a submission.
+ * @param {Object} params
+ * @param {string} params.submissionRef - bzz:// reference or hex string identifying the submission
+ * @param {number} params.direction - 1 (upvote), -1 (downvote), or 0 (clear)
+ * @returns {Promise<string>} Transaction hash
+ */
+export async function setVote({ submissionRef, direction }) {
+  if (direction !== 1 && direction !== 0 && direction !== -1) {
+    throw new Error('direction must be 1, 0, or -1');
+  }
+  const submissionId = refToBytes32(submissionRef);
+  return send('setVote', [submissionId, direction]);
 }
 
 /**

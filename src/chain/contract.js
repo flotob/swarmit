@@ -4,6 +4,7 @@
 
 import { Interface } from 'ethers';
 import { CONTRACT_ADDRESS, CONTRACT_DEPLOY_BLOCK } from '../config.js';
+import { ethCall } from '../lib/rpc.js';
 
 export { CONTRACT_ADDRESS, CONTRACT_DEPLOY_BLOCK };
 
@@ -12,14 +13,21 @@ const ABI = [
   // Events
   'event BoardRegistered(bytes32 indexed boardId, string slug, string boardRef, address governance)',
   'event BoardMetadataUpdated(bytes32 indexed boardId, string boardRef)',
-  'event SubmissionAnnounced(bytes32 indexed boardId, bytes32 indexed submissionId, string submissionRef, bytes32 parentSubmissionId, bytes32 rootSubmissionId, address author)',
+  'event SubmissionAnnounced(bytes32 indexed boardId, bytes32 indexed submissionId, bytes32 parentSubmissionId, bytes32 rootSubmissionId, address author)',
   'event CuratorDeclared(address indexed curator, string curatorProfileRef)',
+  'event VoteSet(bytes32 indexed boardId, bytes32 indexed submissionId, address indexed voter, bytes32 rootSubmissionId, int8 direction, int8 previousDirection, uint64 upvotes, uint64 downvotes)',
 
   // Write methods
   'function registerBoard(bytes32 boardId, string slug, string boardRef)',
   'function updateBoardMetadata(bytes32 boardId, string boardRef)',
-  'function announceSubmission(bytes32 boardId, bytes32 submissionId, string submissionRef, bytes32 parentSubmissionId, bytes32 rootSubmissionId)',
+  'function announceSubmission(bytes32 boardId, bytes32 submissionId, bytes32 parentSubmissionId, bytes32 rootSubmissionId)',
   'function declareCurator(string curatorProfileRef)',
+  'function setVote(bytes32 submissionId, int8 direction)',
+
+  // Read methods (auto-generated public getters)
+  'function voteOf(bytes32 submissionId, address voter) view returns (int8)',
+  'function upvoteCount(bytes32 submissionId) view returns (uint64)',
+  'function downvoteCount(bytes32 submissionId) view returns (uint64)',
 ];
 
 export const iface = new Interface(ABI);
@@ -30,6 +38,7 @@ export const TOPICS = {
   BoardMetadataUpdated: iface.getEvent('BoardMetadataUpdated').topicHash,
   SubmissionAnnounced: iface.getEvent('SubmissionAnnounced').topicHash,
   CuratorDeclared: iface.getEvent('CuratorDeclared').topicHash,
+  VoteSet: iface.getEvent('VoteSet').topicHash,
 };
 
 const ADDRESS_ZERO = '0x' + '0'.repeat(40);
@@ -60,3 +69,18 @@ export function isZeroBytes32(val) {
 }
 
 export { BYTES32_ZERO };
+
+/**
+ * Read-only contract call. Symmetric with send() in transactions.js.
+ * @param {string} functionName - ABI function name
+ * @param {any[]} args - Encoded arguments
+ * @returns {Promise<Result>} Decoded return values
+ */
+export async function contractRead(functionName, args) {
+  assertContractConfigured();
+  const data = await ethCall({
+    to: CONTRACT_ADDRESS,
+    data: iface.encodeFunctionData(functionName, args),
+  });
+  return iface.decodeFunctionResult(functionName, data);
+}

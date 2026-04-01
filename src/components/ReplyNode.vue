@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { truncateAddress, timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
+import { useVotes } from '../composables/useVotes.js'
+import { useAuthStore } from '../stores/auth'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import { ChevronUp, ChevronDown, MessageSquare } from 'lucide-vue-next'
 
@@ -11,6 +13,9 @@ const props = defineProps({
 })
 
 defineEmits(['reply', 'toggle-collapse'])
+
+const auth = useAuthStore()
+const { score, myVote, isVoting, upvote, downvote } = useVotes(computed(() => props.node.submissionId))
 
 const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX_THREAD_DEPTH) - 1))
 </script>
@@ -30,10 +35,20 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
     </div>
 
     <div class="w-6 shrink-0 flex flex-col items-center pt-1.5">
-      <button class="text-muted-foreground/30 cursor-not-allowed p-0" title="Voting coming soon">
+      <button
+        class="p-0 transition-colors"
+        :class="myVote === 1 ? 'text-primary' : 'text-muted-foreground/30 hover:text-primary/60'"
+        :disabled="isVoting || !auth.walletConnected"
+        @click="upvote"
+      >
         <ChevronUp class="w-4 h-4" />
       </button>
-      <button class="text-muted-foreground/30 cursor-not-allowed p-0" title="Voting coming soon">
+      <button
+        class="p-0 transition-colors"
+        :class="myVote === -1 ? 'text-destructive' : 'text-muted-foreground/30 hover:text-destructive/60'"
+        :disabled="isVoting || !auth.walletConnected"
+        @click="downvote"
+      >
         <ChevronDown class="w-4 h-4" />
       </button>
     </div>
@@ -56,7 +71,7 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
         </router-link>
 
         <span>·</span>
-        <span class="text-muted-foreground/50">0 points</span>
+        <span :class="myVote === 1 ? 'text-primary' : myVote === -1 ? 'text-destructive' : 'text-muted-foreground/50'">{{ score }} {{ Math.abs(score) === 1 ? 'point' : 'points' }}</span>
 
         <template v-if="node.submission?.createdAt || node.content?.createdAt">
           <span>·</span>
