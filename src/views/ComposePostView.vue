@@ -1,7 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePublish } from '../composables/usePublish'
+import { useSubmissionsStore } from '../stores/submissions'
+import { STATUS } from '../lib/submission-status.js'
+import { refToHex } from '../protocol/references.js'
 import PublishProgress from '../components/PublishProgress.vue'
 import ImageUpload from '../components/ImageUpload.vue'
 import { Button } from '../components/ui/button'
@@ -20,7 +23,23 @@ const linkUrl = ref('')
 const attachments = ref([])
 const bodyEl = ref(null)
 
+const submissions = useSubmissionsStore()
 const { publishPost, steps, isPublishing, result, error } = usePublish()
+
+// Auto-navigate to thread when curator picks up the post
+const trackedStatus = computed(() => {
+  if (!result.value?.submissionRef) return null
+  return submissions.items.find((i) => i.submissionRef === result.value.submissionRef)?.status
+})
+
+watch(trackedStatus, (status) => {
+  if (status === STATUS.CURATED || status === STATUS.SETTLED) {
+    const hex = refToHex(result.value.submissionRef)
+    if (hex) {
+      router.replace({ name: 'thread', params: { slug: slug.value, rootSubId: hex } })
+    }
+  }
+})
 
 function onImageUploaded(descriptor) {
   attachments.value.push(descriptor)
