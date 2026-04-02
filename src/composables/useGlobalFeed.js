@@ -47,7 +47,7 @@ export function useGlobalFeed() {
           const capped = globalIndex.entries.slice(0, MAX_ENTRIES)
           const entries = await resolveEntries(capped)
 
-          views.setAvailableViews(GLOBAL_SCOPE, profile?.globalViewFeeds)
+          views.setAvailableViews(GLOBAL_SCOPE, profile?.globalViewFeeds, profile?.globalIndexFeed)
 
           return {
             entries,

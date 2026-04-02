@@ -61,7 +61,11 @@ export function useBoard(slugRef) {
 
       const entries = await resolveEntries(boardIndex.entries)
 
-      viewsStore.setAvailableViews(boardScope(slug), curator.profile?.boardViewFeeds?.[slug])
+      viewsStore.setAvailableViews(
+        boardScope(slug),
+        curator.profile?.boardViewFeeds?.[slug],
+        curator.profile?.boardFeeds?.[slug],
+      )
 
       return { ...boardIndex, entries, curatorAddress: curator.address, curatorProfile: curator.profile }
     },

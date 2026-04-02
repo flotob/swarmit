@@ -9,6 +9,7 @@ export const GLOBAL_SCOPE = 'global'
 export const useViewsStore = defineStore('views', () => {
   const prefs = ref(loadFromStorage())
   const availableViews = ref({})
+  const defaultViewIds = ref({})
 
   const KNOWN_ORDER = ['new', 'best', 'hot', 'rising', 'controversial']
 
@@ -35,9 +36,10 @@ export const useViewsStore = defineStore('views', () => {
     persist()
   }
 
-  function setAvailableViews(scope, viewMap) {
+  function setAvailableViews(scope, viewMap, defaultFeedRef) {
     if (!viewMap) {
       if (scope in availableViews.value) delete availableViews.value[scope]
+      if (scope in defaultViewIds.value) delete defaultViewIds.value[scope]
       return
     }
     const keys = Object.keys(viewMap)
@@ -46,13 +48,26 @@ export const useViewsStore = defineStore('views', () => {
       ...keys.filter((id) => !KNOWN_ORDER.includes(id)),
     ]
     const current = availableViews.value[scope]
-    if (current && current.length === sorted.length && current.every((v, i) => v === sorted[i])) return
-    availableViews.value[scope] = sorted
+    if (!(current && current.length === sorted.length && current.every((v, i) => v === sorted[i]))) {
+      availableViews.value[scope] = sorted
+    }
+
+    // Derive which named view matches the default feed
+    const effectiveDefault = defaultFeedRef
+      ? keys.find((id) => viewMap[id] === defaultFeedRef) || null
+      : null
+    if (defaultViewIds.value[scope] !== effectiveDefault) {
+      defaultViewIds.value[scope] = effectiveDefault
+    }
   }
 
   function getAvailableViews(scope) {
     return availableViews.value[scope] || []
   }
 
-  return { prefs, getView, setView, setAvailableViews, getAvailableViews }
+  function getDefaultViewId(scope) {
+    return defaultViewIds.value[scope] || null
+  }
+
+  return { prefs, getView, setView, setAvailableViews, getAvailableViews, getDefaultViewId }
 })

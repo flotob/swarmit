@@ -42,9 +42,11 @@ const activeView = computed(() => {
   return views.getView(viewScope.value)
 })
 
+const defaultViewId = computed(() => viewScope.value ? views.getDefaultViewId(viewScope.value) : null)
+
 function selectView(viewId) {
   if (!viewScope.value) return
-  const effective = activeView.value || availableViews.value[0]
+  const effective = activeView.value || defaultViewId.value
   if (viewId === effective && !activeView.value) return
   views.setView(viewScope.value, viewId === activeView.value ? null : viewId)
 }
@@ -77,7 +79,7 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
             v-for="id in availableViews"
             :key="id"
             class="header-tab"
-            :class="activeView === id || (!activeView && id === availableViews[0])
+            :class="activeView === id || (!activeView && id === defaultViewId)
               ? 'header-tab-active'
               : 'header-tab-inactive'"
             @click="selectView(id)"
