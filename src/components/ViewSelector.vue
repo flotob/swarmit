@@ -21,7 +21,7 @@ const viewIds = computed(() => {
   ]
 })
 
-const activeView = computed(() => views.getView(props.scope))
+const activeView = computed(() => views.getView(props.scope) || viewIds.value[0] || null)
 
 function select(viewId) {
   // Clicking the already-active view clears the preference (back to default)

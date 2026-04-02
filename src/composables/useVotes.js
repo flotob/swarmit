@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { getVoteTotals, getUserVote } from '../chain/events.js'
 import { setVote as sendVote } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
+import { useWallet } from './useWallet.js'
 import { waitForReceipt } from '../lib/rpc.js'
 
 /**
@@ -12,6 +13,7 @@ import { waitForReceipt } from '../lib/rpc.js'
  */
 export function useVotes(submissionRef) {
   const auth = useAuthStore()
+  const wallet = useWallet()
   const queryClient = useQueryClient()
 
   const subRef = computed(() => toValue(submissionRef))
@@ -49,6 +51,16 @@ export function useVotes(submissionRef) {
     if (isVoting.value) return
     error.value = null
     isVoting.value = true
+
+    try {
+      if (!auth.walletConnected) {
+        await wallet.connect()
+      }
+    } catch (err) {
+      if (err.code !== 4001) error.value = err.message
+      isVoting.value = false
+      return
+    }
 
     const prevMyVote = myVote.value
     const prevUp = upvotes.value

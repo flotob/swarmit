@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { truncateAddress, timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
 import { useVotes } from '../composables/useVotes.js'
-import { useAuthStore } from '../stores/auth'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import { ChevronUp, ChevronDown, MessageSquare } from 'lucide-vue-next'
 
@@ -14,7 +13,6 @@ const props = defineProps({
 
 defineEmits(['reply', 'toggle-collapse'])
 
-const auth = useAuthStore()
 const { score, myVote, isVoting, upvote, downvote } = useVotes(computed(() => props.node.submissionId))
 
 const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX_THREAD_DEPTH) - 1))
@@ -38,7 +36,7 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
       <button
         class="p-0 transition-colors"
         :class="myVote === 1 ? 'text-primary' : 'text-muted-foreground/30 hover:text-primary/60'"
-        :disabled="isVoting || !auth.walletConnected"
+        :disabled="isVoting"
         @click="upvote"
       >
         <ChevronUp class="w-4 h-4" />
@@ -46,7 +44,7 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
       <button
         class="p-0 transition-colors"
         :class="myVote === -1 ? 'text-destructive' : 'text-muted-foreground/30 hover:text-destructive/60'"
-        :disabled="isVoting || !auth.walletConnected"
+        :disabled="isVoting"
         @click="downvote"
       >
         <ChevronDown class="w-4 h-4" />
