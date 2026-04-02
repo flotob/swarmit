@@ -1,27 +1,25 @@
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { useCuratorDeclarations, getCuratorPref } from './useCurators.js'
+import { useViewsStore } from '../stores/views.js'
 import { fetchGlobalIndex } from '../swarm/feeds.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 
 const MAX_ENTRIES = 30
 
-/**
- * Fetch a curator's global cross-board feed.
- * Selects a curator (user preference or first available), resolves their
- * globalIndexFeed, then bulk-fetches submission + content for each entry.
- */
 export function useGlobalFeed() {
   const { data: curators } = useCuratorDeclarations()
+  const views = useViewsStore()
 
   const curatorKey = computed(() =>
     (curators.value || []).map((c) => c.curator.toLowerCase()).sort()
   )
   const globalPrefKey = computed(() => getCuratorPref('_global') || '_auto')
+  const viewId = computed(() => views.getView('global'))
 
   const globalQuery = useQuery({
-    queryKey: ['globalFeed', curatorKey, globalPrefKey],
+    queryKey: ['globalFeed', curatorKey, globalPrefKey, viewId],
     queryFn: async () => {
       const curatorList = curators.value || []
       if (!curatorList.length) return null
@@ -41,7 +39,7 @@ export function useGlobalFeed() {
           const { valid: profileValid } = validate(profile)
           if (!profileValid) continue
 
-          const globalIndex = await fetchGlobalIndex(profile)
+          const globalIndex = await fetchGlobalIndex(profile, viewId.value)
           if (!globalIndex?.entries?.length) continue
           const { valid: indexValid } = validate(globalIndex)
           if (!indexValid) continue
@@ -63,6 +61,7 @@ export function useGlobalFeed() {
       return null
     },
     enabled: computed(() => !!curators.value?.length),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   })
 

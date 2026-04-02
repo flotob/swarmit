@@ -2,6 +2,7 @@
 import { useGlobalFeed } from '../composables/useGlobalFeed'
 import PostCard from '../components/PostCard.vue'
 import CuratorBar from '../components/CuratorBar.vue'
+import ViewSelector from '../components/ViewSelector.vue'
 import FeedSidebar from '../components/FeedSidebar.vue'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
@@ -20,6 +21,13 @@ const { feed, curators, isLoading, isError, error, curatorAddress, curatorProfil
         :curator-address="curatorAddress"
         :curators="curators"
         context="_global"
+      />
+
+      <ViewSelector
+        v-if="curatorProfile?.globalViewFeeds"
+        scope="global"
+        :available-views="curatorProfile.globalViewFeeds"
+        class="mt-2 mb-3"
       />
 
       <div v-if="isLoading" class="space-y-3">

@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex, getCuratorPref } from './useCurators.js'
+import { useViewsStore } from '../stores/views.js'
 
 export function useBoardMetadata(slug) {
   return useQuery({
@@ -27,6 +28,7 @@ export function useBoardMetadata(slug) {
 export function useBoard(slugRef) {
   const { data: board } = useBoardMetadata(slugRef)
   const { data: curators } = useCuratorDeclarations()
+  const viewsStore = useViewsStore()
 
   const boardMetaKey = computed(() => {
     const b = board.value
@@ -35,9 +37,10 @@ export function useBoard(slugRef) {
   })
 
   const curatorPrefKey = computed(() => getCuratorPref(slugRef.value) || '_auto')
+  const viewId = computed(() => viewsStore.getView(`board:${slugRef.value}`))
 
   const boardQuery = useQuery({
-    queryKey: ['boardIndex', slugRef, boardMetaKey, curatorPrefKey],
+    queryKey: ['boardIndex', slugRef, boardMetaKey, curatorPrefKey, viewId],
     queryFn: async () => {
       const slug = slugRef.value
       const boardObj = board.value
@@ -45,7 +48,7 @@ export function useBoard(slugRef) {
 
       if (!curatorList.length) return null
 
-      const result = await resolveCuratorBoardIndex(slug, boardObj, curatorList)
+      const result = await resolveCuratorBoardIndex(slug, boardObj, curatorList, viewId.value)
       if (!result) return null
 
       const { boardIndex, curator } = result
@@ -61,6 +64,7 @@ export function useBoard(slugRef) {
       return { ...boardIndex, entries, curatorAddress: curator.address, curatorProfile: curator.profile }
     },
     enabled: computed(() => !!slugRef.value && !!curators.value?.length),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   })
 

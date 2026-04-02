@@ -39,14 +39,15 @@ export async function resolveFeed(feedManifestRef) {
  * @param {string} boardId - The board slug/ID
  * @returns {Promise<Object|null>} The boardIndex object, or null if not available
  */
-export async function fetchBoardIndex(curatorProfile, boardId) {
-  const boardFeeds = curatorProfile?.boardFeeds;
-  if (!boardFeeds || !boardFeeds[boardId]) {
-    return null;
-  }
+export async function fetchBoardIndex(curatorProfile, boardId, viewId) {
+  // Try named view feed first
+  const viewFeed = viewId && curatorProfile?.boardViewFeeds?.[boardId]?.[viewId];
+  const defaultFeed = curatorProfile?.boardFeeds?.[boardId];
+  const feedRef = viewFeed || defaultFeed;
+  if (!feedRef) return null;
 
   try {
-    return await resolveFeed(boardFeeds[boardId]);
+    return await resolveFeed(feedRef);
   } catch (err) {
     console.warn(`[Feeds] Failed to resolve boardIndex for ${boardId}:`, err.message);
     return null;
@@ -64,12 +65,15 @@ export async function fetchBoardIndex(curatorProfile, boardId) {
  * @param {Object} curatorProfile - The curatorProfile object
  * @returns {Promise<Object|null>} The globalIndex object, or null
  */
-export async function fetchGlobalIndex(curatorProfile) {
-  const globalFeed = curatorProfile?.globalIndexFeed;
-  if (!globalFeed) return null;
+export async function fetchGlobalIndex(curatorProfile, viewId) {
+  // Try named view feed first
+  const viewFeed = viewId && curatorProfile?.globalViewFeeds?.[viewId];
+  const defaultFeed = curatorProfile?.globalIndexFeed;
+  const feedRef = viewFeed || defaultFeed;
+  if (!feedRef) return null;
 
   try {
-    return await resolveFeed(globalFeed);
+    return await resolveFeed(feedRef);
   } catch (err) {
     console.warn(`[Feeds] Failed to resolve globalIndex:`, err.message);
     return null;

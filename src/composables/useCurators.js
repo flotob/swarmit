@@ -54,7 +54,7 @@ export function buildCandidates(slug, board, curators) {
 /**
  * Shared curator resolution loop — try candidates until one has a usable boardIndex.
  */
-export async function resolveCuratorBoardIndex(slug, board, curatorList) {
+export async function resolveCuratorBoardIndex(slug, board, curatorList, viewId) {
   const candidates = buildCandidates(slug, board, curatorList)
 
   for (const addr of candidates.list) {
@@ -67,7 +67,7 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList) {
       const { valid: profileValid } = validate(profile)
       if (!profileValid) continue
 
-      const boardIdx = await fetchBoardIndex(profile, slug)
+      const boardIdx = await fetchBoardIndex(profile, slug, viewId)
       if (!boardIdx?.entries?.length) continue
       const { valid: idxValid } = validate(boardIdx)
       if (!idxValid) continue
