@@ -16,15 +16,6 @@ const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, 
 <template>
   <div class="lg:grid lg:grid-cols-[1fr_18rem] lg:gap-6">
     <div>
-      <div class="mb-4">
-        <h1 class="text-2xl font-bold text-foreground">
-          {{ board?.title || `r/${slug}` }}
-        </h1>
-        <p v-if="board?.description" class="text-muted-foreground mt-1">
-          {{ board.description }}
-        </p>
-      </div>
-
       <CuratorBar
         v-if="curatorAddress"
         :curator-name="curatorProfile?.name"

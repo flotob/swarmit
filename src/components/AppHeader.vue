@@ -167,8 +167,4 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
   opacity: 0.6;
 }
 
-.header-tab-inactive:hover {
-  opacity: 0.85;
-  background-color: color-mix(in oklch, var(--header) 70%, var(--background) 30%);
-}
 </style>
