@@ -7,9 +7,9 @@ export const CHAIN_ID = 100;
 export const CHAIN_ID_HEX = '0x64';
 export const GNOSIS_RPC_URL = 'https://rpc.gnosischain.com';
 
-// Contract — deployed on Gnosis Chain
-export const CONTRACT_ADDRESS = '0x34b27b9978E05B6EfD8AFEcc133C3b1fC5431613';
-export const CONTRACT_DEPLOY_BLOCK = '0x2b374e6'; // block 45315302
+// Contract — SwarmitRegistryV2 deployed on Gnosis Chain
+export const CONTRACT_ADDRESS = '0x7a2D98B5e8BA54Ed82Dd1159fCCBB50b7e5b71B1';
+export const CONTRACT_DEPLOY_BLOCK = '0x2b5bae7'; // block 45464295
 
 // Protocol
 export const PROTOCOL_VERSION = 'v1';
