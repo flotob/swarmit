@@ -47,14 +47,16 @@ export function useVotes(submissionRef) {
   const score = computed(() => upvotes.value - downvotes.value)
   const myVote = computed(() => optimisticMyVote.value ?? myVoteData.value ?? 0)
 
-  async function vote(direction) {
+  async function vote(intendedDirection) {
     if (isVoting.value) return
     error.value = null
     isVoting.value = true
 
+    let justConnected = false
     try {
       if (!auth.walletConnected) {
         await wallet.connect()
+        justConnected = true
       }
     } catch (err) {
       if (err.code !== 4001) error.value = err.message
@@ -62,7 +64,21 @@ export function useVotes(submissionRef) {
       return
     }
 
-    const prevMyVote = myVote.value
+    // After fresh wallet connect, the userVote query may not have fired yet
+    if (justConnected) {
+      try {
+        await queryClient.ensureQueryData({
+          queryKey: ['userVote', subRef.value, auth.userAddress],
+          queryFn: () => getUserVote(subRef.value, auth.userAddress),
+          staleTime: 30_000,
+        })
+      } catch { /* proceed with whatever myVote has */ }
+    }
+
+    const currentVote = myVote.value
+    const direction = intendedDirection === currentVote ? 0 : intendedDirection
+
+    const prevMyVote = currentVote
     const prevUp = upvotes.value
     const prevDown = downvotes.value
 
@@ -90,18 +106,18 @@ export function useVotes(submissionRef) {
     } catch (err) {
       optimisticTotals.value = null
       optimisticMyVote.value = null
-      error.value = err.message
+      if (err.code !== 4001) error.value = err.message
     } finally {
       isVoting.value = false
     }
   }
 
   function upvote() {
-    return vote(myVote.value === 1 ? 0 : 1)
+    return vote(1)
   }
 
   function downvote() {
-    return vote(myVote.value === -1 ? 0 : -1)
+    return vote(-1)
   }
 
   return { upvotes, downvotes, score, myVote, isVoting, error, upvote, downvote }

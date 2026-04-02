@@ -62,7 +62,8 @@ export function useGlobalFeed() {
     },
     enabled: computed(() => !!curators.value?.length),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchInterval: 5_000,
   })
 
   const curatorAddress = computed(() => globalQuery.data.value?.curatorAddress ?? null)

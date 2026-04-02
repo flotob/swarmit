@@ -65,7 +65,8 @@ export function useBoard(slugRef) {
     },
     enabled: computed(() => !!slugRef.value && !!curators.value?.length),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchInterval: 5_000,
   })
 
   const curatorAddress = computed(() => boardQuery.data.value?.curatorAddress ?? null)
