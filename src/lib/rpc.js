@@ -67,3 +67,28 @@ export async function ethCall(callObj, block = 'latest') {
 export async function getBlockNumber() {
   return rpcCall('eth_blockNumber');
 }
+
+/**
+ * eth_getTransactionReceipt — get the receipt of a mined transaction.
+ * @param {string} txHash
+ * @returns {Promise<object|null>} Receipt object, or null if not yet mined
+ */
+export async function getTransactionReceipt(txHash) {
+  return rpcCall('eth_getTransactionReceipt', [txHash]);
+}
+
+/**
+ * Poll for a transaction receipt until mined or timeout.
+ * @param {string} txHash
+ * @param {{ timeout?: number, interval?: number }} [opts]
+ * @returns {Promise<object>} Receipt object
+ */
+export async function waitForReceipt(txHash, { timeout = 60000, interval = 3000 } = {}) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const receipt = await getTransactionReceipt(txHash);
+    if (receipt) return receipt;
+    await new Promise((r) => setTimeout(r, interval));
+  }
+  throw new Error('Transaction not mined within timeout');
+}

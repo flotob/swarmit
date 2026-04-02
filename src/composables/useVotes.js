@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { getVoteTotals, getUserVote } from '../chain/events.js'
 import { setVote as sendVote } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
+import { waitForReceipt } from '../lib/rpc.js'
 
 /**
  * Vote composable for a single submission.
@@ -63,7 +64,11 @@ export function useVotes(submissionRef) {
     optimisticTotals.value = { upvotes: newUp, downvotes: newDown }
 
     try {
-      await sendVote({ submissionRef: subRef.value, direction })
+      const txHash = await sendVote({ submissionRef: subRef.value, direction })
+      const receipt = await waitForReceipt(txHash)
+      if (receipt.status === '0x0') {
+        throw new Error('Vote transaction reverted on-chain')
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['voteTotals', subRef.value] }),
         queryClient.invalidateQueries({ queryKey: ['userVote', subRef.value, auth.userAddress] }),
