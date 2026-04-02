@@ -38,7 +38,7 @@ Important protocol rules:
 - Clients MUST tolerate unknown `viewId` strings.
 - Curators are NOT required to publish every view.
 - We should NOT invent fake ranking semantics.
-- For the reference implementation, only publish `new` unless/until real ranking logic exists.
+- The reference implementation should publish `new` and one simple ranked view such as `best` once that formula is explicit; defer more ambiguous ranked views until their formulas are defined.
 
 Implementation target for this pass:
 - Add full protocol/data-model support for named views.
@@ -48,14 +48,16 @@ Implementation target for this pass:
   - default global feed as today
   - default board feeds as today
   - `new` named global/board views
+  - `best` named global/board views using a simple documented formula
 - It is acceptable for `new` to point to the same feed-manifest URL as the current default feed, since the current reference curator is chronological.
+- For the first pass, `best` should sort by net score descending (`upvotes - downvotes`), with newer chain announcement order as the tie-break.
 - Thread named views are optional in this pass:
   - implement protocol support and read fallback for them
   - curator may omit `threadViewFeeds` for now unless it is trivial to publish `new` as an alias of the default thread feed
 
 Do NOT:
 - add contract events
-- add ranking algorithms for `best/hot/rising/controversial`
+- add ranking algorithms for `hot/rising/controversial` before their formulas are defined
 - break existing default-feed clients
 - require thread multi-view publishing
 
@@ -133,7 +135,7 @@ SPA UI guidance:
   - `new`, `best`, `hot`, `rising`, `controversial`
   then any unknown/custom IDs after that.
 - It is okay if the picker is hidden when there are no named views or only one effective option.
-- Since the reference curator will likely only publish `new` at first, do not force a noisy UI if there is no meaningful choice yet.
+- Since the reference curator may initially publish only `new` and `best`, do not force a noisy UI if there is no meaningful choice yet.
 
 SPA route/product guidance:
 - Keep current routes.
@@ -181,11 +183,16 @@ Curator publishing behavior for this pass:
 - Continue publishing current default feeds exactly as today.
 - Add named-view publishing for:
   - global scope: `new`
+  - global scope: `best`
   - board scope: `new`
+  - board scope: `best`
 - It is acceptable for:
   - `globalViewFeeds.new === globalIndexFeed`
   - `boardViewFeeds[slug].new === boardFeeds[slug]`
   if the current default view is already chronological.
+- For the first pass, `best` should use:
+  - primary sort: net score descending (`upvotes - downvotes`)
+  - tie-break: newer chain announcement first
 - Do NOT publish fake `best/hot/rising/controversial` views unless there is real distinct logic.
 - Thread named views:
   - protocol support should exist
@@ -195,7 +202,7 @@ Curator publishing behavior for this pass:
 
 Curator state/config guidance:
 - Add an explicit concept of supported named views, even if initial value is just:
-  - `['new']`
+  - `['new', 'best']`
 - This can live in config or a small constant.
 - Feed manifests for named views should be tracked in state separately from default feeds.
 - Avoid conflating default feed refs with named-view feed refs even if they currently point to the same manifest.
@@ -237,9 +244,9 @@ Behavioral acceptance criteria
 
 3. Curator behavior:
 - Curator continues publishing default feeds.
-- Curator now also publishes named `new` views for global and board scopes.
+- Curator now also publishes named `new` and `best` views for global and board scopes.
 - CuratorProfile advertises those named views.
-- No fake ranked views are published.
+- No fake ranked views are published beyond the documented `best` formula.
 
 4. Thread behavior:
 - Thread read path supports `threadViewFeeds` when present.

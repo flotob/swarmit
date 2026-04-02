@@ -21,6 +21,8 @@ Examples include:
 
 The key idea is that these are not merely client-side sort toggles. They are distinct curator-published views over the same underlying submission universe.
 
+This patch concerns off-chain Swarm objects and feed discovery only. The `submissionId` and `submissionRef` fields shown in `boardIndex`, `threadIndex`, and `globalIndex` examples remain the existing off-chain Swarm-ref fields and are unaffected by the V2 contract's on-chain `bytes32 submissionId` surface.
+
 ## Summary of Changes
 
 1. Keep existing feed fields as the default view:
@@ -77,6 +79,7 @@ Rules:
 - Curators MAY publish custom `viewId` values.
 - `new` SHOULD represent a clearly chronological view, ideally by chain announcement order or another documented chronological policy.
 - `best`, `hot`, `rising`, and `controversial` MAY be offered as curator-defined ranked views.
+- When raw vote signals are available, curators MAY use them as inputs to ranked views such as `best`, `hot`, `rising`, and `controversial`, but the ranking formulas remain curator-defined.
 - Clients MUST NOT assume that non-`new` view IDs have identical semantics across curators.
 
 ## Normative Patch for `swarm-message-board-v1-spec.md`
@@ -170,7 +173,7 @@ Replace the example with:
   "boardViewFeeds": {
     "tech": {
       "new": "bzz://TECH_NEW_FEED_MANIFEST_REF",
-      "hot": "bzz://TECH_HOT_FEED_MANIFEST_REF"
+      "best": "bzz://TECH_BEST_FEED_MANIFEST_REF"
     }
   }
 }
@@ -301,7 +304,7 @@ Amend the example to:
   "boardViewFeeds": {
     "tech": {
       "new": "bzz://TECH_NEW_FEED_MANIFEST_REF",
-      "hot": "bzz://TECH_HOT_FEED_MANIFEST_REF"
+      "best": "bzz://TECH_BEST_FEED_MANIFEST_REF"
     }
   }
 }
@@ -354,6 +357,8 @@ Curators may choose to publish:
 - only a single default thread view
 
 Nothing in this patch requires every curator to publish every named view for every scope.
+
+A simple reference deployment can demonstrate the mechanism with `new` plus one explicitly defined ranked view such as `best`. More ambiguous ranked labels can wait until their formulas are documented.
 
 ## Explicit Non-Goals of This Patch
 
