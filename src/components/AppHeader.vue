@@ -57,7 +57,7 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
     <div class="px-4 h-12 flex items-end justify-between">
       <div class="flex items-end gap-1">
         <router-link to="/" class="text-lg font-bold text-header-foreground hover:opacity-80 transition-opacity leading-none mb-[5px] mr-2">
-          swarmit
+          <span class="inline-block scale-x-[-1] text-[1.7em] leading-[0] align-baseline">🐝</span> swarmit
         </router-link>
 
         <span
