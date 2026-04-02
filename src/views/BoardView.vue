@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router'
 import { useBoard } from '../composables/useBoard'
 import PostCard from '../components/PostCard.vue'
 import CuratorBar from '../components/CuratorBar.vue'
-import ViewSelector from '../components/ViewSelector.vue'
 import BoardSidebar from '../components/BoardSidebar.vue'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
@@ -32,13 +31,6 @@ const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, 
         :curator-address="curatorAddress"
         :curators="curators"
         :context="slug"
-      />
-
-      <ViewSelector
-        v-if="curatorProfile?.boardViewFeeds?.[slug]"
-        :scope="`board:${slug}`"
-        :available-views="curatorProfile.boardViewFeeds[slug]"
-        class="mt-2 mb-3"
       />
 
       <div v-if="isLoading" class="space-y-3">

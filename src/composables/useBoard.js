@@ -4,7 +4,7 @@ import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex, getCuratorPref } from './useCurators.js'
-import { useViewsStore } from '../stores/views.js'
+import { useViewsStore, boardScope } from '../stores/views.js'
 
 export function useBoardMetadata(slug) {
   return useQuery({
@@ -37,7 +37,7 @@ export function useBoard(slugRef) {
   })
 
   const curatorPrefKey = computed(() => getCuratorPref(slugRef.value) || '_auto')
-  const viewId = computed(() => viewsStore.getView(`board:${slugRef.value}`))
+  const viewId = computed(() => viewsStore.getView(boardScope(slugRef.value)))
 
   const boardQuery = useQuery({
     queryKey: ['boardIndex', slugRef, boardMetaKey, curatorPrefKey, viewId],
@@ -60,6 +60,8 @@ export function useBoard(slugRef) {
       }
 
       const entries = await resolveEntries(boardIndex.entries)
+
+      viewsStore.setAvailableViews(boardScope(slug), curator.profile?.boardViewFeeds?.[slug])
 
       return { ...boardIndex, entries, curatorAddress: curator.address, curatorProfile: curator.profile }
     },

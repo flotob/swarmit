@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { useCuratorDeclarations, getCuratorPref } from './useCurators.js'
-import { useViewsStore } from '../stores/views.js'
+import { useViewsStore, GLOBAL_SCOPE } from '../stores/views.js'
 import { fetchGlobalIndex } from '../swarm/feeds.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
@@ -16,7 +16,7 @@ export function useGlobalFeed() {
     (curators.value || []).map((c) => c.curator.toLowerCase()).sort()
   )
   const globalPrefKey = computed(() => getCuratorPref('_global') || '_auto')
-  const viewId = computed(() => views.getView('global'))
+  const viewId = computed(() => views.getView(GLOBAL_SCOPE))
 
   const globalQuery = useQuery({
     queryKey: ['globalFeed', curatorKey, globalPrefKey, viewId],
@@ -46,6 +46,8 @@ export function useGlobalFeed() {
 
           const capped = globalIndex.entries.slice(0, MAX_ENTRIES)
           const entries = await resolveEntries(capped)
+
+          views.setAvailableViews(GLOBAL_SCOPE, profile?.globalViewFeeds)
 
           return {
             entries,

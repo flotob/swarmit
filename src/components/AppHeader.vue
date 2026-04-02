@@ -1,19 +1,23 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useUiStore } from '../stores/ui'
 import { useSubmissionsStore } from '../stores/submissions'
+import { useViewsStore, boardScope, GLOBAL_SCOPE } from '../stores/views'
 import { useWallet } from '../composables/useWallet'
 import { useColorMode } from '../composables/useColorMode'
 import { truncateAddress } from '../lib/format.js'
 import { Bell, Wallet, Radio } from 'lucide-vue-next'
 
+const route = useRoute()
 const auth = useAuthStore()
 const ui = useUiStore()
 const submissions = useSubmissionsStore()
+const views = useViewsStore()
 const wallet = useWallet()
 const { preference } = useColorMode()
 
-// Enforce light mode for now
 preference.value = 'light'
 
 async function connectWallet() {
@@ -23,40 +27,82 @@ async function connectWallet() {
     console.error('Wallet connect failed:', err)
   }
 }
+
+const slug = computed(() => route.params.slug || null)
+const routeName = computed(() => route.name)
+
+const viewScope = computed(() => {
+  if (routeName.value === 'home') return GLOBAL_SCOPE
+  if (routeName.value === 'board' && slug.value) return boardScope(slug.value)
+  return null
+})
+
+const activeView = computed(() => {
+  if (!viewScope.value) return null
+  return views.getView(viewScope.value)
+})
+
+function selectView(viewId) {
+  if (!viewScope.value) return
+  const effective = activeView.value || availableViews.value[0]
+  if (viewId === effective && !activeView.value) return
+  views.setView(viewScope.value, viewId === activeView.value ? null : viewId)
+}
+
+const availableViews = computed(() => viewScope.value ? views.getAvailableViews(viewScope.value) : [])
 </script>
 
 <template>
   <header class="sticky top-0 z-50 bg-header border-b border-header-border">
     <div class="px-4 h-12 flex items-end justify-between">
-      <div class="flex items-center gap-6 pb-2">
-        <router-link to="/" class="text-lg font-bold text-header-foreground hover:opacity-80 transition-opacity">
+      <div class="flex items-end gap-1">
+        <router-link to="/" class="text-lg font-bold text-header-foreground hover:opacity-80 transition-opacity leading-none mb-[5px] mr-2">
           swarmit
         </router-link>
-        <nav class="hidden sm:flex items-center gap-1 text-sm">
+
+        <span
+          v-if="slug"
+          class="font-bold uppercase text-[11px] tracking-wider text-header-foreground leading-none mb-[6px] mr-1"
+        >
           <router-link
-            :to="{ name: 'boards' }"
-            class="px-3 py-1 rounded-md text-header-foreground/70 hover:text-header-foreground hover:bg-header-foreground/10 transition-colors"
+            :to="{ name: 'board', params: { slug } }"
+            class="hover:opacity-70 transition-opacity"
           >
-            Boards
+            {{ slug }}
           </router-link>
-          <router-link
-            :to="{ name: 'curators' }"
-            class="px-3 py-1 rounded-md text-header-foreground/70 hover:text-header-foreground hover:bg-header-foreground/10 transition-colors"
+        </span>
+
+        <template v-if="availableViews.length">
+          <button
+            v-for="id in availableViews"
+            :key="id"
+            class="header-tab"
+            :class="activeView === id || (!activeView && id === availableViews[0])
+              ? 'header-tab-active'
+              : 'header-tab-inactive'"
+            @click="selectView(id)"
           >
-            Curators
-          </router-link>
-          <router-link
-            :to="{ name: 'create-board' }"
-            class="px-3 py-1 rounded-md text-header-foreground/70 hover:text-header-foreground hover:bg-header-foreground/10 transition-colors"
-          >
-            Create Board
-          </router-link>
-        </nav>
+            {{ id.charAt(0).toUpperCase() + id.slice(1) }}
+          </button>
+        </template>
+
+        <span
+          v-else-if="routeName === 'thread'"
+          class="header-tab header-tab-active"
+        >
+          comments
+        </span>
+
+        <span
+          v-else-if="routeName === 'compose-post'"
+          class="header-tab header-tab-active"
+        >
+          submit
+        </span>
       </div>
 
-      <!-- User bar: anchored to bottom of header -->
+      <!-- User bar -->
       <div class="flex items-center bg-header-foreground/5 rounded-t-md px-1 text-xs text-header-foreground/70">
-        <!-- Activity -->
         <button
           @click="ui.toggleSidebar()"
           class="hidden lg:inline-flex items-center gap-1 px-2 py-1.5 hover:text-header-foreground transition-colors"
@@ -69,7 +115,6 @@ async function connectWallet() {
 
         <span class="text-header-foreground/20 hidden lg:inline">|</span>
 
-        <!-- Swarm status -->
         <span class="inline-flex items-center gap-1 px-2 py-1.5">
           <Radio class="w-3.5 h-3.5" :class="auth.swarmDetected ? 'text-success' : 'text-destructive'" />
           {{ auth.swarmDetected ? 'Swarm' : 'No Swarm' }}
@@ -77,7 +122,6 @@ async function connectWallet() {
 
         <span class="text-header-foreground/20">|</span>
 
-        <!-- Wallet -->
         <button
           v-if="!auth.walletConnected"
           @click="connectWallet"
@@ -98,3 +142,33 @@ async function connectWallet() {
     </div>
   </header>
 </template>
+
+<style scoped>
+.header-tab {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.25rem 0.25rem 0 0;
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+  margin-bottom: -1px;
+  border: 1px solid transparent;
+  border-bottom: none;
+}
+
+.header-tab-active {
+  background-color: var(--background);
+  color: var(--header-foreground);
+  border-color: var(--header-border);
+}
+
+.header-tab-inactive {
+  color: var(--header-foreground);
+  opacity: 0.6;
+}
+
+.header-tab-inactive:hover {
+  opacity: 0.85;
+  background-color: color-mix(in oklch, var(--header) 70%, var(--background) 30%);
+}
+</style>
