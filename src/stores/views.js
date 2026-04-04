@@ -43,19 +43,23 @@ export const useViewsStore = defineStore('views', () => {
       return
     }
     const keys = Object.keys(viewMap)
+
+    // Derive which named view matches the default feed
+    const effectiveDefault = defaultFeedRef
+      ? keys.find((id) => viewMap[id] === defaultFeedRef) || null
+      : null
+
+    // Order: default view first, then known order, then custom
     const sorted = [
-      ...KNOWN_ORDER.filter((id) => keys.includes(id)),
-      ...keys.filter((id) => !KNOWN_ORDER.includes(id)),
+      ...(effectiveDefault ? [effectiveDefault] : []),
+      ...KNOWN_ORDER.filter((id) => keys.includes(id) && id !== effectiveDefault),
+      ...keys.filter((id) => !KNOWN_ORDER.includes(id) && id !== effectiveDefault),
     ]
     const current = availableViews.value[scope]
     if (!(current && current.length === sorted.length && current.every((v, i) => v === sorted[i]))) {
       availableViews.value[scope] = sorted
     }
 
-    // Derive which named view matches the default feed
-    const effectiveDefault = defaultFeedRef
-      ? keys.find((id) => viewMap[id] === defaultFeedRef) || null
-      : null
     if (defaultViewIds.value[scope] !== effectiveDefault) {
       defaultViewIds.value[scope] = effectiveDefault
     }
