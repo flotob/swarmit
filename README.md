@@ -74,10 +74,11 @@ swarmit/
     views/                # All page views (lazy-loaded)
     components/           # Shared UI components
   vendor/                 # Vendored ethers.js (CSP requires local JS)
-  contracts/              # SwarmitRegistry Solidity contract + tests
   fixtures/               # Test fixture documentation
   docs/                   # Protocol specs
 ```
+
+> The SwarmitRegistry Solidity contracts have moved to [swarmit-protocol](https://github.com/flotob/swarmit-protocol/tree/main/contracts), which also hosts the shared JavaScript protocol library.
 
 ### Key design decisions
 
