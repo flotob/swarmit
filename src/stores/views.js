@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { RECOMMENDED_VIEW_NAMES } from '../protocol/objects.js'
 
 const STORAGE_KEY = 'swarmit-views'
 
@@ -11,7 +12,7 @@ export const useViewsStore = defineStore('views', () => {
   const availableViews = ref({})
   const defaultViewIds = ref({})
 
-  const KNOWN_ORDER = ['new', 'best', 'hot', 'rising', 'controversial']
+  const KNOWN_ORDER = RECOMMENDED_VIEW_NAMES
 
   function loadFromStorage() {
     try {

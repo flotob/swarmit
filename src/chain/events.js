@@ -5,7 +5,8 @@
  */
 
 import { getLogs } from '../lib/rpc.js';
-import { CONTRACT_ADDRESS, CONTRACT_DEPLOY_BLOCK, TOPICS, iface, isZeroBytes32, assertContractConfigured, contractRead } from './contract.js';
+import { iface, TOPICS } from 'swarmit-protocol/chain';
+import { CONTRACT_ADDRESS, CONTRACT_DEPLOY_BLOCK, isZeroBytes32, assertContractConfigured, contractRead } from './contract.js';
 import { slugToBoardId, bytes32ToRef, refToBytes32 } from '../protocol/references.js';
 
 /**

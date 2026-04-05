@@ -1,7 +1,3 @@
-// Reference helpers live in swarmit-protocol. This file re-exports the
-// canonical helpers and keeps one UI-specific helper (bzzToGatewayUrl)
-// local to the Vue app.
-
 export {
   refToHex,
   hexToBzz,
@@ -12,11 +8,10 @@ export {
   refToBytes32,
   bytes32ToRef,
   slugToBoardId,
-} from 'swarmit-protocol';
+} from 'swarmit-protocol/references';
 
 /**
  * Convert a bzz:// reference to a gateway-relative URL for rendering.
- * Used by components that display Swarm content via the local gateway.
  * @param {string} bzzRef - 'bzz://<64hex>' reference
  * @returns {string} '/bzz/<64hex>/' gateway path, or the input unchanged if not a bzz:// ref
  */

@@ -3,6 +3,8 @@
  * Only module that touches window.swarm directly.
  */
 
+import { hexToBzz } from '../protocol/references.js';
+
 /**
  * Check if the Swarm provider is available.
  */
@@ -26,7 +28,7 @@ export async function getCapabilities() {
  */
 function normalizePublishResult(result) {
   const ref = result.reference || '';
-  const bzzUrl = result.bzzUrl || (ref ? `bzz://${ref}` : '');
+  const bzzUrl = result.bzzUrl || hexToBzz(ref);
   return { ...result, reference: ref, bzzUrl };
 }
 

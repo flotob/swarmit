@@ -54,18 +54,17 @@ export async function fetchRaw(ref) {
 }
 
 /**
- * Fetch and validate a protocol object from Swarm.
- * Checks that the object has a `protocol` field.
+ * Fetch and validate a protocol object from Swarm using the library's
+ * schema validator.
  * @param {string} ref
  * @returns {Promise<Object>}
  */
 export async function fetchProtocolObject(ref) {
   const obj = await fetchObject(ref);
-
-  if (!obj.protocol || typeof obj.protocol !== 'string') {
-    throw new Error(`Object at ${ref} is missing a valid 'protocol' field`);
+  const { valid, errors } = validate(obj);
+  if (!valid) {
+    throw new Error(`Invalid protocol object at ${ref}: ${errors.join(', ')}`);
   }
-
   return obj;
 }
 

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { fetchObject } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
-import { refToHex } from '../protocol/references.js'
+import { refToHex, hexToBzz } from '../protocol/references.js'
 import { truncateAddress, timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS, STATUS_PANEL_COLORS } from '../lib/submission-status.js'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
@@ -19,10 +19,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useSubmissionsStore()
 
-const submissionRef = computed(() => {
-  const hex = route.params.submissionRef
-  return hex ? `bzz://${hex}` : null
-})
+const submissionRef = computed(() => hexToBzz(route.params.submissionRef) || null)
 
 const tracked = computed(() =>
   store.items.find((i) => i.submissionRef === submissionRef.value)
