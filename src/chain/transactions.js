@@ -1,19 +1,24 @@
 /**
  * Build and send transactions via ethereum.js (wallet needed).
  * All public functions accept human-readable slugs and bzz:// refs.
- * The slug→bytes32 and ref→bytes32 boundaries are handled internally.
+ * Calldata encoding is delegated to swarmit-protocol/chain; this file
+ * just adds the Vue-app signer wiring (sendTransaction via window.ethereum).
+ *
+ * NOTE: the public param names here (parentSubmissionId, rootSubmissionId)
+ * are Vue-app-legacy — they actually carry bzz:// refs, not on-chain IDs.
+ * The library's encode.announceSubmission uses the more accurate *Ref
+ * naming; the mapping happens at the library call site below.
  */
 
 import { sendTransaction } from '../lib/ethereum.js';
-import { CONTRACT_ADDRESS, iface, BYTES32_ZERO, assertContractConfigured } from './contract.js';
-import { slugToBoardId, refToBytes32 } from '../protocol/references.js';
+import { CONTRACT_ADDRESS, assertContractConfigured } from './contract.js';
+import { encode } from 'swarmit-protocol/chain';
 
 /**
- * Encode a function call and send it to the contract.
+ * Encode a calldata payload via the library and send it to the contract.
  */
-async function send(functionName, args) {
+async function sendCalldata(data) {
   assertContractConfigured();
-  const data = iface.encodeFunctionData(functionName, args);
   return sendTransaction({ to: CONTRACT_ADDRESS, data });
 }
 
@@ -24,8 +29,7 @@ async function send(functionName, args) {
  * @returns {Promise<string>} Transaction hash
  */
 export async function registerBoard(slug, boardRef) {
-  const boardId = slugToBoardId(slug);
-  return send('registerBoard', [boardId, slug, boardRef]);
+  return sendCalldata(encode.registerBoard({ slug, boardRef }));
 }
 
 /**
@@ -35,8 +39,7 @@ export async function registerBoard(slug, boardRef) {
  * @returns {Promise<string>} Transaction hash
  */
 export async function updateBoardMetadata(slug, boardRef) {
-  const boardId = slugToBoardId(slug);
-  return send('updateBoardMetadata', [boardId, boardRef]);
+  return sendCalldata(encode.updateBoardMetadata({ slug, boardRef }));
 }
 
 /**
@@ -49,18 +52,13 @@ export async function updateBoardMetadata(slug, boardRef) {
  * @returns {Promise<string>} Transaction hash
  */
 export async function announceSubmission({ boardSlug, submissionRef, parentSubmissionId, rootSubmissionId }) {
-  if (!parentSubmissionId !== !rootSubmissionId) {
-    throw new Error('parentSubmissionId and rootSubmissionId must both be null (top-level post) or both be non-null (reply)');
-  }
-
-  const boardId = slugToBoardId(boardSlug);
-  const submissionId = refToBytes32(submissionRef);
-
-  // For top-level posts: parent is zero, root equals self
-  const parentBytes32 = parentSubmissionId ? refToBytes32(parentSubmissionId) : BYTES32_ZERO;
-  const rootBytes32 = rootSubmissionId ? refToBytes32(rootSubmissionId) : submissionId;
-
-  return send('announceSubmission', [boardId, submissionId, parentBytes32, rootBytes32]);
+  const data = encode.announceSubmission({
+    boardSlug,
+    submissionRef,
+    parentSubmissionRef: parentSubmissionId,
+    rootSubmissionRef: rootSubmissionId,
+  });
+  return sendCalldata(data);
 }
 
 /**
@@ -71,11 +69,7 @@ export async function announceSubmission({ boardSlug, submissionRef, parentSubmi
  * @returns {Promise<string>} Transaction hash
  */
 export async function setVote({ submissionRef, direction }) {
-  if (direction !== 1 && direction !== 0 && direction !== -1) {
-    throw new Error('direction must be 1, 0, or -1');
-  }
-  const submissionId = refToBytes32(submissionRef);
-  return send('setVote', [submissionId, direction]);
+  return sendCalldata(encode.setVote({ submissionRef, direction }));
 }
 
 /**
@@ -84,5 +78,5 @@ export async function setVote({ submissionRef, direction }) {
  * @returns {Promise<string>} Transaction hash
  */
 export async function declareCurator(curatorProfileRef) {
-  return send('declareCurator', [curatorProfileRef]);
+  return sendCalldata(encode.declareCurator({ curatorProfileRef }));
 }
