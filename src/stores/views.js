@@ -2,26 +2,35 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { RECOMMENDED_VIEW_NAMES } from '../protocol/objects.js'
 
-const STORAGE_KEY = 'swarmit-views'
+const PREFS_KEY = 'swarmit-views'
+const AVAILABLE_KEY = 'swarmit-available-views'
 
 export const boardScope = (slug) => `board:${slug}`
 export const GLOBAL_SCOPE = 'global'
 
 export const useViewsStore = defineStore('views', () => {
-  const prefs = ref(loadFromStorage())
-  const availableViews = ref({})
-  const defaultViewIds = ref({})
+  const prefs = ref(loadJson(PREFS_KEY, {}))
+  const stored = loadJson(AVAILABLE_KEY, {})
+  const availableViews = ref(stored.views || {})
+  const defaultViewIds = ref(stored.defaults || {})
 
   const KNOWN_ORDER = RECOMMENDED_VIEW_NAMES
 
-  function loadFromStorage() {
+  function loadJson(key, fallback) {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    } catch { return {} }
+      return JSON.parse(localStorage.getItem(key) || 'null') || fallback
+    } catch { return fallback }
   }
 
-  function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs.value))
+  function persistPrefs() {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs.value))
+  }
+
+  function persistAvailable() {
+    localStorage.setItem(AVAILABLE_KEY, JSON.stringify({
+      views: availableViews.value,
+      defaults: defaultViewIds.value,
+    }))
   }
 
   function getView(scope) {
@@ -34,36 +43,40 @@ export const useViewsStore = defineStore('views', () => {
     } else {
       delete prefs.value[scope]
     }
-    persist()
+    persistPrefs()
   }
 
   function setAvailableViews(scope, viewMap, defaultFeedRef) {
     if (!viewMap) {
       if (scope in availableViews.value) delete availableViews.value[scope]
       if (scope in defaultViewIds.value) delete defaultViewIds.value[scope]
+      persistAvailable()
       return
     }
     const keys = Object.keys(viewMap)
 
-    // Derive which named view matches the default feed
     const effectiveDefault = defaultFeedRef
       ? keys.find((id) => viewMap[id] === defaultFeedRef) || null
       : null
 
-    // Order: default view first, then known order, then custom
     const sorted = [
       ...(effectiveDefault ? [effectiveDefault] : []),
       ...KNOWN_ORDER.filter((id) => keys.includes(id) && id !== effectiveDefault),
       ...keys.filter((id) => !KNOWN_ORDER.includes(id) && id !== effectiveDefault),
     ]
+    let changed = false
     const current = availableViews.value[scope]
     if (!(current && current.length === sorted.length && current.every((v, i) => v === sorted[i]))) {
       availableViews.value[scope] = sorted
+      changed = true
     }
 
     if (defaultViewIds.value[scope] !== effectiveDefault) {
       defaultViewIds.value[scope] = effectiveDefault
+      changed = true
     }
+
+    if (changed) persistAvailable()
   }
 
   function getAvailableViews(scope) {
