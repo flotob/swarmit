@@ -9,7 +9,7 @@
 
 import { fetchObject } from './fetch.js';
 import { refToHex } from '../protocol/references.js';
-import { validate, TYPES } from '../protocol/objects.js';
+import { validateCuratorProfile } from '../protocol/objects.js';
 
 // TTL cache for curator profiles. Keyed by ref hex → { profile, fetchedAt }.
 // Short TTL (30s) so feed-backed profiles refresh reasonably quickly.
@@ -67,9 +67,9 @@ export async function resolveCuratorProfile(curatorProfileRef) {
 
   const profile = await response.json();
 
-  const { valid, errors } = validate(profile);
-  if (!valid || profile.protocol !== TYPES.CURATOR) {
-    throw new Error(`Invalid curator profile at ${hex}: ${(errors || []).join(', ')}`);
+  const errors = validateCuratorProfile(profile);
+  if (errors.length) {
+    throw new Error(`Invalid curator profile at ${hex}: ${errors.join(', ')}`);
   }
 
   profileCache.set(hex, { profile, fetchedAt: now });

@@ -17,10 +17,12 @@ const REFRESH_INTERVAL_MS = 30_000
 export function useCuratorProfiles(curatorsRef) {
   const profiles = reactive(new Map())
   const source = typeof curatorsRef === 'function' ? curatorsRef : () => curatorsRef.value
+  let resolving = false
 
   async function resolveAll(list) {
-    if (!list?.length) return
-    await Promise.allSettled(
+    if (!list?.length || resolving) return
+    resolving = true
+    try { await Promise.allSettled(
       list.map(async (c) => {
         try {
           const profile = await resolveCuratorProfile(c.curatorProfileRef)
@@ -29,7 +31,7 @@ export function useCuratorProfiles(curatorsRef) {
           if (!profiles.has(c.curator)) profiles.set(c.curator, null)
         }
       })
-    )
+    ) } finally { resolving = false }
   }
 
   // Resolve immediately when the curator list changes (picks up new curators).
