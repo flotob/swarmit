@@ -9,6 +9,12 @@
 
 import { fetchObject } from './fetch.js';
 import { refToHex } from '../protocol/references.js';
+import { validate, TYPES } from '../protocol/objects.js';
+
+// TTL cache for curator profiles. Keyed by ref hex → { profile, fetchedAt }.
+// Short TTL (30s) so feed-backed profiles refresh reasonably quickly.
+const profileCache = new Map();
+const PROFILE_TTL_MS = 30_000;
 
 /**
  * Resolve a feed manifest to its latest content.
@@ -30,6 +36,44 @@ export async function resolveFeed(feedManifestRef) {
   }
 
   return response.json();
+}
+
+/**
+ * Resolve a curator profile from a stable Swarm locator.
+ *
+ * Works for both old-style immutable content refs and new-style feed
+ * manifest refs — both resolve via /bzz/<ref>/. Uses a 30s TTL cache
+ * so feed-backed profiles refresh without hammering the gateway.
+ *
+ * Does NOT use fetchObject() (which caches immutably forever).
+ *
+ * @param {string} curatorProfileRef - bzz:// URL or bare hex
+ * @returns {Promise<Object>} Validated curatorProfile object
+ */
+export async function resolveCuratorProfile(curatorProfileRef) {
+  const hex = refToHex(curatorProfileRef);
+  if (!hex) throw new Error('Invalid curator profile reference');
+
+  const now = Date.now();
+  const cached = profileCache.get(hex);
+  if (cached && (now - cached.fetchedAt) < PROFILE_TTL_MS) {
+    return cached.profile;
+  }
+
+  const response = await fetch(`/bzz/${hex}/`);
+  if (!response.ok) {
+    throw new Error(`Curator profile fetch failed: ${response.status} for ${hex}`);
+  }
+
+  const profile = await response.json();
+
+  const { valid, errors } = validate(profile);
+  if (!valid || profile.protocol !== TYPES.CURATOR) {
+    throw new Error(`Invalid curator profile at ${hex}: ${(errors || []).join(', ')}`);
+  }
+
+  profileCache.set(hex, { profile, fetchedAt: now });
+  return profile;
 }
 
 /**

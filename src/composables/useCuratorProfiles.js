@@ -1,35 +1,47 @@
-import { reactive, watch } from 'vue'
-import { fetchObject } from '../swarm/fetch.js'
-import { validate } from '../protocol/objects.js'
+import { reactive, watch, onScopeDispose } from 'vue'
+import { resolveCuratorProfile } from '../swarm/feeds.js'
 import { truncateAddress } from '../lib/format.js'
 
+const REFRESH_INTERVAL_MS = 30_000
+
 /**
- * Fetch and cache curator profiles for a list of curator declarations.
- * Profiles are immutable Swarm objects — fetchObject caches them after first load.
+ * Fetch and periodically refresh curator profiles for a list of declarations.
+ *
+ * Profiles are resolved via resolveCuratorProfile() which uses a 30s TTL cache.
+ * The watcher handles new curators appearing; the interval handles refreshing
+ * existing curators so feed-backed profiles stay fresh.
+ *
  * @param {Ref|Function} curatorsRef — reactive source of curator declarations
  * @returns {{ profiles: Map, profileName: (addr) => string }}
  */
 export function useCuratorProfiles(curatorsRef) {
   const profiles = reactive(new Map())
-
   const source = typeof curatorsRef === 'function' ? curatorsRef : () => curatorsRef.value
 
-  watch(source, async (list) => {
-    if (!list) return
+  async function resolveAll(list) {
+    if (!list?.length) return
     await Promise.allSettled(
-      list
-        .filter((c) => c.curator && !profiles.has(c.curator))
-        .map(async (c) => {
-          try {
-            const profile = await fetchObject(c.curatorProfileRef)
-            const { valid } = validate(profile)
-            profiles.set(c.curator, valid ? profile : null)
-          } catch {
-            profiles.set(c.curator, null)
-          }
-        })
+      list.map(async (c) => {
+        try {
+          const profile = await resolveCuratorProfile(c.curatorProfileRef)
+          profiles.set(c.curator, profile)
+        } catch {
+          if (!profiles.has(c.curator)) profiles.set(c.curator, null)
+        }
+      })
     )
-  }, { immediate: true })
+  }
+
+  // Resolve immediately when the curator list changes (picks up new curators).
+  watch(source, (list) => resolveAll(list), { immediate: true })
+
+  // Periodic refresh of ALL known profiles (aligned with the resolver's 30s TTL).
+  const refreshTimer = setInterval(() => {
+    const list = source()
+    if (list?.length) resolveAll(list)
+  }, REFRESH_INTERVAL_MS)
+
+  onScopeDispose(() => clearInterval(refreshTimer))
 
   function profileName(addr) {
     return profiles.get(addr)?.name || truncateAddress(addr)

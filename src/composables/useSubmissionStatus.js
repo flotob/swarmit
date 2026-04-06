@@ -1,8 +1,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useCuratorDeclarations } from './useCurators'
-import { fetchObject } from '../swarm/fetch.js'
-import { fetchBoardIndex, resolveFeed } from '../swarm/feeds.js'
+import { fetchBoardIndex, resolveFeed, resolveCuratorProfile } from '../swarm/feeds.js'
 import { validate } from '../protocol/objects.js'
 
 const POLL_INTERVAL = 30_000
@@ -37,9 +36,8 @@ export function useSubmissionStatus() {
         if (boardIndexCache.has(key)) return boardIndexCache.get(key)
 
         try {
-          const profile = await fetchObject(curator.curatorProfileRef)
-          const { valid } = validate(profile)
-          if (!valid || !profile.boardFeeds?.[boardSlug]) {
+          const profile = await resolveCuratorProfile(curator.curatorProfileRef)
+          if (!profile?.boardFeeds?.[boardSlug]) {
             boardIndexCache.set(key, null)
             return null
           }

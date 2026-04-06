@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { getCuratorDeclarations } from '../chain/events.js'
-import { fetchObject } from '../swarm/fetch.js'
-import { fetchBoardIndex } from '../swarm/feeds.js'
+import { fetchBoardIndex, resolveCuratorProfile } from '../swarm/feeds.js'
 import { validate } from '../protocol/objects.js'
 import { useCuratorPrefsStore } from '../stores/curators.js'
 
@@ -62,10 +61,8 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList, viewId)
     if (!match) continue
 
     try {
-      const profile = await fetchObject(match.curatorProfileRef)
+      const profile = await resolveCuratorProfile(match.curatorProfileRef)
       if (!profile) continue
-      const { valid: profileValid } = validate(profile)
-      if (!profileValid) continue
 
       const boardIdx = await fetchBoardIndex(profile, slug, viewId)
       if (!boardIdx?.entries?.length) continue

@@ -2,8 +2,8 @@ import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { useCuratorDeclarations, getCuratorPref } from './useCurators.js'
 import { useViewsStore, GLOBAL_SCOPE } from '../stores/views.js'
-import { fetchGlobalIndex } from '../swarm/feeds.js'
-import { fetchObject, resolveEntries } from '../swarm/fetch.js'
+import { fetchGlobalIndex, resolveCuratorProfile } from '../swarm/feeds.js'
+import { resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 
 const MAX_ENTRIES = 30
@@ -34,10 +34,8 @@ export function useGlobalFeed() {
         if (!match) continue
 
         try {
-          const profile = await fetchObject(match.curatorProfileRef)
+          const profile = await resolveCuratorProfile(match.curatorProfileRef)
           if (!profile?.globalIndexFeed) continue
-          const { valid: profileValid } = validate(profile)
-          if (!profileValid) continue
 
           const globalIndex = await fetchGlobalIndex(profile, viewId.value)
           if (!globalIndex?.entries?.length) continue
