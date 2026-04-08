@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
-import { useCuratorDeclarations, getCuratorPref } from './useCurators.js'
+import { useCuratorDeclarations, getCuratorPref, getDefaultCuratorIds, createOrderedSet } from './useCurators.js'
 import { useViewsStore, GLOBAL_SCOPE } from '../stores/views.js'
 import { fetchGlobalIndex, resolveCuratorProfile } from '../swarm/feeds.js'
 import { resolveEntries } from '../swarm/fetch.js'
@@ -25,9 +25,11 @@ export function useGlobalFeed() {
       if (!curatorList.length) return null
 
       const preferred = getCuratorPref('_global')
-      const ordered = preferred
-        ? [preferred, ...curatorList.map((c) => c.curator).filter((a) => a.toLowerCase() !== preferred.toLowerCase())]
-        : curatorList.map((c) => c.curator)
+      const defaults = getDefaultCuratorIds(curatorList)
+      const { list: ordered, add } = createOrderedSet()
+      if (preferred) add(preferred)
+      for (const d of defaults) add(d)
+      for (const c of curatorList) add(c.curator)
 
       for (const addr of ordered) {
         const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())

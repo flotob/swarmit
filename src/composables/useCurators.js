@@ -3,10 +3,15 @@ import { computed } from 'vue'
 import { getCuratorDeclarations } from '../chain/events.js'
 import { fetchBoardIndex, resolveCuratorProfile } from '../swarm/feeds.js'
 import { validate } from '../protocol/objects.js'
+import { refToHex } from '../protocol/references.js'
 import { useCuratorPrefsStore } from '../stores/curators.js'
+import { DEFAULT_CURATORS } from '../config.js'
+
+const defaultRefHexes = new Set(DEFAULT_CURATORS.map((r) => refToHex(r)).filter(Boolean))
 
 /**
  * Load all curator declarations from chain, deduplicated (latest per address).
+ * Merges env-configured default curators that aren't already declared on-chain.
  */
 export function useCuratorDeclarations() {
   return useQuery({
@@ -15,10 +20,42 @@ export function useCuratorDeclarations() {
       const all = await getCuratorDeclarations()
       const byAddr = new Map()
       for (const c of all) byAddr.set(c.curator.toLowerCase(), c)
-      return [...byAddr.values()]
+      const curators = [...byAddr.values()]
+
+      const knownRefs = new Set(curators.map((c) => refToHex(c.curatorProfileRef)).filter(Boolean))
+      for (const ref of DEFAULT_CURATORS) {
+        const hex = refToHex(ref)
+        if (hex && !knownRefs.has(hex)) {
+          curators.push({ curator: `default:${hex.slice(0, 16)}`, curatorProfileRef: ref, blockNumber: '0x0' })
+        }
+      }
+
+      return curators
     },
-    staleTime: 30_000, // 30s — curators update profiles when new boards appear
+    staleTime: 30_000,
   })
+}
+
+/**
+ * Check if a curator entry matches a default curator ref.
+ */
+function isDefaultCurator(c) {
+  const hex = refToHex(c.curatorProfileRef)
+  return hex && defaultRefHexes.has(hex)
+}
+
+/**
+ * Case-insensitive ordered dedup for curator IDs/addresses.
+ */
+export function createOrderedSet() {
+  const seen = new Set()
+  const list = []
+  function add(addr) {
+    if (!addr) return
+    const lower = addr.toLowerCase()
+    if (!seen.has(lower)) { seen.add(lower); list.push(addr) }
+  }
+  return { list, add }
 }
 
 /**
@@ -27,18 +64,10 @@ export function useCuratorDeclarations() {
  */
 export function buildCandidates(slug, board, curators) {
   const curatorPrefs = useCuratorPrefsStore()
-  const seen = new Set()
-  const list = []
-
-  function add(addr) {
-    if (!addr) return
-    const lower = addr.toLowerCase()
-    if (seen.has(lower)) return
-    seen.add(lower)
-    list.push(addr)
-  }
+  const { list, add } = createOrderedSet()
 
   add(curatorPrefs.getPreference(slug))
+  for (const c of curators) { if (isDefaultCurator(c)) add(c.curator) }
   add(board?.defaultCurator)
   if (board?.endorsedCurators?.length === 1) add(board.endorsedCurators[0])
 
@@ -75,6 +104,13 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList, viewId)
   }
 
   return null
+}
+
+/**
+ * Return curator IDs from a list that match env-configured defaults.
+ */
+export function getDefaultCuratorIds(curators) {
+  return curators.filter(isDefaultCurator).map((c) => c.curator)
 }
 
 export function getCuratorPref(slug) {
