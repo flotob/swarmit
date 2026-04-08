@@ -1,3 +1,4 @@
+// Reserved for a future "browse all boards" surface (chain-wide enumeration).
 import { useQuery } from '@tanstack/vue-query'
 import { getBoardRegistrations, getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject } from '../swarm/fetch.js'

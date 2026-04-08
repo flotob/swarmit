@@ -1,14 +1,13 @@
 <script setup>
-import { useBoardList } from '../composables/useBoardList'
+import { useCuratorBoards } from '../composables/useCuratorBoards'
 import { useRouter } from 'vue-router'
 import { Card, CardContent } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
 import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
 
 const router = useRouter()
-const { data: boards, isLoading, isError, error } = useBoardList()
+const { boards, curatorName, isLoading, isError, error } = useCuratorBoards()
 
 function goToBoard(slug) {
   router.push({ name: 'board', params: { slug } })
@@ -18,7 +17,10 @@ function goToBoard(slug) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-foreground">Boards</h1>
+      <div>
+        <h1 class="text-2xl font-bold text-foreground">Boards</h1>
+        <p v-if="curatorName" class="text-sm text-muted-foreground mt-1">Curated by {{ curatorName }}</p>
+      </div>
       <Button as-child>
         <router-link :to="{ name: 'create-board' }">Create Board</router-link>
       </Button>
@@ -35,26 +37,20 @@ function goToBoard(slug) {
       <AlertDescription>{{ error?.message || 'Failed to load boards' }}</AlertDescription>
     </Alert>
 
-    <div v-else-if="!boards?.length" class="text-center py-16">
-      <p class="text-lg mb-2 text-foreground">No boards registered yet.</p>
-      <p class="text-sm text-muted-foreground">Be the first — create a board to get started.</p>
+    <div v-else-if="!boards.length" class="text-center py-16">
+      <p class="text-lg mb-2 text-foreground">No boards available yet.</p>
+      <p class="text-sm text-muted-foreground">The selected curator hasn't published any board feeds.</p>
     </div>
 
     <div v-else class="space-y-2">
       <Card
-        v-for="b in boards"
-        :key="b.slug"
-        @click="goToBoard(b.slug)"
+        v-for="slug in boards"
+        :key="slug"
+        @click="goToBoard(slug)"
         class="cursor-pointer hover:bg-accent/50 transition-colors py-0 gap-0"
       >
         <CardContent class="p-4">
-          <div class="text-base font-semibold text-card-foreground">
-            {{ b.board?.title || `r/${b.slug}` }}
-          </div>
-          <div v-if="b.board?.description" class="text-sm text-muted-foreground mt-1">
-            {{ b.board.description }}
-          </div>
-          <Badge variant="outline" class="mt-2 text-xs">r/{{ b.slug }}</Badge>
+          <div class="text-base font-semibold text-card-foreground">r/{{ slug }}</div>
         </CardContent>
       </Card>
     </div>

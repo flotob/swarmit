@@ -1,8 +1,8 @@
 import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
-import { useCuratorDeclarations, getCuratorPref, getDefaultCuratorIds, createOrderedSet } from './useCurators.js'
+import { useCuratorDeclarations, getCuratorPref, resolveGlobalCurator } from './useCurators.js'
 import { useViewsStore, GLOBAL_SCOPE } from '../stores/views.js'
-import { fetchGlobalIndex, resolveCuratorProfile } from '../swarm/feeds.js'
+import { fetchGlobalIndex } from '../swarm/feeds.js'
 import { resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 
@@ -24,43 +24,26 @@ export function useGlobalFeed() {
       const curatorList = curators.value || []
       if (!curatorList.length) return null
 
-      const preferred = getCuratorPref('_global')
-      const defaults = getDefaultCuratorIds(curatorList)
-      const { list: ordered, add } = createOrderedSet()
-      if (preferred) add(preferred)
-      for (const d of defaults) add(d)
-      for (const c of curatorList) add(c.curator)
+      return resolveGlobalCurator(curatorList, async (profile, addr) => {
+        if (!profile?.globalIndexFeed) return null
 
-      for (const addr of ordered) {
-        const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())
-        if (!match) continue
+        const globalIndex = await fetchGlobalIndex(profile, viewId.value)
+        if (!globalIndex?.entries?.length) return null
+        const { valid: indexValid } = validate(globalIndex)
+        if (!indexValid) return null
 
-        try {
-          const profile = await resolveCuratorProfile(match.curatorProfileRef)
-          if (!profile?.globalIndexFeed) continue
+        const capped = globalIndex.entries.slice(0, MAX_ENTRIES)
+        const entries = await resolveEntries(capped)
 
-          const globalIndex = await fetchGlobalIndex(profile, viewId.value)
-          if (!globalIndex?.entries?.length) continue
-          const { valid: indexValid } = validate(globalIndex)
-          if (!indexValid) continue
+        views.setAvailableViews(GLOBAL_SCOPE, profile?.globalViewFeeds, profile?.globalIndexFeed)
 
-          const capped = globalIndex.entries.slice(0, MAX_ENTRIES)
-          const entries = await resolveEntries(capped)
-
-          views.setAvailableViews(GLOBAL_SCOPE, profile?.globalViewFeeds, profile?.globalIndexFeed)
-
-          return {
-            entries,
-            curatorAddress: addr,
-            curatorProfile: profile,
-            updatedAt: globalIndex.updatedAt,
-          }
-        } catch {
-          continue
+        return {
+          entries,
+          curatorAddress: addr,
+          curatorProfile: profile,
+          updatedAt: globalIndex.updatedAt,
         }
-      }
-
-      return null
+      })
     },
     enabled: computed(() => !!curators.value?.length),
     placeholderData: keepPreviousData,

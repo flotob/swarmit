@@ -107,6 +107,35 @@ export async function resolveCuratorBoardIndex(slug, board, curatorList, viewId)
 }
 
 /**
+ * Resolve the preferred global curator's profile.
+ * Iterates candidates (user pref → env defaults → all) and returns the first
+ * profile accepted by `acceptFn`. Returns null if none accepted.
+ * @param {Array} curatorList - curator declarations
+ * @param {(profile: Object, addr: string) => any} acceptFn - return non-null to accept
+ */
+export async function resolveGlobalCurator(curatorList, acceptFn) {
+  const preferred = getCuratorPref('_global')
+  const defaults = getDefaultCuratorIds(curatorList)
+  const { list: ordered, add } = createOrderedSet()
+  if (preferred) add(preferred)
+  for (const d of defaults) add(d)
+  for (const c of curatorList) add(c.curator)
+
+  for (const addr of ordered) {
+    const match = curatorList.find((c) => c.curator.toLowerCase() === addr.toLowerCase())
+    if (!match) continue
+    try {
+      const profile = await resolveCuratorProfile(match.curatorProfileRef)
+      const result = await acceptFn(profile, addr)
+      if (result != null) return result
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
+/**
  * Return curator IDs from a list that match env-configured defaults.
  */
 export function getDefaultCuratorIds(curators) {
