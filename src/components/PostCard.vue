@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { truncateAddress, timeAgo, formatLinkDisplay } from '../lib/format.js'
+import { displayName, timeAgo, formatLinkDisplay } from '../lib/format.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
@@ -145,7 +145,7 @@ function share() {
           <template v-if="authorAddress">
             by
             <router-link :to="`/u/${authorAddress}`" class="hover:underline">
-              {{ truncateAddress(authorAddress) }}
+              {{ displayName(authorAddress) }}
             </router-link>
           </template>
           <template v-if="showBoard && boardSlug">

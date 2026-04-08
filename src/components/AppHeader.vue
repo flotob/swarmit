@@ -7,7 +7,7 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { useViewsStore, boardScope, GLOBAL_SCOPE } from '../stores/views'
 import { useWallet } from '../composables/useWallet'
 import { useColorMode } from '../composables/useColorMode'
-import { truncateAddress } from '../lib/format.js'
+import { displayName } from '../lib/format.js'
 import { Bell, Wallet, Radio } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -138,7 +138,7 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
           class="inline-flex items-center gap-1 px-2 py-1.5 hover:text-header-foreground font-bold transition-colors"
         >
           <Wallet class="w-3.5 h-3.5" />
-          {{ truncateAddress(auth.userAddress) }}
+          {{ displayName(auth.userAddress) }}
         </router-link>
       </div>
     </div>

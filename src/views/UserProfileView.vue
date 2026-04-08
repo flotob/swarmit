@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '../stores/auth'
-import { truncateAddress, timeAgo } from '../lib/format.js'
+import { displayName, timeAgo } from '../lib/format.js'
 import { refToHex } from '../protocol/references.js'
 import { validate } from '../protocol/objects.js'
 import { resolveFeed } from '../swarm/feeds.js'
@@ -86,7 +86,7 @@ async function goToThread(entry) {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-foreground">{{ truncateAddress(address) }}</h1>
+    <h1 class="text-2xl font-bold text-foreground">{{ displayName(address) }}</h1>
     <p class="text-xs font-mono text-muted-foreground mt-1 break-all">{{ address }}</p>
 
     <div v-if="isLoading" class="mt-6 space-y-2">

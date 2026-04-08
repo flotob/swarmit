@@ -5,7 +5,7 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { fetchObject } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { refToHex, hexToBzz } from '../protocol/references.js'
-import { truncateAddress, timeAgo } from '../lib/format.js'
+import { displayName, timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS, STATUS_PANEL_COLORS } from '../lib/submission-status.js'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
 import { ExternalLink } from 'lucide-vue-next'
@@ -100,7 +100,7 @@ function goToThread() {
             class="flex items-center gap-2 text-sm text-foreground"
           >
             <span class="text-success">●</span>
-            <span>{{ pickup.curatorName || truncateAddress(pickup.curator) }}</span>
+            <span>{{ displayName(pickup.curator, pickup.curatorName) }}</span>
             <span class="text-xs text-muted-foreground">{{ timeAgo(pickup.pickedUpAt) }}</span>
           </div>
         </div>
@@ -146,7 +146,7 @@ function goToThread() {
           :body-text="content.body?.text || ''"
         />
         <div class="mt-3 text-xs text-muted-foreground">
-          by {{ truncateAddress(content.author?.address) }}
+          by {{ displayName(content.author?.address) }}
         </div>
       </div>
 

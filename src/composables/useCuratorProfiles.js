@@ -1,6 +1,6 @@
 import { reactive, watch, onScopeDispose } from 'vue'
 import { resolveCuratorProfile } from '../swarm/feeds.js'
-import { truncateAddress } from '../lib/format.js'
+import { displayName } from '../lib/format.js'
 
 const REFRESH_INTERVAL_MS = 30_000
 
@@ -46,7 +46,7 @@ export function useCuratorProfiles(curatorsRef) {
   onScopeDispose(() => clearInterval(refreshTimer))
 
   function profileName(addr) {
-    return profiles.get(addr)?.name || truncateAddress(addr)
+    return displayName(addr, profiles.get(addr)?.name)
   }
 
   return { profiles, profileName }

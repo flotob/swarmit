@@ -1,7 +1,7 @@
 <script setup>
 import { useCuratorDeclarations, getCuratorPref, setCuratorPref } from '../composables/useCurators'
 import { useCuratorProfiles } from '../composables/useCuratorProfiles'
-import { truncateAddress } from '../lib/format.js'
+import { displayName } from '../lib/format.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Skeleton } from '../components/ui/skeleton'
@@ -53,7 +53,7 @@ function selectCurator(addr, boardSlug) {
       >
         <CardContent class="p-4">
           <div class="text-base font-semibold text-card-foreground">
-            {{ getProfile(c.curator)?.name || truncateAddress(c.curator) }}
+            {{ displayName(c.curator, getProfile(c.curator)?.name) }}
           </div>
           <div class="text-xs font-mono text-muted-foreground mt-0.5">
             {{ c.curator }}

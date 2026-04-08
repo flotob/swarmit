@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { truncateAddress, timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
+import { displayName, timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
 import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import { ChevronUp, ChevronDown, MessageSquare } from 'lucide-vue-next'
@@ -65,7 +65,7 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
           :to="`/u/${node.content.author.address}`"
           class="font-medium hover:underline"
         >
-          {{ truncateAddress(node.content.author.address) }}
+          {{ displayName(node.content.author.address) }}
         </router-link>
 
         <span>·</span>

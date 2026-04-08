@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { setCuratorPref } from '../composables/useCurators'
 import { useCuratorProfiles } from '../composables/useCuratorProfiles'
-import { truncateAddress } from '../lib/format.js'
+import { displayName } from '../lib/format.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,8 +29,8 @@ const allCurators = computed(() => {
   }))
 })
 
-const displayName = computed(() =>
-  props.curatorName || truncateAddress(props.curatorAddress)
+const curatorDisplayName = computed(() =>
+  displayName(props.curatorAddress, props.curatorName)
 )
 
 function selectCurator(address) {
@@ -44,7 +44,7 @@ function selectCurator(address) {
 
     <DropdownMenu v-if="allCurators.length > 1">
       <DropdownMenuTrigger class="inline-flex items-center gap-1 text-foreground font-medium hover:text-primary cursor-pointer outline-none transition-colors">
-        {{ displayName }}
+        {{ curatorDisplayName }}
         <ChevronDown class="w-3.5 h-3.5 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" class="min-w-[8rem]">
@@ -60,6 +60,6 @@ function selectCurator(address) {
       </DropdownMenuContent>
     </DropdownMenu>
 
-    <span v-else class="text-foreground font-medium">{{ displayName }}</span>
+    <span v-else class="text-foreground font-medium">{{ curatorDisplayName }}</span>
   </div>
 </template>
