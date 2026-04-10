@@ -10,15 +10,23 @@ import { validate } from '../protocol/objects.js'
 import { resolveFeed } from '../swarm/feeds.js'
 import { fetchObject } from '../swarm/fetch.js'
 import { getBoardRegistrations, getSubmissionsForBoard } from '../chain/events.js'
+import { isUsernameRegistryConfigured } from '../chain/username-registry.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
+import ClaimUsernameCard from '../components/ClaimUsernameCard.vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const address = computed(() => route.params.address)
+
+const showUsernameCard = computed(() =>
+  isUsernameRegistryConfigured() &&
+  !!auth.userAddress &&
+  address.value?.toLowerCase() === auth.userAddress.toLowerCase(),
+)
 
 const { data: profile, isLoading, isError, error } = useQuery({
   queryKey: ['userProfile', address],
@@ -89,6 +97,8 @@ async function goToThread(entry) {
   <div>
     <h1 class="text-2xl font-bold text-foreground">{{ displayName(address) }}</h1>
     <p class="text-xs font-mono text-muted-foreground mt-1 break-all">{{ address }}</p>
+
+    <ClaimUsernameCard v-if="showUsernameCard" :address="address" />
 
     <div v-if="isLoading" class="mt-6 space-y-2">
       <Skeleton v-for="i in 4" :key="i" class="h-14 rounded-lg" />

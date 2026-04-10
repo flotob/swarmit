@@ -20,7 +20,12 @@ export const DEFAULT_CURATORS = (import.meta.env.VITE_DEFAULT_CURATORS || '')
 
 // SwarmitUsernameRegistry (optional — if unset, the app degrades to fallback names)
 export const USERNAME_REGISTRY_ADDRESS = import.meta.env.VITE_USERNAME_REGISTRY_ADDRESS || '';
-export const USERNAME_REGISTRY_DEPLOY_BLOCK = import.meta.env.VITE_USERNAME_REGISTRY_DEPLOY_BLOCK || '';
+// Normalized to 0x-prefixed hex for direct use in eth_getLogs fromBlock.
+export const USERNAME_REGISTRY_DEPLOY_BLOCK = (() => {
+  const raw = import.meta.env.VITE_USERNAME_REGISTRY_DEPLOY_BLOCK || '';
+  if (!raw) return '';
+  return raw.startsWith('0x') ? raw : '0x' + Number(raw).toString(16);
+})();
 export const MULTICALL3_ADDRESS = import.meta.env.VITE_MULTICALL3_ADDRESS || '';
 
 const ADDRESS_ZERO = '0x' + '0'.repeat(40);

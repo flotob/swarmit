@@ -6,19 +6,31 @@ import { iface as registryIface } from 'swarmit-protocol/username-registry'
 const REGISTRY_ADDR = '0x1111111111111111111111111111111111111111'
 const MULTICALL_ADDR = '0x2222222222222222222222222222222222222222'
 
-// Mock rpc and config BEFORE importing the module under test
+// Mock rpc, ethereum, and config BEFORE importing the module under test
 const mockEthCall = vi.fn()
+const mockGetLogs = vi.fn()
+const mockSendTransaction = vi.fn()
 let registryConfigured = true
-vi.mock('../../src/lib/rpc.js', () => ({ ethCall: mockEthCall }))
+vi.mock('../../src/lib/rpc.js', () => ({
+  ethCall: mockEthCall,
+  getLogs: mockGetLogs,
+}))
+vi.mock('../../src/lib/ethereum.js', () => ({ sendTransaction: mockSendTransaction }))
 vi.mock('../../src/config.js', () => ({
   USERNAME_REGISTRY_ADDRESS: REGISTRY_ADDR,
+  USERNAME_REGISTRY_DEPLOY_BLOCK: '0x64',
   MULTICALL3_ADDRESS: MULTICALL_ADDR,
   isUsernameRegistryConfigured: () => registryConfigured,
 }))
 
-const { getPrimaryName, getPrimaryNames, getCurrentUsernamePrice, multicallIface } = await import(
-  '../../src/chain/username-registry.js'
-)
+const {
+  getPrimaryName,
+  getPrimaryNames,
+  getCurrentUsernamePrice,
+  claimUsername,
+  setPrimaryUsername,
+  multicallIface,
+} = await import('../../src/chain/username-registry.js')
 
 function encodePrimaryNameReturn(name) {
   return registryIface.encodeFunctionResult('primaryNameOf', [name])
@@ -198,5 +210,52 @@ describe('getCurrentUsernamePrice', () => {
     const price = await getCurrentUsernamePrice()
     expect(price).toBe(1500000000000000n)
     expect(typeof price).toBe('bigint')
+  })
+})
+
+describe('claimUsername', () => {
+  beforeEach(() => {
+    mockSendTransaction.mockReset()
+    registryConfigured = true
+  })
+
+  it('sends a tx with calldata and value=maxPriceWei', async () => {
+    mockSendTransaction.mockResolvedValueOnce('0xtxhash')
+    const hash = await claimUsername({ name: 'alice', maxPriceWei: 1500000000000000n })
+
+    expect(hash).toBe('0xtxhash')
+    expect(mockSendTransaction).toHaveBeenCalledOnce()
+    const arg = mockSendTransaction.mock.calls[0][0]
+    expect(arg.to).toBe(REGISTRY_ADDR)
+    expect(arg.value).toBe('0x5543df729c000')
+    expect(arg.data.slice(0, 10)).toBe('0xe64d2fb4') // claim selector
+  })
+
+  it('throws when registry is not configured', async () => {
+    registryConfigured = false
+    await expect(claimUsername({ name: 'alice', maxPriceWei: 1n })).rejects.toThrow(/not configured/)
+    expect(mockSendTransaction).not.toHaveBeenCalled()
+  })
+})
+
+describe('setPrimaryUsername', () => {
+  beforeEach(() => {
+    mockSendTransaction.mockReset()
+    registryConfigured = true
+  })
+
+  it('sends a tx with setPrimaryName calldata', async () => {
+    mockSendTransaction.mockResolvedValueOnce('0xtxhash')
+    const hash = await setPrimaryUsername(42n)
+
+    expect(hash).toBe('0xtxhash')
+    const arg = mockSendTransaction.mock.calls[0][0]
+    expect(arg.to).toBe(REGISTRY_ADDR)
+    expect(arg.data.slice(0, 10)).toBe('0xa4f69657') // setPrimaryName selector
+  })
+
+  it('throws when registry is not configured', async () => {
+    registryConfigured = false
+    await expect(setPrimaryUsername(1n)).rejects.toThrow(/not configured/)
   })
 })
