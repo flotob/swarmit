@@ -90,7 +90,10 @@ export const useVotesStore = defineStore('votes', () => {
       for (const [key, { upvotes, downvotes }] of result.totals) {
         totals[key] = { upvotes, downvotes, fetchedAt: now }
       }
-      if (voter) {
+      // Only write myVote results if the wallet hasn't changed during the
+      // in-flight RPC — otherwise we'd cache directions for the previous
+      // wallet under the current wallet's namespace.
+      if (voter && voter === auth.userAddress) {
         for (const [key, direction] of result.myVotes) {
           myVotes[key] = { direction, fetchedAt: now }
         }
@@ -100,6 +103,10 @@ export const useVotesStore = defineStore('votes', () => {
     }
   }
 
+  /**
+   * Drop both the totals and the myVote cache entries for a ref.
+   * Called after a successful vote tx so the next render re-fetches.
+   */
   function invalidate(ref) {
     if (!ref) return
     const key = ref.toLowerCase()

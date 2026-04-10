@@ -40,15 +40,12 @@ vi.mock('../../src/composables/useWallet.js', () => ({
   useWallet: () => ({ connect: mockConnect }),
 }))
 
-const { useVotes } = await import('../../src/composables/useVotes.js')
+const { useVotes, applyVoteTransition } = await import('../../src/composables/useVotes.js')
 const { useAuthStore } = await import('../../src/stores/auth.js')
+const { flushMicrotasks } = await import('../helpers/flushMicrotasks.js')
 
 const REF = 'bzz://' + 'a'.repeat(64)
 const VOTER = '0xAAAA000000000000000000000000000000000001'
-
-function flushMicrotasks() {
-  return new Promise((resolve) => setTimeout(resolve, 0))
-}
 
 describe('useVotes', () => {
   beforeEach(() => {
@@ -87,18 +84,21 @@ describe('useVotes', () => {
     storeTotals.value = { upvotes: 5, downvotes: 1 }
     storeMyVote.value = 0
     mockSendVote.mockResolvedValueOnce('0xtxhash')
+    let resolveReceipt
     mockWaitForReceipt.mockImplementationOnce(
-      () => new Promise((resolve) => setTimeout(() => resolve({ status: '0x1' }), 10)),
+      () => new Promise((resolve) => { resolveReceipt = resolve }),
     )
     const { upvotes, downvotes, score, myVote, upvote } = useVotes(REF)
 
     const votePromise = upvote()
-    // Optimistic state applied before tx resolves
+    // Give microtasks a chance so optimistic state is applied
+    await Promise.resolve()
     expect(myVote.value).toBe(1)
     expect(upvotes.value).toBe(6)
     expect(downvotes.value).toBe(1)
     expect(score.value).toBe(5)
 
+    resolveReceipt({ status: '0x1' })
     await votePromise
     expect(mockInvalidate).toHaveBeenCalledWith(REF)
   })
@@ -156,5 +156,37 @@ describe('useVotes', () => {
     expect(myVote.value).toBe(0)
     expect(error.value).toMatch(/reverted/)
     expect(mockInvalidate).not.toHaveBeenCalled()
+  })
+})
+
+describe('applyVoteTransition', () => {
+  const T = { upvotes: 5, downvotes: 2 }
+
+  it('0 → 1 increments upvotes', () => {
+    expect(applyVoteTransition(T, 0, 1)).toEqual({ upvotes: 6, downvotes: 2 })
+  })
+  it('0 → -1 increments downvotes', () => {
+    expect(applyVoteTransition(T, 0, -1)).toEqual({ upvotes: 5, downvotes: 3 })
+  })
+  it('1 → 0 decrements upvotes (clear)', () => {
+    expect(applyVoteTransition(T, 1, 0)).toEqual({ upvotes: 4, downvotes: 2 })
+  })
+  it('-1 → 0 decrements downvotes (clear)', () => {
+    expect(applyVoteTransition(T, -1, 0)).toEqual({ upvotes: 5, downvotes: 1 })
+  })
+  it('1 → -1 flips: -1 upvote, +1 downvote', () => {
+    expect(applyVoteTransition(T, 1, -1)).toEqual({ upvotes: 4, downvotes: 3 })
+  })
+  it('-1 → 1 flips: +1 upvote, -1 downvote', () => {
+    expect(applyVoteTransition(T, -1, 1)).toEqual({ upvotes: 6, downvotes: 1 })
+  })
+  it('0 → 0 no-op', () => {
+    expect(applyVoteTransition(T, 0, 0)).toEqual({ upvotes: 5, downvotes: 2 })
+  })
+  it('1 → 1 no-op (same direction)', () => {
+    expect(applyVoteTransition(T, 1, 1)).toEqual({ upvotes: 5, downvotes: 2 })
+  })
+  it('-1 → -1 no-op (same direction)', () => {
+    expect(applyVoteTransition(T, -1, -1)).toEqual({ upvotes: 5, downvotes: 2 })
   })
 })

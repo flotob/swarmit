@@ -11,10 +11,7 @@ vi.mock('../../src/chain/username-registry.js', () => ({
 }))
 
 const { useUsernamesStore } = await import('../../src/stores/usernames.js')
-
-function flushMicrotasks() {
-  return new Promise((resolve) => setTimeout(resolve, 0))
-}
+const { flushMicrotasks } = await import('../helpers/flushMicrotasks.js')
 
 describe('usernames store', () => {
   beforeEach(() => {

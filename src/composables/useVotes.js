@@ -7,6 +7,23 @@ import { isContractConfigured } from '../chain/contract.js'
 import { useWallet } from './useWallet.js'
 import { waitForReceipt } from '../lib/rpc.js'
 
+// EIP-1193 user rejected request
+const USER_REJECTED_CODE = 4001
+
+/**
+ * Pure function: apply a vote direction change to existing totals.
+ * Exported for unit testing the full 3×3 transition matrix.
+ * @param {{upvotes: number, downvotes: number}} totals
+ * @param {number} fromDirection - current on-chain direction (-1, 0, 1)
+ * @param {number} toDirection - new direction being sent
+ */
+export function applyVoteTransition(totals, fromDirection, toDirection) {
+  return {
+    upvotes: totals.upvotes - (fromDirection === 1 ? 1 : 0) + (toDirection === 1 ? 1 : 0),
+    downvotes: totals.downvotes - (fromDirection === -1 ? 1 : 0) + (toDirection === -1 ? 1 : 0),
+  }
+}
+
 /**
  * Vote composable for a single submission. Reads go through the votes
  * store (batched via Multicall3 on first render); writes go through
@@ -50,7 +67,7 @@ export function useVotes(submissionRef) {
         justConnected = true
       }
     } catch (err) {
-      if (err.code !== 4001) error.value = err.message
+      if (err.code !== USER_REJECTED_CODE) error.value = err.message
       isVoting.value = false
       return
     }
@@ -62,21 +79,19 @@ export function useVotes(submissionRef) {
     if (justConnected) {
       try {
         currentVote = await getUserVote(subRef.value, auth.userAddress)
-      } catch { /* proceed with 0 */ }
+      } catch (err) {
+        console.debug('[useVotes] post-connect getUserVote fallback failed', err)
+      }
     }
 
     const direction = intendedDirection === currentVote ? 0 : intendedDirection
 
-    const prevUp = upvotes.value
-    const prevDown = downvotes.value
     optimisticMyVote.value = direction
-    let newUp = prevUp
-    let newDown = prevDown
-    if (currentVote === 1) newUp--
-    if (currentVote === -1) newDown--
-    if (direction === 1) newUp++
-    if (direction === -1) newDown++
-    optimisticTotals.value = { upvotes: newUp, downvotes: newDown }
+    optimisticTotals.value = applyVoteTransition(
+      { upvotes: upvotes.value, downvotes: downvotes.value },
+      currentVote,
+      direction,
+    )
 
     try {
       const txHash = await sendVote({ submissionRef: subRef.value, direction })
@@ -90,7 +105,7 @@ export function useVotes(submissionRef) {
     } catch (err) {
       optimisticTotals.value = null
       optimisticMyVote.value = null
-      if (err.code !== 4001) error.value = err.message
+      if (err.code !== USER_REJECTED_CODE) error.value = err.message
     } finally {
       isVoting.value = false
     }

@@ -14,10 +14,7 @@ vi.mock('../../src/chain/contract.js', () => ({
 
 const { useVotesStore } = await import('../../src/stores/votes.js')
 const { useAuthStore } = await import('../../src/stores/auth.js')
-
-function flushMicrotasks() {
-  return new Promise((resolve) => setTimeout(resolve, 0))
-}
+const { flushMicrotasks } = await import('../helpers/flushMicrotasks.js')
 
 const REF_A = 'bzz://' + 'a'.repeat(64)
 const REF_B = 'bzz://' + 'b'.repeat(64)
@@ -224,6 +221,31 @@ describe('votes store', () => {
     useAuthStore().setWallet('0xBBBB000000000000000000000000000000000002')
     await flushMicrotasks()
     // Old entry was cleared on wallet change → next read re-enqueues and returns null
+    expect(store.getMyVote(REF_A)).toBeNull()
+  })
+
+  it('discards in-flight myVote results if wallet changed during flush', async () => {
+    // Race: flush starts with wallet A, wallet switches to B during the
+    // RPC. When the RPC resolves, the stale (wallet-A) directions must
+    // NOT be written into the myVotes cache under the wallet-B namespace.
+    let resolveBatch
+    mockGetVotesBatch.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveBatch = resolve }),
+    )
+    const store = useVotesStore()
+
+    store.getMyVote(REF_A)
+    await Promise.resolve() // let queueMicrotask fire, flush starts
+
+    useAuthStore().setWallet('0xBBBB000000000000000000000000000000000002')
+    resolveBatch({
+      totals: new Map(),
+      myVotes: new Map([[REF_A.toLowerCase(), 1]]),
+    })
+    await flushMicrotasks()
+
+    // Wallet-A result was discarded; next read re-enqueues for wallet B
+    mockGetVotesBatch.mockResolvedValueOnce({ totals: new Map(), myVotes: new Map() })
     expect(store.getMyVote(REF_A)).toBeNull()
   })
 })
