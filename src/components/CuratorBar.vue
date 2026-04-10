@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { setCuratorPref } from '../composables/useCurators'
 import { useCuratorProfiles } from '../composables/useCuratorProfiles'
-import { displayName } from '../lib/format.js'
+import { displayName } from '../lib/displayName.js'
 import {
   DropdownMenu,
   DropdownMenuContent,

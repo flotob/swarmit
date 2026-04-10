@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { displayName, timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
+import { timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
+import { displayName } from '../lib/displayName.js'
 import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import { ChevronUp, ChevronDown, MessageSquare } from 'lucide-vue-next'

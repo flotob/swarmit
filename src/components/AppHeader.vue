@@ -7,7 +7,7 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { useViewsStore, boardScope, GLOBAL_SCOPE } from '../stores/views'
 import { useWallet } from '../composables/useWallet'
 import { useColorMode } from '../composables/useColorMode'
-import { displayName } from '../lib/format.js'
+import { displayName } from '../lib/displayName.js'
 import { Bell, Wallet, Radio } from 'lucide-vue-next'
 
 const route = useRoute()

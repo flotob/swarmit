@@ -1,21 +1,13 @@
 /**
  * Shared formatting helpers for UI display.
+ *
+ * Identity labels (addresses → human names) live in useDisplayNames —
+ * this module only provides the sync fallback `truncateAddress`.
  */
-
-import { addressToFallbackName } from 'swarmit-protocol/names'
 
 export function truncateAddress(addr) {
   if (!addr || addr.length < 10) return addr || '?';
   return addr.slice(0, 6) + '...' + addr.slice(-4);
-}
-
-/**
- * Resolve a human-readable display name for an address.
- * Precedence: explicit name → deterministic fallback → truncated address.
- */
-export function displayName(address, explicitName) {
-  if (explicitName) return explicitName
-  try { return addressToFallbackName(address) } catch { return truncateAddress(address) }
 }
 
 export function timeAgo(timestamp) {

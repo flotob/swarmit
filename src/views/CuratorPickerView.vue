@@ -1,7 +1,7 @@
 <script setup>
 import { useCuratorDeclarations, getCuratorPref, setCuratorPref } from '../composables/useCurators'
 import { useCuratorProfiles } from '../composables/useCuratorProfiles'
-import { displayName } from '../lib/format.js'
+import { displayName } from '../lib/displayName.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Skeleton } from '../components/ui/skeleton'

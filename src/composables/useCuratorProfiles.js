@@ -1,6 +1,6 @@
 import { reactive, watch, onScopeDispose } from 'vue'
 import { resolveCuratorProfile } from '../swarm/feeds.js'
-import { displayName } from '../lib/format.js'
+import { displayName } from '../lib/displayName.js'
 
 const REFRESH_INTERVAL_MS = 30_000
 

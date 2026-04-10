@@ -1,7 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { displayName, timeAgo, formatLinkDisplay } from '../lib/format.js'
+import { timeAgo, formatLinkDisplay } from '../lib/format.js'
+import { displayName } from '../lib/displayName.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
