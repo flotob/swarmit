@@ -29,8 +29,8 @@ const {
   getCurrentUsernamePrice,
   claimUsername,
   setPrimaryUsername,
-  multicallIface,
 } = await import('../../src/chain/username-registry.js')
+const { multicallIface } = await import('../../src/chain/multicall.js')
 
 function encodePrimaryNameReturn(name) {
   return registryIface.encodeFunctionResult('primaryNameOf', [name])

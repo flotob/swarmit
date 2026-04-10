@@ -4,51 +4,17 @@
  * functions return empty results with no RPC calls. Writes throw.
  */
 
-import { Interface } from 'ethers';
 import { iface as registryIface, encode, TOPICS } from 'swarmit-protocol/username-registry';
 import { ethCall, getLogs } from '../lib/rpc.js';
 import { sendTransaction } from '../lib/ethereum.js';
+import { multicallAggregate, decodeResult, chunk, MAX_BATCH_SIZE } from './multicall.js';
 import {
   USERNAME_REGISTRY_ADDRESS,
   USERNAME_REGISTRY_DEPLOY_BLOCK,
-  MULTICALL3_ADDRESS,
   isUsernameRegistryConfigured,
 } from '../config.js';
 
 export { isUsernameRegistryConfigured };
-
-// See https://github.com/mds1/multicall for the full contract.
-export const multicallIface = new Interface([
-  'function aggregate3((address target, bool allowFailure, bytes callData)[] calls) payable returns ((bool success, bytes returnData)[] returnData)',
-]);
-
-// Cap a single aggregate3 call to stay well under RPC eth_call gas limits.
-// Typical limits are 30M+ gas; primaryNameOf is ~5k gas per call.
-const MAX_BATCH_SIZE = 250;
-
-/**
- * Call Multicall3.aggregate3 and return the array of { success, returnData } results.
- */
-async function multicallAggregate(calls) {
-  const data = await ethCall({
-    to: MULTICALL3_ADDRESS,
-    data: multicallIface.encodeFunctionData('aggregate3', [calls]),
-  });
-  const [results] = multicallIface.decodeFunctionResult('aggregate3', data);
-  return results;
-}
-
-/**
- * Decode one aggregate3 result via the registry interface. Returns null on failure.
- */
-function decodeResult(result, functionName) {
-  if (!result.success || !result.returnData || result.returnData === '0x') return null;
-  try {
-    return registryIface.decodeFunctionResult(functionName, result.returnData);
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Fetch a single address's primary username.
@@ -88,14 +54,9 @@ export async function getPrimaryNames(addresses) {
   if (!unique.size) return result;
 
   const entries = [...unique.entries()];
-  const chunks = [];
-  for (let i = 0; i < entries.length; i += MAX_BATCH_SIZE) {
-    chunks.push(entries.slice(i, i + MAX_BATCH_SIZE));
-  }
-
-  const chunkResults = await Promise.all(chunks.map(fetchChunk));
-  for (const chunk of chunkResults) {
-    for (const [key, name] of chunk) result.set(key, name);
+  const chunkResults = await Promise.all(chunk(entries, MAX_BATCH_SIZE).map(fetchChunk));
+  for (const c of chunkResults) {
+    for (const [key, name] of c) result.set(key, name);
   }
 
   return result;
@@ -114,7 +75,7 @@ async function fetchChunk(entries) {
   const results = await multicallAggregate(calls);
   const out = new Map();
   for (let i = 0; i < results.length; i++) {
-    const decoded = decodeResult(results[i], 'primaryNameOf');
+    const decoded = decodeResult(results[i], 'primaryNameOf', registryIface);
     out.set(entries[i][0], decoded ? decoded[0] || '' : '');
   }
   return out;
@@ -187,15 +148,15 @@ export async function getOwnedTokens(address) {
   const results = await multicallAggregate([...ownerCalls, ...nameCalls, primaryCall]);
   const ownerResults = results.slice(0, idList.length);
   const nameResults = results.slice(idList.length, idList.length * 2);
-  const primaryDecoded = decodeResult(results[results.length - 1], 'primaryTokenOf');
+  const primaryDecoded = decodeResult(results[results.length - 1], 'primaryTokenOf', registryIface);
   const primaryTokenId = primaryDecoded ? primaryDecoded[0] : 0n;
 
   const tokens = [];
   for (let i = 0; i < idList.length; i++) {
-    const ownerDecoded = decodeResult(ownerResults[i], 'ownerOf');
+    const ownerDecoded = decodeResult(ownerResults[i], 'ownerOf', registryIface);
     if (!ownerDecoded) continue;
     if (ownerDecoded[0].toLowerCase() !== address.toLowerCase()) continue;
-    const nameDecoded = decodeResult(nameResults[i], 'nameOfToken');
+    const nameDecoded = decodeResult(nameResults[i], 'nameOfToken', registryIface);
     tokens.push({
       tokenId: idList[i],
       name: nameDecoded ? nameDecoded[0] : '',
