@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { iface } from 'swarmit-protocol/chain'
+import { encodeAggregate3Return, decodeAggregate3Calldata } from './helpers.js'
 
 const CONTRACT_ADDR = '0x1111111111111111111111111111111111111111'
 const MULTICALL_ADDR = '0x2222222222222222222222222222222222222222'
@@ -17,9 +18,7 @@ vi.mock('../../src/config.js', () => ({
 }))
 
 const { getVotesBatch } = await import('../../src/chain/votes.js')
-const { multicallIface } = await import('../../src/chain/multicall.js')
 
-// bzz://<hex> — test refs with unique 64-char hex bodies
 function makeRef(n) {
   return `bzz://${String(n).padStart(64, '0')}`
 }
@@ -32,10 +31,6 @@ function encodeDownvoteReturn(count) {
 }
 function encodeVoteOfReturn(direction) {
   return iface.encodeFunctionResult('voteOf', [direction])
-}
-
-function encodeAggregate3Return(results) {
-  return multicallIface.encodeFunctionResult('aggregate3', [results])
 }
 
 describe('getVotesBatch', () => {
@@ -114,7 +109,7 @@ describe('getVotesBatch', () => {
 
     const result = await getVotesBatch(refs)
     expect(mockEthCall).toHaveBeenCalledOnce()
-    const decoded = multicallIface.decodeFunctionData('aggregate3', mockEthCall.mock.calls[0][0].data)
+    const decoded = decodeAggregate3Calldata(mockEthCall.mock.calls[0][0].data)
     expect(decoded[0].length).toBe(2)
     expect(result.totals.size).toBe(1)
   })

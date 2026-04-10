@@ -7,7 +7,7 @@
 import { iface as registryIface, encode, TOPICS } from 'swarmit-protocol/username-registry';
 import { ethCall, getLogs } from '../lib/rpc.js';
 import { sendTransaction } from '../lib/ethereum.js';
-import { multicallAggregate, decodeResult, chunk, MAX_BATCH_SIZE } from './multicall.js';
+import { multicallAggregate, decodeResult, chunk, dedupeByLowercase, MAX_BATCH_SIZE } from './multicall.js';
 import {
   USERNAME_REGISTRY_ADDRESS,
   USERNAME_REGISTRY_DEPLOY_BLOCK,
@@ -44,13 +44,7 @@ export async function getPrimaryNames(addresses) {
   const result = new Map();
   if (!isUsernameRegistryConfigured() || !addresses?.length) return result;
 
-  // Dedupe (lowercase), preserve original checksum for the call encoding
-  const unique = new Map();
-  for (const addr of addresses) {
-    if (!addr) continue;
-    const key = addr.toLowerCase();
-    if (!unique.has(key)) unique.set(key, addr);
-  }
+  const unique = dedupeByLowercase(addresses);
   if (!unique.size) return result;
 
   const entries = [...unique.entries()];

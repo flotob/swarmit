@@ -8,7 +8,7 @@ import { Interface } from 'ethers';
 import { ethCall } from '../lib/rpc.js';
 import { MULTICALL3_ADDRESS } from '../config.js';
 
-export const multicallIface = new Interface([
+const multicallIface = new Interface([
   'function aggregate3((address target, bool allowFailure, bytes callData)[] calls) payable returns ((bool success, bytes returnData)[] returnData)',
 ]);
 
@@ -58,4 +58,21 @@ export function chunk(arr, size) {
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+/**
+ * Case-insensitive dedup of string values. Returns a Map from lowercase key
+ * to the first-seen original value (preserving checksum casing for addresses).
+ * Skips null/undefined/empty entries.
+ * @param {string[]} values
+ * @returns {Map<string, string>}
+ */
+export function dedupeByLowercase(values) {
+  const unique = new Map();
+  for (const v of values) {
+    if (!v) continue;
+    const key = v.toLowerCase();
+    if (!unique.has(key)) unique.set(key, v);
+  }
+  return unique;
 }

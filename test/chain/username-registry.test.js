@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { iface as registryIface } from 'swarmit-protocol/username-registry'
+import { encodeAggregate3Return, decodeAggregate3Calldata } from './helpers.js'
 
 // Placeholder addresses — the test mocks the config module, so any valid
 // hex address works. Real deployment addresses live in .env.
@@ -30,14 +31,9 @@ const {
   claimUsername,
   setPrimaryUsername,
 } = await import('../../src/chain/username-registry.js')
-const { multicallIface } = await import('../../src/chain/multicall.js')
 
 function encodePrimaryNameReturn(name) {
   return registryIface.encodeFunctionResult('primaryNameOf', [name])
-}
-
-function encodeAggregate3Return(results) {
-  return multicallIface.encodeFunctionResult('aggregate3', [results])
 }
 
 describe('getPrimaryName', () => {
@@ -120,10 +116,7 @@ describe('getPrimaryNames', () => {
     ])
 
     expect(mockEthCall).toHaveBeenCalledOnce()
-    const callArgs = multicallIface.decodeFunctionData(
-      'aggregate3',
-      mockEthCall.mock.calls[0][0].data,
-    )
+    const callArgs = decodeAggregate3Calldata(mockEthCall.mock.calls[0][0].data)
     expect(callArgs[0].length).toBe(1)
     expect(result.size).toBe(1)
     expect(result.get('0xaaaa000000000000000000000000000000000001')).toBe('alice')
