@@ -4,6 +4,7 @@ import { getLatestBoardMetadata } from '../chain/events.js'
 import { fetchObject, resolveEntries } from '../swarm/fetch.js'
 import { validate } from '../protocol/objects.js'
 import { useCuratorDeclarations, resolveCuratorBoardIndex, getCuratorPref } from './useCurators.js'
+import { useDelayedFlag } from './useDelayedFlag.js'
 import { useViewsStore, boardScope } from '../stores/views.js'
 
 export function useBoardMetadata(slug) {
@@ -78,12 +79,19 @@ export function useBoard(slugRef) {
   const curatorAddress = computed(() => boardQuery.data.value?.curatorAddress ?? null)
   const curatorProfile = computed(() => boardQuery.data.value?.curatorProfile ?? null)
 
+  // Delayed stale-loading flag so fast cached view switches don't flash
+  // the skeleton. Covers both first-load (isLoading) and view-switch
+  // (isPlaceholderData) cases; suppressed when an error is shown.
+  const delayedStale = useDelayedFlag(boardQuery.isPlaceholderData)
+  const showSkeleton = computed(() =>
+    boardQuery.isLoading.value || (delayedStale.value && !boardQuery.isError.value),
+  )
+
   return {
     board,
     curators,
     boardIndex: boardQuery.data,
-    isLoading: boardQuery.isLoading,
-    isPlaceholderData: boardQuery.isPlaceholderData,
+    showSkeleton,
     isError: boardQuery.isError,
     error: boardQuery.error,
     curatorAddress,

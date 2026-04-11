@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 
 const router = createRouter({
   history: createWebHashHistory(),
+  scrollBehavior: () => ({ top: 0 }),
   routes: [
     { path: '/', name: 'home', component: () => import('../views/FeedView.vue') },
     { path: '/boards', name: 'boards', component: () => import('../views/HomeView.vue') },

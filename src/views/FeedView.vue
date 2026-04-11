@@ -1,20 +1,17 @@
 <script setup>
 import { watch } from 'vue'
 import { useGlobalFeed } from '../composables/useGlobalFeed'
-import { useDelayedFlag } from '../composables/useDelayedFlag'
 import { useViewsStore, GLOBAL_SCOPE } from '../stores/views'
 import PostCard from '../components/PostCard.vue'
+import PostSkeletonList from '../components/PostSkeletonList.vue'
 import CuratorBar from '../components/CuratorBar.vue'
 import FeedSidebar from '../components/FeedSidebar.vue'
-import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
 import { Button } from '../components/ui/button'
 
-const { feed, curators, isLoading, isPlaceholderData, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
-const showStaleLoader = useDelayedFlag(isPlaceholderData)
+const { feed, curators, showSkeleton, isError, error, curatorAddress, curatorProfile } = useGlobalFeed()
 
 // Scroll to top whenever the user switches to a different view.
-// Does not fire on initial mount or background refetches.
 const viewsStore = useViewsStore()
 watch(
   () => viewsStore.getView(GLOBAL_SCOPE),
@@ -34,13 +31,7 @@ watch(
         context="_global"
       />
 
-      <div v-if="isLoading || (showStaleLoader && !isError)" class="space-y-3">
-        <div v-for="i in 5" :key="i" class="rounded-lg border border-border p-4">
-          <Skeleton class="h-4 w-3/4 mb-3" />
-          <Skeleton class="h-3 w-full mb-2" />
-          <Skeleton class="h-3 w-1/2" />
-        </div>
-      </div>
+      <PostSkeletonList v-if="showSkeleton" :count="5" />
 
       <Alert v-else-if="isError" variant="destructive">
         <AlertDescription>{{ error?.message || 'Failed to load feed' }}</AlertDescription>

@@ -84,8 +84,20 @@ describe('useDelayedFlag', () => {
     source.value = true
     scope.stop()
     vi.advanceTimersByTime(200)
-    // Flag should not have been set after dispose; no error thrown
+    // Pending timer was cleared; flag never flipped
     expect(flag.value).toBe(false)
+  })
+
+  it('starts the delay timer when source is already true at creation', () => {
+    const scope = effectScope()
+    const source = ref(true)
+    let flag
+    scope.run(() => { flag = useDelayedFlag(source, 150) })
+
+    expect(flag.value).toBe(false)
+    vi.advanceTimersByTime(150)
+    expect(flag.value).toBe(true)
+    scope.stop()
   })
 
   it('handles rapid flips correctly (true→false→true)', () => {

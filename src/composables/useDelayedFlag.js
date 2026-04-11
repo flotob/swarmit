@@ -8,7 +8,10 @@ import { ref, watch, onScopeDispose } from 'vue'
  * If the source flips true then false within the delay window, the
  * returned flag never turns true at all — the indicator stays hidden.
  *
- * @param {() => boolean | import('vue').Ref<boolean>} source
+ * Note: not a drop-in for VueUse `refDebounced` — that debounces both
+ * edges, which would keep the indicator visible AFTER data arrives.
+ *
+ * @param {(() => boolean) | import('vue').Ref<boolean>} source
  * @param {number} [delayMs=150]
  * @returns {import('vue').Ref<boolean>}
  */
@@ -16,6 +19,9 @@ export function useDelayedFlag(source, delayMs = 150) {
   const flag = ref(false)
   let timer = null
 
+  // flush: 'sync' so the timer starts exactly when the source changes,
+  // not on the next microtask. Keeps the delay deterministic and makes
+  // fake-timer tests straightforward.
   watch(
     source,
     (val) => {

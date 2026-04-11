@@ -1,6 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { useCuratorDeclarations, getCuratorPref, resolveGlobalCurator } from './useCurators.js'
+import { useDelayedFlag } from './useDelayedFlag.js'
 import { useViewsStore, GLOBAL_SCOPE } from '../stores/views.js'
 import { fetchGlobalIndex } from '../swarm/feeds.js'
 import { resolveEntries } from '../swarm/fetch.js'
@@ -54,11 +55,18 @@ export function useGlobalFeed() {
   const curatorAddress = computed(() => globalQuery.data.value?.curatorAddress ?? null)
   const curatorProfile = computed(() => globalQuery.data.value?.curatorProfile ?? null)
 
+  // Delayed stale-loading flag so fast cached view switches don't flash
+  // the skeleton. Covers both first-load (isLoading) and view-switch
+  // (isPlaceholderData) cases; suppressed when an error is shown.
+  const delayedStale = useDelayedFlag(globalQuery.isPlaceholderData)
+  const showSkeleton = computed(() =>
+    globalQuery.isLoading.value || (delayedStale.value && !globalQuery.isError.value),
+  )
+
   return {
     feed: globalQuery.data,
     curators,
-    isLoading: globalQuery.isLoading,
-    isPlaceholderData: globalQuery.isPlaceholderData,
+    showSkeleton,
     isError: globalQuery.isError,
     error: globalQuery.error,
     curatorAddress,

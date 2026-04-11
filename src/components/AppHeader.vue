@@ -47,7 +47,6 @@ const defaultViewId = computed(() => viewScope.value ? views.getDefaultViewId(vi
 function selectView(viewId) {
   if (!viewScope.value) return
   const effective = activeView.value || defaultViewId.value
-  // No-op if clicking the currently-effective view
   if (viewId === effective) return
   // Store null for the default view so "default by implicit" and
   // "default by explicit selection" share the same query cache key
