@@ -99,7 +99,7 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
         </span>
 
         <span
-          v-else-if="routeName === 'compose-post'"
+          v-else-if="routeName === 'compose-post' || routeName === 'submit'"
           class="header-tab header-tab-active"
         >
           submit

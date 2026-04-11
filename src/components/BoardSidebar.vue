@@ -27,12 +27,12 @@ const actionClass = 'flex items-center justify-between w-full px-4 py-2 rounded-
     </div>
 
     <div class="space-y-2">
-      <router-link :to="{ name: 'compose-post', params: { slug } }" :class="actionClass">
+      <router-link :to="{ name: 'compose-post', params: { slug }, query: { kind: 'link' } }" :class="actionClass">
         Submit a new link
         <ChevronRight class="w-4 h-4" />
       </router-link>
 
-      <router-link :to="{ name: 'compose-post', params: { slug } }" :class="actionClass">
+      <router-link :to="{ name: 'compose-post', params: { slug }, query: { kind: 'text' } }" :class="actionClass">
         Submit a new text post
         <ChevronRight class="w-4 h-4" />
       </router-link>

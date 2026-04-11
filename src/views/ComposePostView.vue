@@ -7,6 +7,7 @@ import { STATUS } from '../lib/submission-status.js'
 import { refToHex } from '../protocol/references.js'
 import PublishProgress from '../components/PublishProgress.vue'
 import ImageUpload from '../components/ImageUpload.vue'
+import BoardPicker from '../components/BoardPicker.vue'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
@@ -14,9 +15,14 @@ import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs'
 
 const route = useRoute()
 const router = useRouter()
-const slug = computed(() => route.params.slug)
 
-const postType = ref('text')
+// Slug is either from the route (/r/:slug/submit) or picked in the
+// form (/submit). Effective slug is what the form actually uses.
+const slugFromRoute = computed(() => route.params.slug || null)
+const selectedSlug = ref(null)
+const effectiveSlug = computed(() => slugFromRoute.value || selectedSlug.value)
+
+const postType = ref(route.query.kind === 'link' ? 'link' : 'text')
 const title = ref('')
 const body = ref('')
 const linkUrl = ref('')
@@ -35,8 +41,8 @@ const trackedStatus = computed(() => {
 watch(trackedStatus, (status) => {
   if (status === STATUS.CURATED || status === STATUS.SETTLED) {
     const hex = refToHex(result.value.submissionRef)
-    if (hex) {
-      router.replace({ name: 'thread', params: { slug: slug.value, rootSubId: hex } })
+    if (hex && effectiveSlug.value) {
+      router.replace({ name: 'thread', params: { slug: effectiveSlug.value, rootSubId: hex } })
     }
   }
 })
@@ -67,6 +73,7 @@ function onImageRemoved(descriptor) {
 }
 
 const canSubmit = computed(() => {
+  if (!effectiveSlug.value) return false
   if (!title.value.trim()) return false
   if (postType.value === 'text') return !!body.value.trim() || attachments.value.length > 0
   if (postType.value === 'link') return !!linkUrl.value.trim()
@@ -85,7 +92,7 @@ async function handleSubmit() {
 
   try {
     await publishPost({
-      boardSlug: slug.value,
+      boardSlug: effectiveSlug.value,
       title: title.value.trim(),
       bodyText: trimmedBody,
       link,
@@ -100,14 +107,24 @@ async function handleSubmit() {
 <template>
   <div>
     <Button variant="ghost" size="sm" as-child class="mb-4">
-      <router-link :to="{ name: 'board', params: { slug } }">
-        &larr; r/{{ slug }}
+      <router-link v-if="slugFromRoute" :to="{ name: 'board', params: { slug: slugFromRoute } }">
+        &larr; r/{{ slugFromRoute }}
+      </router-link>
+      <router-link v-else :to="{ name: 'home' }">
+        &larr; Home
       </router-link>
     </Button>
 
-    <h1 class="text-2xl font-bold text-foreground mb-4">Submit to r/{{ slug }}</h1>
+    <h1 class="text-2xl font-bold text-foreground mb-4">
+      {{ slugFromRoute ? `Submit to r/${slugFromRoute}` : 'Submit a post' }}
+    </h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
+      <div v-if="!slugFromRoute">
+        <label class="block text-sm text-muted-foreground mb-1">Board</label>
+        <BoardPicker v-model="selectedSlug" :disabled="isPublishing" />
+      </div>
+
       <!-- Post type selection -->
       <Tabs v-model="postType" class="w-full">
         <TabsList>
@@ -173,7 +190,7 @@ async function handleSubmit() {
       :steps="steps"
       :result="result"
       :error="error"
-      :board-slug="slug"
+      :board-slug="effectiveSlug"
     />
   </div>
 </template>
