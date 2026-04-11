@@ -13,7 +13,7 @@ const { boards } = useCuratorBoards()
           v-for="slug in boards"
           :key="slug"
           :to="{ name: 'board', params: { slug } }"
-          class="px-2 py-0.5 rounded hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+          class="px-2 py-0.5 rounded hover:bg-primary/10 hover:text-primary transition-colors shrink-0 uppercase"
         >
           {{ slug }}
         </router-link>
