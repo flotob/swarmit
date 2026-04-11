@@ -45,4 +45,33 @@ describe('BoardPicker', () => {
     const trigger = wrapper.find('button')
     expect(trigger.attributes('disabled')).toBeDefined()
   })
+
+  it('filters out excludeSlug from the rendered list', async () => {
+    mockBoards.value = ['tech', 'science', 'programming']
+    const wrapper = mount(BoardPicker, {
+      props: { modelValue: null, excludeSlug: 'science' },
+      attachTo: document.body,
+    })
+    await wrapper.find('button').trigger('click')
+    await wrapper.vm.$nextTick()
+    const text = document.body.textContent
+    expect(text).toContain('r/tech')
+    expect(text).toContain('r/programming')
+    expect(text).not.toContain('r/science')
+    wrapper.unmount()
+  })
+
+  it('does not filter anything when excludeSlug is absent', async () => {
+    mockBoards.value = ['tech', 'science']
+    const wrapper = mount(BoardPicker, {
+      props: { modelValue: null },
+      attachTo: document.body,
+    })
+    await wrapper.find('button').trigger('click')
+    await wrapper.vm.$nextTick()
+    const text = document.body.textContent
+    expect(text).toContain('r/tech')
+    expect(text).toContain('r/science')
+    wrapper.unmount()
+  })
 })

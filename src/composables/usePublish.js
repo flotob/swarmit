@@ -65,7 +65,7 @@ export function usePublish() {
     }
   }
 
-  async function runPipeline({ boardSlug, kind, contentLabel, contentBuilderFn, submissionExtras, chainExtras, stepNames }) {
+  async function runPipeline({ boardSlug, kind, contentLabel, contentBuilderFn, existingContentRef, submissionExtras, chainExtras, stepNames }) {
     if (pipelineLock) {
       error.value = 'A publish is already in progress'
       throw new Error('A publish is already in progress')
@@ -85,17 +85,27 @@ export function usePublish() {
       setStep('Ensure identity', 'done', userAddress)
 
       // Step 2: Build + publish content
-      setStep(contentLabel, 'active')
-      const content = contentBuilderFn(author)
-      const contentResult = await publishValidated(content, kind)
-      setStep(contentLabel, 'done', contentResult.bzzUrl)
+      let contentRef
+      let contentTitle = null
+      let contentBodyPreview = null
+      if (existingContentRef) {
+        contentRef = existingContentRef
+      } else {
+        setStep(contentLabel, 'active')
+        const content = contentBuilderFn(author)
+        const contentResult = await publishValidated(content, kind)
+        contentRef = contentResult.bzzUrl
+        contentTitle = content.title || null
+        contentBodyPreview = content.body?.text?.slice(0, 100) || null
+        setStep(contentLabel, 'done', contentResult.bzzUrl)
+      }
 
       // Step 3: Build + publish submission
       setStep('Publish submission', 'active')
       const submission = buildSubmission({
         boardId: boardSlug,
         kind,
-        contentRef: contentResult.bzzUrl,
+        contentRef,
         author,
         ...submissionExtras,
       })
@@ -138,7 +148,7 @@ export function usePublish() {
       }
 
       result.value = {
-        contentRef: contentResult.bzzUrl,
+        contentRef,
         submissionRef: subResult.bzzUrl,
         userFeedIndexRef: indexResult.bzzUrl,
         announced,
@@ -147,11 +157,11 @@ export function usePublish() {
       // Track in submissions store for lifecycle monitoring
       submissions.add({
         submissionRef: subResult.bzzUrl,
-        contentRef: contentResult.bzzUrl,
+        contentRef,
         boardSlug,
         kind,
-        title: content.title || null,
-        bodyPreview: content.body?.text?.slice(0, 100) || null,
+        title: contentTitle,
+        bodyPreview: contentBodyPreview,
         rootSubmissionId: submissionExtras.rootSubmissionId || subResult.bzzUrl,
         parentSubmissionId: submissionExtras.parentSubmissionId || null,
         txHash: null, // We don't have the tx hash from announceSubmission currently
@@ -174,6 +184,7 @@ export function usePublish() {
 
   const POST_STEPS = ['Ensure identity', 'Publish post', 'Publish submission', 'Update user feed', 'Announce on-chain']
   const REPLY_STEPS = ['Ensure identity', 'Publish reply', 'Publish submission', 'Update user feed', 'Announce on-chain']
+  const CROSSPOST_STEPS = ['Ensure identity', 'Publish submission', 'Update user feed', 'Announce on-chain']
 
   async function publishPost({ boardSlug, title, bodyText, link, attachments }) {
     return runPipeline({
@@ -205,5 +216,25 @@ export function usePublish() {
     })
   }
 
-  return { publishPost, publishReply, steps, isPublishing, result, error }
+  // Provenance points one hop back (linked list, not flattened origin) —
+  // crosspost-of-crosspost preserves the chain.
+  async function publishCrosspost({ targetBoardSlug, contentRef, sourceBoardSlug, sourceSubmissionRef }) {
+    return runPipeline({
+      boardSlug: targetBoardSlug,
+      kind: 'post',
+      existingContentRef: contentRef,
+      submissionExtras: {
+        metadata: {
+          crosspost: {
+            fromBoard: sourceBoardSlug,
+            fromSubmissionRef: sourceSubmissionRef,
+          },
+        },
+      },
+      chainExtras: { parentSubmissionId: null, rootSubmissionId: null },
+      stepNames: CROSSPOST_STEPS,
+    })
+  }
+
+  return { publishPost, publishReply, publishCrosspost, steps, isPublishing, result, error }
 }

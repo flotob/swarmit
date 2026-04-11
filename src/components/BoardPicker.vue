@@ -12,11 +12,16 @@ import { ChevronDown, Check } from 'lucide-vue-next'
 const props = defineProps({
   modelValue: { type: String, default: null },
   disabled: { type: Boolean, default: false },
+  excludeSlug: { type: String, default: null },
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const { boards, isLoading } = useCuratorBoards()
+
+const visibleBoards = computed(() =>
+  props.excludeSlug ? boards.value.filter((s) => s !== props.excludeSlug) : boards.value
+)
 
 const label = computed(() => props.modelValue ? `r/${props.modelValue}` : 'Select a board')
 
@@ -38,11 +43,11 @@ function selectBoard(slug) {
       <DropdownMenuItem v-if="isLoading" disabled class="text-muted-foreground">
         Loading…
       </DropdownMenuItem>
-      <DropdownMenuItem v-else-if="!boards.length" disabled class="text-muted-foreground">
+      <DropdownMenuItem v-else-if="!visibleBoards.length" disabled class="text-muted-foreground">
         No boards available
       </DropdownMenuItem>
       <DropdownMenuItem
-        v-for="slug in boards"
+        v-for="slug in visibleBoards"
         :key="slug"
         class="cursor-pointer flex items-center justify-between"
         @click="selectBoard(slug)"

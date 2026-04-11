@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { timeAgo, formatLinkDisplay } from '../lib/format.js'
 import { displayName } from '../lib/displayName.js'
@@ -7,6 +7,7 @@ import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import AttachmentGallery from './AttachmentGallery.vue'
+import CrosspostDialog from './CrosspostDialog.vue'
 import { Skeleton } from './ui/skeleton'
 import { ChevronUp, ChevronDown, FileText, Link as LinkIcon, Share2, MessageSquare, ExternalLink, Repeat2 } from 'lucide-vue-next'
 
@@ -20,12 +21,25 @@ const props = defineProps({
 
 const router = useRouter()
 
-const voteRef = computed(() => props.entry.submissionId || props.entry.submissionRef)
-const { score, myVote, isVoting, upvote, downvote } = useVotes(voteRef)
+const submissionRef = computed(() => props.entry.submissionId || props.entry.submissionRef)
+const { score, myVote, isVoting, upvote, downvote } = useVotes(submissionRef)
 
 const authorAddress = computed(() => props.entry.content?.author?.address || props.entry.submission?.author?.address)
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
 const isLinkPost = computed(() => !!props.entry.content?.link?.url)
+
+const crosspost = computed(() => props.entry.submission?.metadata?.crosspost || null)
+const crossposterAddress = computed(() => props.entry.submission?.author?.address || null)
+const crossposterIsOriginalAuthor = computed(() =>
+  !!(crossposterAddress.value && authorAddress.value &&
+    crossposterAddress.value.toLowerCase() === authorAddress.value.toLowerCase())
+)
+
+const showCrosspostDialog = ref(false)
+const sourceContentRef = computed(() => props.entry.submission?.contentRef)
+const canCrosspost = computed(() =>
+  props.entry.submission?.kind === 'post' && !!sourceContentRef.value && !!submissionRef.value && !!props.boardSlug,
+)
 const hasExpandableContent = computed(() =>
   !!(props.entry.content?.body?.text || props.entry.content?.attachments?.length)
 )
@@ -157,6 +171,21 @@ function share() {
           </template>
         </div>
 
+        <!-- Crosspost provenance -->
+        <div v-if="crosspost" class="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+          <Repeat2 class="w-3 h-3" />
+          crossposted from
+          <router-link :to="{ name: 'board', params: { slug: crosspost.fromBoard } }" class="hover:underline font-medium">
+            r/{{ crosspost.fromBoard }}
+          </router-link>
+          <template v-if="crossposterAddress && !crossposterIsOriginalAuthor">
+            by
+            <router-link :to="`/u/${crossposterAddress}`" class="hover:underline">
+              {{ displayName(crossposterAddress) }}
+            </router-link>
+          </template>
+        </div>
+
         <!-- Expanded content (thread view only) -->
         <div v-if="expanded && hasExpandableContent" class="mt-3 mb-2 p-4 rounded-md bg-secondary/50 max-w-3xl">
           <a
@@ -192,12 +221,24 @@ function share() {
             <Share2 class="w-3 h-3" />
             share
           </button>
-          <button disabled class="flex items-center gap-1 cursor-not-allowed text-muted-foreground/50" title="Crosspost coming soon">
+          <button
+            v-if="canCrosspost"
+            class="hover:underline flex items-center gap-1"
+            @click="showCrosspostDialog = true"
+          >
             <Repeat2 class="w-3 h-3" />
             crosspost
           </button>
         </div>
       </template>
     </div>
+
+    <CrosspostDialog
+      v-if="showCrosspostDialog"
+      v-model:open="showCrosspostDialog"
+      :source-board-slug="boardSlug"
+      :source-submission-ref="submissionRef"
+      :content-ref="sourceContentRef"
+    />
   </div>
 </template>
