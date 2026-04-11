@@ -27,7 +27,6 @@ const title = ref('')
 const body = ref('')
 const linkUrl = ref('')
 const attachments = ref([])
-const bodyEl = ref(null)
 
 const submissions = useSubmissionsStore()
 const { publishPost, steps, isPublishing, result, error } = usePublish()
@@ -49,23 +48,6 @@ watch(trackedStatus, (status) => {
 
 function onImageUploaded(descriptor) {
   attachments.value.push(descriptor)
-
-  const textarea = bodyEl.value?.$el || bodyEl.value
-  if (textarea) {
-    const name = descriptor.name || 'image'
-    const syntax = `![${name}](${descriptor.reference})`
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = body.value
-    body.value = text.slice(0, start) + syntax + text.slice(end)
-
-    const newPos = start + syntax.length
-    requestAnimationFrame(() => {
-      textarea.selectionStart = newPos
-      textarea.selectionEnd = newPos
-      textarea.focus()
-    })
-  }
 }
 
 function onImageRemoved(descriptor) {
@@ -105,7 +87,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div>
+  <div class="max-w-2xl mx-auto">
     <Button variant="ghost" size="sm" as-child class="mb-4">
       <router-link v-if="slugFromRoute" :to="{ name: 'board', params: { slug: slugFromRoute } }">
         &larr; r/{{ slugFromRoute }}
@@ -120,12 +102,6 @@ async function handleSubmit() {
     </h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
-      <div v-if="!slugFromRoute">
-        <label class="block text-sm text-muted-foreground mb-1">Board</label>
-        <BoardPicker v-model="selectedSlug" :disabled="isPublishing" />
-      </div>
-
-      <!-- Post type selection -->
       <Tabs v-model="postType" class="w-full">
         <TabsList>
           <TabsTrigger value="text">Text</TabsTrigger>
@@ -133,7 +109,6 @@ async function handleSubmit() {
         </TabsList>
       </Tabs>
 
-      <!-- Title (always) -->
       <div>
         <label class="block text-sm text-muted-foreground mb-1">Title</label>
         <Input
@@ -145,7 +120,6 @@ async function handleSubmit() {
         />
       </div>
 
-      <!-- URL (link posts only) -->
       <div v-if="postType === 'link'">
         <label class="block text-sm text-muted-foreground mb-1">URL</label>
         <Input
@@ -156,26 +130,28 @@ async function handleSubmit() {
         />
       </div>
 
-      <!-- Image upload (both types) -->
       <ImageUpload
         :disabled="isPublishing"
         @uploaded="onImageUploaded"
         @removed="onImageRemoved"
       />
 
-      <!-- Body text -->
       <div>
         <label class="block text-sm text-muted-foreground mb-1">
           {{ postType === 'link' ? 'Text (optional)' : 'Text' }}
         </label>
         <Textarea
-          ref="bodyEl"
           v-model="body"
           :placeholder="postType === 'link' ? 'Add your thoughts...' : 'Write your post...'"
           :rows="postType === 'link' ? 4 : 8"
           :disabled="isPublishing"
           class="resize-y text-sm"
         />
+      </div>
+
+      <div v-if="!slugFromRoute">
+        <label class="block text-sm text-muted-foreground mb-1">Board</label>
+        <BoardPicker v-model="selectedSlug" :disabled="isPublishing" />
       </div>
 
       <Button
