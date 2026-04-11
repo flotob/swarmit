@@ -47,8 +47,12 @@ const defaultViewId = computed(() => viewScope.value ? views.getDefaultViewId(vi
 function selectView(viewId) {
   if (!viewScope.value) return
   const effective = activeView.value || defaultViewId.value
-  if (viewId === effective && !activeView.value) return
-  views.setView(viewScope.value, viewId === activeView.value ? null : viewId)
+  // No-op if clicking the currently-effective view
+  if (viewId === effective) return
+  // Store null for the default view so "default by implicit" and
+  // "default by explicit selection" share the same query cache key
+  const newPref = viewId === defaultViewId.value ? null : viewId
+  views.setView(viewScope.value, newPref)
 }
 
 const availableViews = computed(() => viewScope.value ? views.getAvailableViews(viewScope.value) : [])
