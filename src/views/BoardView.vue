@@ -1,7 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBoard } from '../composables/useBoard'
+import { useDelayedFlag } from '../composables/useDelayedFlag'
+import { useViewsStore, boardScope } from '../stores/views'
 import PostCard from '../components/PostCard.vue'
 import CuratorBar from '../components/CuratorBar.vue'
 import BoardSidebar from '../components/BoardSidebar.vue'
@@ -10,7 +12,17 @@ import { Alert, AlertDescription } from '../components/ui/alert'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug)
-const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, curatorProfile } = useBoard(slug)
+const { board, curators, boardIndex, isLoading, isPlaceholderData, isError, error, curatorAddress, curatorProfile } = useBoard(slug)
+const showStaleLoader = useDelayedFlag(isPlaceholderData)
+
+// Scroll to top whenever the user navigates to a new board OR switches
+// to a different view on the current board. Does not fire on initial
+// mount or background refetches.
+const viewsStore = useViewsStore()
+watch(
+  [slug, () => viewsStore.getView(boardScope(slug.value))],
+  () => window.scrollTo({ top: 0 }),
+)
 </script>
 
 <template>
@@ -24,7 +36,7 @@ const { board, curators, boardIndex, isLoading, isError, error, curatorAddress, 
         :context="slug"
       />
 
-      <div v-if="isLoading" class="space-y-3">
+      <div v-if="isLoading || (showStaleLoader && !isError)" class="space-y-3">
         <div v-for="i in 3" :key="i" class="rounded-lg border border-border p-4">
           <Skeleton class="h-4 w-3/4 mb-3" />
           <Skeleton class="h-3 w-full mb-2" />

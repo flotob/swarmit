@@ -83,6 +83,7 @@ export function useBoard(slugRef) {
     curators,
     boardIndex: boardQuery.data,
     isLoading: boardQuery.isLoading,
+    isPlaceholderData: boardQuery.isPlaceholderData,
     isError: boardQuery.isError,
     error: boardQuery.error,
     curatorAddress,

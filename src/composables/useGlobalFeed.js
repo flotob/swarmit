@@ -58,6 +58,7 @@ export function useGlobalFeed() {
     feed: globalQuery.data,
     curators,
     isLoading: globalQuery.isLoading,
+    isPlaceholderData: globalQuery.isPlaceholderData,
     isError: globalQuery.isError,
     error: globalQuery.error,
     curatorAddress,
