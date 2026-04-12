@@ -5,6 +5,7 @@ import { usePublish } from '../composables/usePublish'
 import { useSubmissionsStore } from '../stores/submissions'
 import { STATUS } from '../lib/submission-status.js'
 import { refToHex } from '../protocol/references.js'
+import PostCard from './PostCard.vue'
 import BoardPicker from './BoardPicker.vue'
 import PublishProgress from './PublishProgress.vue'
 import {
@@ -19,6 +20,7 @@ import { Button } from './ui/button'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
+  entry: { type: Object, required: true },
   sourceBoardSlug: { type: String, required: true },
   sourceSubmissionRef: { type: String, required: true },
   contentRef: { type: String, required: true },
@@ -80,6 +82,10 @@ watch(trackedStatus, (status) => {
           Share this post to another board. The original post and author are preserved.
         </DialogDescription>
       </DialogHeader>
+
+      <div class="rounded-md border border-border bg-secondary/30 px-3">
+        <PostCard :entry="entry" :board-slug="sourceBoardSlug" preview show-board />
+      </div>
 
       <div class="space-y-2">
         <label class="block text-sm text-muted-foreground">Target board</label>

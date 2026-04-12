@@ -10,7 +10,6 @@ import {
   useForwardPropsEmits,
 } from "reka-ui"
 import { cn } from "@/lib/utils"
-import DialogOverlay from "./DialogOverlay.vue"
 
 interface DialogContentWrapperProps extends DialogContentProps {
   class?: HTMLAttributes["class"]
@@ -30,7 +29,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
 <template>
   <DialogPortal>
-    <DialogOverlay />
     <DialogContent
       data-slot="dialog-content"
       :class="cn(

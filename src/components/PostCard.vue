@@ -17,6 +17,7 @@ const props = defineProps({
   showBoard: Boolean,
   rank: Number,
   expanded: Boolean,
+  preview: Boolean,
 })
 
 const router = useRouter()
@@ -73,31 +74,33 @@ function share() {
 
 <template>
   <div class="flex items-start gap-0 py-2 hover:bg-accent/30 transition-colors">
-    <div v-if="rank" class="w-8 shrink-0 text-right pr-1 pt-2 text-sm text-muted-foreground font-medium">
-      {{ rank }}
-    </div>
+    <template v-if="!preview">
+      <div v-if="rank" class="w-8 shrink-0 text-right pr-1 pt-2 text-sm text-muted-foreground font-medium">
+        {{ rank }}
+      </div>
 
-    <div class="w-10 shrink-0 flex flex-col items-center gap-0">
-      <button
-        class="p-0.5 transition-colors"
-        :class="myVote === 1 ? 'text-primary' : 'text-muted-foreground/30 hover:text-primary/60'"
-        :disabled="isVoting"
-        @click="upvote"
-      >
-        <ChevronUp class="w-5 h-5" />
-      </button>
-      <span class="text-xs font-medium" :class="myVote === 1 ? 'text-primary' : myVote === -1 ? 'text-destructive' : 'text-muted-foreground/40'">
-        {{ score }}
-      </span>
-      <button
-        class="p-0.5 transition-colors"
-        :class="myVote === -1 ? 'text-destructive' : 'text-muted-foreground/30 hover:text-destructive/60'"
-        :disabled="isVoting"
-        @click="downvote"
-      >
-        <ChevronDown class="w-5 h-5" />
-      </button>
-    </div>
+      <div class="w-10 shrink-0 flex flex-col items-center gap-0">
+        <button
+          class="p-0.5 transition-colors"
+          :class="myVote === 1 ? 'text-primary' : 'text-muted-foreground/30 hover:text-primary/60'"
+          :disabled="isVoting"
+          @click="upvote"
+        >
+          <ChevronUp class="w-5 h-5" />
+        </button>
+        <span class="text-xs font-medium" :class="myVote === 1 ? 'text-primary' : myVote === -1 ? 'text-destructive' : 'text-muted-foreground/40'">
+          {{ score }}
+        </span>
+        <button
+          class="p-0.5 transition-colors"
+          :class="myVote === -1 ? 'text-destructive' : 'text-muted-foreground/30 hover:text-destructive/60'"
+          :disabled="isVoting"
+          @click="downvote"
+        >
+          <ChevronDown class="w-5 h-5" />
+        </button>
+      </div>
+    </template>
 
     <!-- Thumbnail -->
     <router-link v-if="threadRoute" :to="threadRoute" class="w-18 h-14 shrink-0 mr-2 mt-1 rounded overflow-hidden bg-secondary flex items-center justify-center">
@@ -212,7 +215,7 @@ function share() {
         </div>
 
         <!-- Action line -->
-        <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
+        <div v-if="!preview" class="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
           <router-link v-if="threadRoute" :to="threadRoute" class="hover:underline flex items-center gap-1">
             <MessageSquare class="w-3 h-3" />
             {{ isLinkPost ? 'comments' : 'discuss' }}
@@ -234,8 +237,9 @@ function share() {
     </div>
 
     <CrosspostDialog
-      v-if="showCrosspostDialog"
+      v-if="!preview && showCrosspostDialog"
       v-model:open="showCrosspostDialog"
+      :entry="entry"
       :source-board-slug="boardSlug"
       :source-submission-ref="submissionRef"
       :content-ref="sourceContentRef"

@@ -94,13 +94,11 @@ onUnmounted(() => {
     </div>
 
     <Teleport to="body">
-      <Transition name="backdrop-fade">
-        <div
-          v-if="ui.sidebarOpen"
-          class="hidden lg:block fixed inset-0 z-40 bg-black/20"
-          @click="ui.closeSidebar()"
-        />
-      </Transition>
+      <div
+        v-if="ui.sidebarOpen"
+        class="hidden lg:block fixed inset-0 z-40"
+        @click="ui.closeSidebar()"
+      />
 
       <Transition name="panel-slide">
         <aside
@@ -127,15 +125,6 @@ onUnmounted(() => {
 </template>
 
 <style>
-.backdrop-fade-enter-active,
-.backdrop-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.backdrop-fade-enter-from,
-.backdrop-fade-leave-to {
-  opacity: 0;
-}
-
 .panel-slide-enter-active,
 .panel-slide-leave-active {
   transition: transform 0.3s ease, opacity 0.3s ease;
