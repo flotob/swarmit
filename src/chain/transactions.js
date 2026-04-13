@@ -63,3 +63,22 @@ export async function setVote({ submissionRef, direction }) {
 export async function declareCurator(curatorProfileRef) {
   return sendCalldata(encode.declareCurator({ curatorProfileRef }));
 }
+
+/**
+ * Declare a user feed on-chain so other users can discover it.
+ * @param {string} feedTopic - 64-char hex or 0x-prefixed bytes32 topic
+ * @param {string} feedOwner - 0x-prefixed Swarm signer address
+ * @returns {Promise<string>} Transaction hash
+ */
+export async function declareUserFeed(feedTopic, feedOwner) {
+  return sendCalldata(encode.declareUserFeed({ feedTopic, feedOwner }));
+}
+
+/**
+ * Revoke a previously declared user feed.
+ * @param {string} feedId - 0x-prefixed bytes32 feedId
+ * @returns {Promise<string>} Transaction hash
+ */
+export async function revokeUserFeed(feedId) {
+  return sendCalldata(encode.revokeUserFeed({ feedId }));
+}
