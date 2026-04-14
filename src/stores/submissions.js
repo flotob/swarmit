@@ -32,6 +32,7 @@ export const useSubmissionsStore = defineStore('submissions', () => {
       parentSubmissionId: entry.parentSubmissionId || null,
       txHash: entry.txHash || null,
       announced: entry.announced || false,
+      authorAddress: entry.authorAddress || null,
       createdAt: Date.now(),
       lastCheckedAt: null,
       curatorPickups: [],
@@ -76,25 +77,14 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     items.value.filter((i) => i.status === STATUS.WAITING || i.status === STATUS.ANNOUNCED || i.status === STATUS.CURATED)
   )
 
-  const recent = computed(() =>
-    items.value.filter((i) => i.status !== STATUS.SETTLED).slice(0, 20)
-  )
-
-  function pendingForThread(rootSubmissionId) {
+  function pendingForThread(rootSubmissionId, authorAddress) {
     return items.value.filter((i) =>
       (i.status === STATUS.WAITING || i.status === STATUS.ANNOUNCED || i.status === STATUS.CURATED) &&
       i.rootSubmissionId === rootSubmissionId &&
-      i.kind === 'reply'
+      i.kind === 'reply' &&
+      (!authorAddress || i.authorAddress?.toLowerCase() === authorAddress.toLowerCase())
     )
   }
 
-  function pendingForBoard(boardSlug) {
-    return items.value.filter((i) =>
-      (i.status === STATUS.WAITING || i.status === STATUS.ANNOUNCED) &&
-      i.boardSlug === boardSlug &&
-      i.kind === 'post'
-    )
-  }
-
-  return { items, add, addPickup, markChecked, settleOld, persist, pending, recent, pendingForThread, pendingForBoard }
+  return { items, add, addPickup, markChecked, settleOld, persist, pending, pendingForThread }
 })

@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/vue-query'
 import { useThread } from '../composables/useThread'
 import { useBoardMetadata } from '../composables/useBoard'
 import { useSubmissionsStore } from '../stores/submissions'
+import { useAuthStore } from '../stores/auth'
 import { STATUS } from '../lib/submission-status.js'
 import { PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
 import PostCard from '../components/PostCard.vue'
@@ -23,6 +24,7 @@ const rootSubId = computed(() => route.params.rootSubId)
 const { thread, curators, isLoading, isFetching, isError, error, rootSubRef, curatorAddress, curatorProfile } = useThread(slug, rootSubId)
 const { data: board } = useBoardMetadata(slug)
 const submissions = useSubmissionsStore()
+const auth = useAuthStore()
 
 const replyingTo = ref(null)
 
@@ -125,7 +127,7 @@ const rootEntry = computed(() => {
 
 const pendingReplies = computed(() => {
   if (!rootSubRef.value) return []
-  const tracked = submissions.pendingForThread(rootSubRef.value)
+  const tracked = submissions.pendingForThread(rootSubRef.value, auth.userAddress)
   return tracked.filter((t) => !visibleNodeRefs.value.has(t.submissionRef))
 })
 
@@ -183,7 +185,7 @@ function onInlinePublished(result) {
 
 // Auto-refetch when curator picks up any reply in this thread
 const curatedCount = computed(() =>
-  submissions.pendingForThread(rootSubRef.value)
+  submissions.pendingForThread(rootSubRef.value, auth.userAddress)
     .filter((i) => i.status === STATUS.CURATED)
     .length
 )

@@ -1,27 +1,17 @@
 <script setup>
-import { computed } from 'vue'
-import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
 import { useRouter } from 'vue-router'
 import { refToHex } from '../protocol/references.js'
 import { timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS } from '../lib/submission-status.js'
+import { useActivityFeed } from '../composables/useActivityFeed.js'
 import { Badge } from './ui/badge'
+import { Skeleton } from './ui/skeleton'
 import { X } from 'lucide-vue-next'
 
-const store = useSubmissionsStore()
 const ui = useUiStore()
 const router = useRouter()
-
-const queued = computed(() =>
-  store.items.filter((i) =>
-    i.status === STATUS.WAITING || i.status === STATUS.PUBLISHED || i.status === STATUS.ANNOUNCED
-  )
-)
-
-const curated = computed(() =>
-  store.items.filter((i) => i.status === STATUS.CURATED).slice(0, 10)
-)
+const { queued, curated, history, isFeedLoading } = useActivityFeed()
 
 const statusColors = {
   [STATUS.PUBLISHED]: 'text-muted-foreground',
@@ -35,6 +25,12 @@ function handleClick(item) {
     const hex = refToHex(rootRef)
     if (hex && item.boardSlug) {
       router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: hex } })
+      ui.closeSidebar()
+      return
+    }
+    // Reply without rootSubmissionId (feed-sourced history) — go to board
+    if (item.boardSlug) {
+      router.push({ name: 'board', params: { slug: item.boardSlug } })
       ui.closeSidebar()
       return
     }
@@ -61,7 +57,7 @@ function handleClick(item) {
       </button>
     </div>
 
-    <template v-if="queued.length || curated.length">
+    <template v-if="queued.length || curated.length || history.length">
       <div v-if="queued.length">
         <h4 class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
           Queue
@@ -122,9 +118,36 @@ function handleClick(item) {
         </div>
       </div>
 
-      <p class="text-[10px] text-muted-foreground/40 mt-4">
-        Tracked from this browser only
-      </p>
+      <div v-if="history.length" :class="queued.length || curated.length ? 'mt-5' : ''">
+        <h4 class="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-2">
+          History
+        </h4>
+        <div class="space-y-1 opacity-40">
+          <div
+            v-for="item in history"
+            :key="item.submissionRef"
+            @click="handleClick(item)"
+            class="flex items-start gap-2 p-2 rounded-md hover:bg-accent hover:opacity-100 cursor-pointer transition-all"
+          >
+            <span class="text-sm mt-0.5 shrink-0 text-muted-foreground">
+              {{ STATUS_ICONS[STATUS.SETTLED] }}
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm text-foreground truncate">
+                <Badge variant="outline" class="text-[10px] mr-1 align-middle">{{ item.kind }}</Badge>
+                r/{{ item.boardSlug }}
+              </div>
+              <div class="text-xs text-muted-foreground mt-0.5">
+                {{ timeAgo(item.createdAt) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else-if="isFeedLoading">
+      <Skeleton v-for="i in 3" :key="i" class="h-10 rounded-md mb-1" />
     </template>
 
     <p v-else class="text-sm text-muted-foreground">

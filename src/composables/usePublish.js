@@ -161,7 +161,8 @@ export function usePublish() {
         bodyPreview: contentBodyPreview,
         rootSubmissionId: submissionExtras.rootSubmissionId || subResult.bzzUrl,
         parentSubmissionId: submissionExtras.parentSubmissionId || null,
-        txHash: null, // We don't have the tx hash from announceSubmission currently
+        authorAddress: userAddress,
+        txHash: null,
         announced,
       })
     } catch (err) {

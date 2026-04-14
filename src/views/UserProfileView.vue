@@ -9,9 +9,7 @@ import { displayName } from '../lib/displayName.js'
 import { refToHex } from '../protocol/references.js'
 import { validate } from '../protocol/objects.js'
 import { fetchObject } from '../swarm/fetch.js'
-import { getUserFeeds } from '../chain/events.js'
-import { isContractConfigured } from '../chain/contract.js'
-import { decodeFeedJSON, topicToSwarmFormat } from 'swarmit-protocol/feeds'
+import { readUserFeed } from '../swarm/userFeed.js'
 import { isUsernameRegistryConfigured } from '../chain/username-registry.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -37,64 +35,12 @@ const showUsernameCard = computed(() =>
 const { data: profile, isLoading, isError, error } = useQuery({
   queryKey: ['userProfile', address],
   queryFn: async () => {
-    const addr = address.value
-
     // Feed entries are discovery aids, not authoritative authorship proof.
     // TODO: verify submission.author.address matches addr for other users' profiles.
-    let feedCoordinates = null
-
-    if (isContractConfigured()) {
-      try {
-        const feeds = await getUserFeeds(addr)
-        if (feeds.length > 0) {
-          feedCoordinates = {
-            topic: feeds[0].feedTopic,
-            owner: feeds[0].feedOwner,
-          }
-        }
-      } catch {
-        // V3 contract may not be deployed yet — fall through
-      }
-    }
-
-    if (!feedCoordinates) {
-      return { entries: [], feedFound: false }
-    }
-
-    try {
-      const readParams = {
-        topic: topicToSwarmFormat(feedCoordinates.topic),
-        owner: feedCoordinates.owner,
-      }
-
-      let latest
-      try {
-        latest = await swarm.readFeedEntry(readParams)
-      } catch (err) {
-        if (err?.data?.reason === 'feed_empty' || err?.message?.includes('feed_empty')) {
-          return { entries: [], feedFound: true }
-        }
-        throw err
-      }
-
-      const totalEntries = latest.nextIndex ?? (latest.index + 1)
-      const MAX_ENTRIES = 100
-      const startIndex = Math.max(0, totalEntries - MAX_ENTRIES)
-
-      const entries = await Promise.all(
-        Array.from({ length: totalEntries - startIndex }, (_, i) =>
-          swarm.readFeedEntry({ ...readParams, index: startIndex + i })
-            .then(decodeFeedJSON)
-            .catch(() => null)
-        ),
-      )
-
-      return {
-        entries: entries.filter(Boolean).reverse(),
-        feedFound: true,
-      }
-    } catch {
-      return { entries: [], feedFound: false }
+    const result = await readUserFeed(address.value, swarm, { maxEntries: 100 })
+    return {
+      entries: result.entries,
+      feedFound: result.feedFound,
     }
   },
   enabled: computed(() => !!address.value),
