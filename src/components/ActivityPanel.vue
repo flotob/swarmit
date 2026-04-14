@@ -2,6 +2,7 @@
 import { useUiStore } from '../stores/ui'
 import { useRouter } from 'vue-router'
 import { refToHex } from '../protocol/references.js'
+import { resolveThreadRootHex } from '../lib/navigation.js'
 import { timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS } from '../lib/submission-status.js'
 import { useActivityFeed } from '../composables/useActivityFeed.js'
@@ -19,21 +20,14 @@ const statusColors = {
   [STATUS.WAITING]: 'text-primary animate-pulse',
 }
 
-function handleClick(item) {
+async function handleClick(item) {
   if (item.status === STATUS.CURATED || item.status === STATUS.SETTLED) {
-    const rootRef = item.kind === 'post' ? item.submissionRef : item.rootSubmissionId
-    const hex = refToHex(rootRef)
-    if (hex && item.boardSlug) {
-      router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: hex } })
+    const rootHex = await resolveThreadRootHex(item)
+    if (rootHex && item.boardSlug) {
+      router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: rootHex } })
       ui.closeSidebar()
-      return
     }
-    // Reply without rootSubmissionId (feed-sourced history) — go to board
-    if (item.boardSlug) {
-      router.push({ name: 'board', params: { slug: item.boardSlug } })
-      ui.closeSidebar()
-      return
-    }
+    return
   }
   const hex = refToHex(item.submissionRef)
   if (hex) {

@@ -6,9 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { useSwarm } from '../composables/useSwarm'
 import { timeAgo } from '../lib/format.js'
 import { displayName } from '../lib/displayName.js'
-import { refToHex } from '../protocol/references.js'
-import { validate } from '../protocol/objects.js'
-import { fetchObject } from '../swarm/fetch.js'
+import { resolveThreadRootHex } from '../lib/navigation.js'
 import { readUserFeed } from '../swarm/userFeed.js'
 import { isUsernameRegistryConfigured } from '../chain/username-registry.js'
 import { Card, CardContent } from '../components/ui/card'
@@ -48,18 +46,7 @@ const { data: profile, isLoading, isError, error } = useQuery({
 })
 
 async function goToThread(entry) {
-  let rootHex
-  if (entry.kind === 'post') {
-    rootHex = refToHex(entry.submissionRef)
-  } else {
-    try {
-      const sub = await fetchObject(entry.submissionRef)
-      const { valid } = validate(sub)
-      rootHex = valid ? refToHex(sub.rootSubmissionId || entry.submissionRef) : refToHex(entry.submissionRef)
-    } catch {
-      rootHex = refToHex(entry.submissionRef)
-    }
-  }
+  const rootHex = await resolveThreadRootHex(entry)
   if (rootHex && entry.boardSlug) {
     router.push({ name: 'thread', params: { slug: entry.boardSlug, rootSubId: rootHex } })
   }

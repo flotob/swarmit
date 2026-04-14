@@ -8,6 +8,7 @@ import { useViewsStore, boardScope, GLOBAL_SCOPE } from '../stores/views'
 import { useWallet } from '../composables/useWallet'
 import { useColorMode } from '../composables/useColorMode'
 import { displayName } from '../lib/displayName.js'
+import { STATUS } from '../lib/submission-status.js'
 import { Bell, Wallet, Radio } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -15,10 +16,20 @@ const auth = useAuthStore()
 const ui = useUiStore()
 const submissions = useSubmissionsStore()
 const views = useViewsStore()
+
 const wallet = useWallet()
 const { preference } = useColorMode()
 
 preference.value = 'light'
+
+const activeCount = computed(() => {
+  const addr = auth.userAddress?.toLowerCase()
+  if (!addr) return 0
+  return submissions.items.filter((i) =>
+    (i.status === STATUS.WAITING || i.status === STATUS.PUBLISHED || i.status === STATUS.ANNOUNCED) &&
+    i.authorAddress?.toLowerCase() === addr
+  ).length
+})
 
 async function connectWallet() {
   try {
@@ -115,7 +126,7 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
         >
           <Bell class="w-3.5 h-3.5" />
           Activity
-          <span v-if="submissions.pending.length" class="font-bold text-primary">({{ submissions.pending.length }})</span>
+          <span v-if="activeCount" class="font-bold text-primary">({{ activeCount }})</span>
         </button>
 
         <span class="text-header-foreground/20 hidden lg:inline">|</span>
