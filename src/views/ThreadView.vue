@@ -154,6 +154,18 @@ function scrollToAndHighlight(submissionId) {
   })
 }
 
+const commentTarget = computed(() => {
+  const hex = route.query.comment
+  return hex ? `bzz://${hex}` : null
+})
+watch(
+  () => !isLoading.value && commentTarget.value,
+  (ready) => {
+    if (ready) scrollToAndHighlight(commentTarget.value)
+  },
+  { immediate: true },
+)
+
 const topLevelResult = ref(null)
 const inlineResult = ref(null)
 

@@ -2,7 +2,7 @@
 import { useUiStore } from '../stores/ui'
 import { useRouter } from 'vue-router'
 import { refToHex } from '../protocol/references.js'
-import { resolveThreadRootHex } from '../lib/navigation.js'
+import { resolveThreadTarget } from '../lib/navigation.js'
 import { timeAgo } from '../lib/format.js'
 import { STATUS, STATUS_ICONS, STATUS_LABELS } from '../lib/submission-status.js'
 import { useActivityFeed } from '../composables/useActivityFeed.js'
@@ -22,9 +22,10 @@ const statusColors = {
 
 async function handleClick(item) {
   if (item.status === STATUS.CURATED || item.status === STATUS.SETTLED) {
-    const rootHex = await resolveThreadRootHex(item)
+    const { rootHex, commentHex } = await resolveThreadTarget(item)
     if (rootHex && item.boardSlug) {
-      router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: rootHex } })
+      const query = commentHex ? { comment: commentHex } : undefined
+      router.push({ name: 'thread', params: { slug: item.boardSlug, rootSubId: rootHex }, query })
       ui.closeSidebar()
     }
     return
