@@ -13,7 +13,6 @@ import { getUserFeeds } from '../chain/events.js'
 import { isContractConfigured } from '../chain/contract.js'
 import { decodeFeedJSON, topicToSwarmFormat } from 'swarmit-protocol/feeds'
 import { isUsernameRegistryConfigured } from '../chain/username-registry.js'
-import { FREEDOM_ADAPTER } from '../config.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Skeleton } from '../components/ui/skeleton'
@@ -44,12 +43,7 @@ const { data: profile, isLoading, isError, error } = useQuery({
     // TODO: verify submission.author.address matches addr for other users' profiles.
     let feedCoordinates = null
 
-    if (isOwnProfile.value && auth.userFeedTopic) {
-      feedCoordinates = {
-        topic: auth.userFeedTopic,
-        owner: auth.userFeedOwner,
-      }
-    } else if (isContractConfigured()) {
+    if (isContractConfigured()) {
       try {
         const feeds = await getUserFeeds(addr)
         if (feeds.length > 0) {
@@ -63,18 +57,15 @@ const { data: profile, isLoading, isError, error } = useQuery({
       }
     }
 
-    if (!feedCoordinates && !isOwnProfile.value) {
+    if (!feedCoordinates) {
       return { entries: [], feedFound: false }
     }
 
     try {
-      // Read the latest entry to discover the count.
-      const readParams = isOwnProfile.value && !feedCoordinates
-        ? { name: FREEDOM_ADAPTER.USER_FEED_NAME }
-        : {
-            topic: topicToSwarmFormat(feedCoordinates.topic),
-            owner: feedCoordinates.owner,
-          }
+      const readParams = {
+        topic: topicToSwarmFormat(feedCoordinates.topic),
+        owner: feedCoordinates.owner,
+      }
 
       let latest
       try {
@@ -103,8 +94,7 @@ const { data: profile, isLoading, isError, error } = useQuery({
         feedFound: true,
       }
     } catch {
-      // Feed not available (Freedom API not yet shipped, etc.)
-      return { entries: [], feedFound: isOwnProfile.value }
+      return { entries: [], feedFound: false }
     }
   },
   enabled: computed(() => !!address.value),
