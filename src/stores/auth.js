@@ -6,6 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
   const userAddress = ref(null)
   const userFeedTopic = ref(null)
   const userFeedOwner = ref(null)
+  const userFeedDeclared = ref(false)
   const swarmDetected = ref(false)
   const swarmConnected = ref(false)
 
@@ -36,7 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    walletConnected, userAddress, userFeedTopic, userFeedOwner,
+    walletConnected, userAddress, userFeedTopic, userFeedOwner, userFeedDeclared,
     swarmDetected, swarmConnected,
     setWallet, clearWallet,
     setSwarmDetected, setSwarmConnected, setUserFeedTopic, setUserFeedOwner,

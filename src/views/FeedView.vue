@@ -50,7 +50,7 @@ watch(
           v-for="(entry, i) in feed.entries"
           :key="entry.submissionRef"
           :entry="entry"
-          :board-slug="entry.boardId"
+          :board-slug="entry.boardSlug"
           :rank="i + 1"
           show-board
         />

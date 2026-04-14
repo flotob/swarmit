@@ -8,6 +8,7 @@ import { slugToBoardId } from '../protocol/references.js'
 import { announceSubmission, declareUserFeed } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
 import { hasUserFeed } from '../chain/events.js'
+import { waitForReceipt } from '../lib/rpc.js'
 import { feedIdFromCoordinates } from 'swarmit-protocol/feeds'
 import { FREEDOM_ADAPTER } from '../config'
 
@@ -108,23 +109,27 @@ export function usePublish() {
         FREEDOM_ADAPTER.USER_FEED_NAME,
         JSON.stringify(feedEntry),
       )
-      // Declare feed on-chain if not yet declared (one-time, best-effort)
-      if (isContractConfigured() && auth.userFeedTopic && auth.userFeedOwner) {
-        try {
-          const feedId = feedIdFromCoordinates(auth.userFeedTopic, auth.userFeedOwner)
-          const declared = await hasUserFeed(userAddress, feedId)
-          if (!declared) {
-            await declareUserFeed(auth.userFeedTopic, auth.userFeedOwner)
-          }
-        } catch {
-          // Non-critical — feed discovery is a convenience, not required for publishing
-        }
-      }
       setStep('Update user feed', 'done')
 
       let announced = false
       if (isContractConfigured()) {
         setStep('Announce on-chain', 'active')
+
+        // Must complete before announce so the two txs don't race on nonce.
+        if (!auth.userFeedDeclared && auth.userFeedTopic && auth.userFeedOwner) {
+          try {
+            const feedId = feedIdFromCoordinates(auth.userFeedTopic, auth.userFeedOwner)
+            const declared = await hasUserFeed(userAddress, feedId)
+            if (!declared) {
+              const declareTx = await declareUserFeed(auth.userFeedTopic, auth.userFeedOwner)
+              await waitForReceipt(declareTx)
+            }
+            auth.userFeedDeclared = true
+          } catch {
+            // Non-critical — will retry on next publish
+          }
+        }
+
         try {
           const tx = await announceSubmission({
             boardSlug,
