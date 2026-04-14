@@ -3,14 +3,17 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '../stores/auth'
+import { useSwarm } from '../composables/useSwarm'
 import { timeAgo } from '../lib/format.js'
 import { displayName } from '../lib/displayName.js'
 import { refToHex } from '../protocol/references.js'
 import { validate } from '../protocol/objects.js'
-import { resolveFeed } from '../swarm/feeds.js'
 import { fetchObject } from '../swarm/fetch.js'
-import { getBoardRegistrations, getSubmissionsForBoard } from '../chain/events.js'
+import { getUserFeeds } from '../chain/events.js'
+import { isContractConfigured } from '../chain/contract.js'
+import { decodeFeedJSON, topicToSwarmFormat } from 'swarmit-protocol/feeds'
 import { isUsernameRegistryConfigured } from '../chain/username-registry.js'
+import { FREEDOM_ADAPTER } from '../config.js'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Skeleton } from '../components/ui/skeleton'
@@ -20,12 +23,16 @@ import ClaimUsernameCard from '../components/ClaimUsernameCard.vue'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const swarm = useSwarm()
 const address = computed(() => route.params.address)
 
-const showUsernameCard = computed(() =>
-  isUsernameRegistryConfigured() &&
+const isOwnProfile = computed(() =>
   !!auth.userAddress &&
   address.value?.toLowerCase() === auth.userAddress.toLowerCase(),
+)
+
+const showUsernameCard = computed(() =>
+  isOwnProfile.value && isUsernameRegistryConfigured(),
 )
 
 const { data: profile, isLoading, isError, error } = useQuery({
@@ -33,42 +40,72 @@ const { data: profile, isLoading, isError, error } = useQuery({
   queryFn: async () => {
     const addr = address.value
 
-    let userFeedRef = null
-    if (auth.userAddress?.toLowerCase() === addr.toLowerCase() && auth.userFeed) {
-      userFeedRef = auth.userFeed
+    // Feed entries are discovery aids, not authoritative authorship proof.
+    // TODO: verify submission.author.address matches addr for other users' profiles.
+    let feedCoordinates = null
+
+    if (isOwnProfile.value && auth.userFeedTopic) {
+      feedCoordinates = {
+        topic: auth.userFeedTopic,
+        owner: auth.userFeedOwner,
+      }
+    } else if (isContractConfigured()) {
+      try {
+        const feeds = await getUserFeeds(addr)
+        if (feeds.length > 0) {
+          feedCoordinates = {
+            topic: feeds[0].feedTopic,
+            owner: feeds[0].feedOwner,
+          }
+        }
+      } catch {
+        // V3 contract may not be deployed yet — fall through
+      }
     }
 
-    if (!userFeedRef) {
-      const regs = await getBoardRegistrations()
-      const results = await Promise.all(
-        regs.map(async (reg) => {
-          try {
-            const subs = await getSubmissionsForBoard(reg.slug)
-            const match = subs.find((s) => s.author?.toLowerCase() === addr.toLowerCase())
-            if (match) {
-              const submission = await fetchObject(match.submissionRef)
-              const { valid } = validate(submission)
-              if (!valid) return null
-              return submission?.author?.userFeed || null
-            }
-          } catch { /* skip */ }
-          return null
-        })
-      )
-      userFeedRef = results.find((r) => r) || null
+    if (!feedCoordinates && !isOwnProfile.value) {
+      return { entries: [], feedFound: false }
     }
-
-    if (!userFeedRef) return { entries: [], feedFound: false }
 
     try {
-      const feedIndex = await resolveFeed(userFeedRef)
-      const { valid } = validate(feedIndex)
-      if (valid && feedIndex?.entries?.length) {
-        return { entries: [...feedIndex.entries].reverse(), feedFound: true }
-      }
-    } catch { /* feed not available */ }
+      // Read the latest entry to discover the count.
+      const readParams = isOwnProfile.value && !feedCoordinates
+        ? { name: FREEDOM_ADAPTER.USER_FEED_NAME }
+        : {
+            topic: topicToSwarmFormat(feedCoordinates.topic),
+            owner: feedCoordinates.owner,
+          }
 
-    return { entries: [], feedFound: true }
+      let latest
+      try {
+        latest = await swarm.readFeedEntry(readParams)
+      } catch (err) {
+        if (err?.data?.reason === 'feed_empty' || err?.message?.includes('feed_empty')) {
+          return { entries: [], feedFound: true }
+        }
+        throw err
+      }
+
+      const totalEntries = latest.nextIndex ?? (latest.index + 1)
+      const MAX_ENTRIES = 100
+      const startIndex = Math.max(0, totalEntries - MAX_ENTRIES)
+
+      const entries = await Promise.all(
+        Array.from({ length: totalEntries - startIndex }, (_, i) =>
+          swarm.readFeedEntry({ ...readParams, index: startIndex + i })
+            .then(decodeFeedJSON)
+            .catch(() => null)
+        ),
+      )
+
+      return {
+        entries: entries.filter(Boolean).reverse(),
+        feedFound: true,
+      }
+    } catch {
+      // Feed not available (Freedom API not yet shipped, etc.)
+      return { entries: [], feedFound: isOwnProfile.value }
+    }
   },
   enabled: computed(() => !!address.value),
   staleTime: 30_000,
@@ -77,18 +114,18 @@ const { data: profile, isLoading, isError, error } = useQuery({
 async function goToThread(entry) {
   let rootHex
   if (entry.kind === 'post') {
-    rootHex = refToHex(entry.submissionRef || entry.submissionId)
+    rootHex = refToHex(entry.submissionRef)
   } else {
     try {
-      const sub = await fetchObject(entry.submissionRef || entry.submissionId)
+      const sub = await fetchObject(entry.submissionRef)
       const { valid } = validate(sub)
-      rootHex = valid ? refToHex(sub.rootSubmissionId || entry.submissionRef) : refToHex(entry.submissionRef || entry.submissionId)
+      rootHex = valid ? refToHex(sub.rootSubmissionId || entry.submissionRef) : refToHex(entry.submissionRef)
     } catch {
-      rootHex = refToHex(entry.submissionRef || entry.submissionId)
+      rootHex = refToHex(entry.submissionRef)
     }
   }
-  if (rootHex && entry.boardId) {
-    router.push({ name: 'thread', params: { slug: entry.boardId, rootSubId: rootHex } })
+  if (rootHex && entry.boardSlug) {
+    router.push({ name: 'thread', params: { slug: entry.boardSlug, rootSubId: rootHex } })
   }
 }
 </script>
@@ -122,7 +159,7 @@ async function goToThread(entry) {
 
       <Card
         v-for="entry in profile.entries"
-        :key="entry.submissionId || entry.submissionRef"
+        :key="entry.submissionRef"
         @click="goToThread(entry)"
         class="cursor-pointer hover:bg-accent/50 transition-colors py-0 gap-0"
       >
@@ -131,11 +168,11 @@ async function goToThread(entry) {
             <Badge :variant="entry.kind === 'post' ? 'default' : 'secondary'" class="text-[10px]">
               {{ entry.kind }}
             </Badge>
-            <span>r/{{ entry.boardId }}</span>
+            <span>r/{{ entry.boardSlug }}</span>
             <span v-if="entry.createdAt">· {{ timeAgo(entry.createdAt) }}</span>
           </div>
           <div class="text-xs font-mono text-muted-foreground/60 mt-1 truncate">
-            {{ entry.submissionRef || entry.submissionId }}
+            {{ entry.submissionRef }}
           </div>
         </CardContent>
       </Card>

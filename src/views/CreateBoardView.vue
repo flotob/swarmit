@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useWallet } from '../composables/useWallet'
 import { useSwarm } from '../composables/useSwarm'
 import { useAuthStore } from '../stores/auth'
-import { buildBoard, validate } from '../protocol/objects.js'
+import { buildBoard, validate, normalizeBoardSlugInput, validateBoardSlug } from '../protocol/objects.js'
 import { registerBoard } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
 import StatusBar from '../components/StatusBar.vue'
@@ -29,16 +29,15 @@ const error = ref(null)
 
 const STEP_NAMES = ['Connect providers', 'Publish board metadata', 'Register on-chain']
 
-const slugPattern = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/
-
 async function handleSubmit() {
-  const s = slug.value.trim().toLowerCase()
+  const s = normalizeBoardSlugInput(slug.value)
   const t = title.value.trim()
   const d = description.value.trim()
   if (!s || !t || !d) return
 
-  if (!slugPattern.test(s) || s.length > 32) {
-    error.value = 'Slug must start/end with a letter or number, contain only a-z 0-9 hyphens, and be at most 32 characters.'
+  const slugErrors = validateBoardSlug(s)
+  if (slugErrors.length) {
+    error.value = slugErrors.join('. ')
     return
   }
 

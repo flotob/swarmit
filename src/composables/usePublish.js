@@ -3,10 +3,13 @@ import { useWallet } from './useWallet.js'
 import { useSwarm } from './useSwarm.js'
 import { useAuthStore } from '../stores/auth'
 import { useSubmissionsStore } from '../stores/submissions'
-import { validate, buildPost, buildReply, buildSubmission, buildUserFeedIndex } from '../protocol/objects.js'
-import { resolveFeed } from '../swarm/feeds.js'
-import { announceSubmission } from '../chain/transactions.js'
+import { validate, buildPost, buildReply, buildSubmission, buildUserFeedEntry } from '../protocol/objects.js'
+import { slugToBoardId } from '../protocol/references.js'
+import { announceSubmission, declareUserFeed } from '../chain/transactions.js'
 import { isContractConfigured } from '../chain/contract.js'
+import { hasUserFeed } from '../chain/events.js'
+import { waitForReceipt } from '../lib/rpc.js'
+import { feedIdFromCoordinates } from 'swarmit-protocol/feeds'
 import { FREEDOM_ADAPTER } from '../config'
 
 let pipelineLock = false
@@ -42,27 +45,14 @@ export function usePublish() {
       setStep('Ensure identity', 'active', 'Connecting to Swarm...')
       await swarm.connect()
     }
-    const userFeed = await swarm.ensureUserFeed()
-    return { userAddress: auth.userAddress, userFeed }
+    await swarm.ensureUserFeed()
+    return { userAddress: auth.userAddress }
   }
 
   async function publishValidated(obj, label) {
     const res = validate(obj)
     if (!res.valid) throw new Error(`${label} validation failed: ${res.errors.join(', ')}`)
     return swarm.publishJSON(obj, label)
-  }
-
-  async function readCurrentUserFeedIndex(userFeed) {
-    try {
-      const index = await resolveFeed(userFeed)
-      if (!index) return null
-      const { valid, errors } = validate(index)
-      if (!valid) throw new Error(`Invalid userFeedIndex: ${errors.join(', ')}`)
-      return index
-    } catch (err) {
-      if (err.message.includes('404')) return null
-      throw new Error(`Cannot read user feed: ${err.message}`)
-    }
   }
 
   async function runPipeline({ boardSlug, kind, contentLabel, contentBuilderFn, existingContentRef, submissionExtras, chainExtras, stepNames }) {
@@ -78,13 +68,11 @@ export function usePublish() {
     error.value = null
 
     try {
-      // Step 1: Identity
       setStep('Ensure identity', 'active')
-      const { userAddress, userFeed } = await ensureIdentity()
-      const author = { address: userAddress, userFeed }
+      const { userAddress } = await ensureIdentity()
+      const author = { address: userAddress }
       setStep('Ensure identity', 'done', userAddress)
 
-      // Step 2: Build + publish content
       let contentRef
       let contentTitle = null
       let contentBodyPreview = null
@@ -100,10 +88,9 @@ export function usePublish() {
         setStep(contentLabel, 'done', contentResult.bzzUrl)
       }
 
-      // Step 3: Build + publish submission
       setStep('Publish submission', 'active')
       const submission = buildSubmission({
-        boardId: boardSlug,
+        boardId: slugToBoardId(boardSlug),
         kind,
         contentRef,
         author,
@@ -112,26 +99,37 @@ export function usePublish() {
       const subResult = await publishValidated(submission, 'submission')
       setStep('Publish submission', 'done', subResult.bzzUrl)
 
-      // Step 4: Update user feed
       setStep('Update user feed', 'active')
-      const currentIndex = await readCurrentUserFeedIndex(userFeed)
-      const entries = currentIndex ? [...currentIndex.entries] : []
-      entries.push({
-        submissionId: subResult.bzzUrl,
+      const feedEntry = buildUserFeedEntry({
         submissionRef: subResult.bzzUrl,
-        boardId: boardSlug,
+        boardSlug,
         kind,
-        createdAt: submission.createdAt,
       })
-      const newIndex = buildUserFeedIndex({ author: userAddress, entries })
-      const indexResult = await publishValidated(newIndex, 'userFeedIndex')
-      await swarm.updateFeed(FREEDOM_ADAPTER.USER_FEED_NAME, indexResult.reference)
-      setStep('Update user feed', 'done', `${entries.length} entries`)
+      await swarm.writeFeedEntry(
+        FREEDOM_ADAPTER.USER_FEED_NAME,
+        JSON.stringify(feedEntry),
+      )
+      setStep('Update user feed', 'done')
 
-      // Step 5: Announce on-chain
       let announced = false
       if (isContractConfigured()) {
         setStep('Announce on-chain', 'active')
+
+        // Must complete before announce so the two txs don't race on nonce.
+        if (!auth.userFeedDeclared && auth.userFeedTopic && auth.userFeedOwner) {
+          try {
+            const feedId = feedIdFromCoordinates(auth.userFeedTopic, auth.userFeedOwner)
+            const declared = await hasUserFeed(userAddress, feedId)
+            if (!declared) {
+              const declareTx = await declareUserFeed(auth.userFeedTopic, auth.userFeedOwner)
+              await waitForReceipt(declareTx)
+            }
+            auth.userFeedDeclared = true
+          } catch {
+            // Non-critical — will retry on next publish
+          }
+        }
+
         try {
           const tx = await announceSubmission({
             boardSlug,
@@ -150,7 +148,6 @@ export function usePublish() {
       result.value = {
         contentRef,
         submissionRef: subResult.bzzUrl,
-        userFeedIndexRef: indexResult.bzzUrl,
         announced,
       }
 

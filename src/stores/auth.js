@@ -4,7 +4,9 @@ import { ref } from 'vue'
 export const useAuthStore = defineStore('auth', () => {
   const walletConnected = ref(false)
   const userAddress = ref(null)
-  const userFeed = ref(null)
+  const userFeedTopic = ref(null)
+  const userFeedOwner = ref(null)
+  const userFeedDeclared = ref(false)
   const swarmDetected = ref(false)
   const swarmConnected = ref(false)
 
@@ -26,14 +28,18 @@ export const useAuthStore = defineStore('auth', () => {
     swarmConnected.value = connected
   }
 
-  function setUserFeed(feed) {
-    userFeed.value = feed
+  function setUserFeedTopic(topic) {
+    userFeedTopic.value = topic
+  }
+
+  function setUserFeedOwner(owner) {
+    userFeedOwner.value = owner
   }
 
   return {
-    walletConnected, userAddress, userFeed,
+    walletConnected, userAddress, userFeedTopic, userFeedOwner, userFeedDeclared,
     swarmDetected, swarmConnected,
     setWallet, clearWallet,
-    setSwarmDetected, setSwarmConnected, setUserFeed,
+    setSwarmDetected, setSwarmConnected, setUserFeedTopic, setUserFeedOwner,
   }
 })

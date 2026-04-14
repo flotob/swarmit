@@ -187,6 +187,61 @@ export async function getCuratorDeclarations(opts = {}) {
 }
 
 // ============================================
+// User feed events + reads
+// ============================================
+
+/**
+ * Get all UserFeedDeclared events for a user address.
+ * @param {string} userAddress
+ * @param {{ fromBlock?: string }} [opts]
+ * @returns {Promise<Array<{ feedId: string, feedTopic: string, feedOwner: string, blockNumber: string }>>}
+ */
+export async function getUserFeedDeclarations(userAddress, opts = {}) {
+  assertContractConfigured();
+  const paddedAddress = '0x' + userAddress.slice(2).toLowerCase().padStart(64, '0');
+  const logs = await getLogs({
+    address: CONTRACT_ADDRESS,
+    topics: [TOPICS.UserFeedDeclared, paddedAddress],
+    fromBlock: opts.fromBlock || CONTRACT_DEPLOY_BLOCK,
+  });
+  return logs.map((log) => {
+    const parsed = decodeLog(log);
+    return {
+      feedId: parsed.args.feedId,
+      feedTopic: parsed.args.feedTopic,
+      feedOwner: parsed.args.feedOwner,
+      blockNumber: log.blockNumber,
+    };
+  });
+}
+
+/**
+ * Read user feeds via the contract view function userFeedsOf().
+ * Returns array of { feedId, feedTopic, feedOwner }.
+ * @param {string} userAddress
+ * @returns {Promise<Array<{ feedId: string, feedTopic: string, feedOwner: string }>>}
+ */
+export async function getUserFeeds(userAddress) {
+  const result = await contractRead('userFeedsOf', [userAddress]);
+  return result[0].map((entry) => ({
+    feedId: entry.feedId,
+    feedTopic: entry.feedTopic,
+    feedOwner: entry.feedOwner,
+  }));
+}
+
+/**
+ * Check if a user has declared a specific feed.
+ * @param {string} userAddress
+ * @param {string} feedId - 0x-prefixed bytes32
+ * @returns {Promise<boolean>}
+ */
+export async function hasUserFeed(userAddress, feedId) {
+  const result = await contractRead('hasUserFeed', [userAddress, feedId]);
+  return result[0];
+}
+
+// ============================================
 // Vote reads (direct contract calls, no wallet)
 // ============================================
 

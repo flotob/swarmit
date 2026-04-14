@@ -51,17 +51,26 @@ export function useSwarm() {
   }
 
   /**
-   * Ensure user feed exists. Returns the stable manifest bzzUrl.
+   * Ensure user feed exists and store its coordinates.
    * Idempotent: createFeed with the same name returns the same feed.
    */
   async function ensureUserFeed() {
-    if (auth.userFeed) return auth.userFeed
+    if (auth.userFeedTopic) return
 
     const result = await createFeed(FREEDOM_ADAPTER.USER_FEED_NAME)
-    const bzzUrl = result.bzzUrl || hexToBzz(result.manifestReference)
-    auth.setUserFeed(bzzUrl)
-    return bzzUrl
+    if (result.topic) auth.setUserFeedTopic(result.topic)
+    if (result.owner) auth.setUserFeedOwner(result.owner)
   }
 
-  return { isAvailable, connect, publishJSON, publishData, createFeed, updateFeed, ensureUserFeed }
+  async function writeFeedEntry(name, data) {
+    if (!isAvailable()) throw new Error('Swarm provider not available')
+    return window.swarm.writeFeedEntry({ name, data })
+  }
+
+  async function readFeedEntry(params) {
+    if (!isAvailable()) throw new Error('Swarm provider not available')
+    return window.swarm.readFeedEntry(params)
+  }
+
+  return { isAvailable, connect, publishJSON, publishData, createFeed, updateFeed, ensureUserFeed, writeFeedEntry, readFeedEntry }
 }
