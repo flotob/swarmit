@@ -246,20 +246,6 @@ export async function hasUserFeed(userAddress, feedId) {
 // ============================================
 
 /**
- * Get vote totals for a submission.
- * @param {string} submissionRef - bzz:// ref or hex string
- * @returns {Promise<{ upvotes: number, downvotes: number }>}
- */
-export async function getVoteTotals(submissionRef) {
-  const submissionId = refToBytes32(submissionRef);
-  const [[upvotes], [downvotes]] = await Promise.all([
-    contractRead('upvoteCount', [submissionId]),
-    contractRead('downvoteCount', [submissionId]),
-  ]);
-  return { upvotes: Number(upvotes), downvotes: Number(downvotes) };
-}
-
-/**
  * Get a specific voter's current vote for a submission.
  * @param {string} submissionRef - bzz:// ref or hex string
  * @param {string} voterAddress - Ethereum address

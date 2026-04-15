@@ -23,14 +23,8 @@ function makeRef(n) {
   return `bzz://${String(n).padStart(64, '0')}`
 }
 
-function encodeUpvoteReturn(count) {
-  return iface.encodeFunctionResult('upvoteCount', [count])
-}
-function encodeDownvoteReturn(count) {
-  return iface.encodeFunctionResult('downvoteCount', [count])
-}
-function encodeVoteOfReturn(direction) {
-  return iface.encodeFunctionResult('voteOf', [direction])
+function encodeVoteStatsReturn(upvotes, downvotes, direction) {
+  return iface.encodeFunctionResult('voteStats', [upvotes, downvotes, direction])
 }
 
 describe('getVotesBatch', () => {
@@ -54,39 +48,31 @@ describe('getVotesBatch', () => {
     expect(mockEthCall).not.toHaveBeenCalled()
   })
 
-  it('batches N refs into one multicall with 2N calls (no voter)', async () => {
+  it('batches N refs into one multicall with N calls (1 voteStats per ref)', async () => {
     const refs = [makeRef(1), makeRef(2), makeRef(3)]
     mockEthCall.mockResolvedValueOnce(
       encodeAggregate3Return([
-        [true, encodeUpvoteReturn(5)],
-        [true, encodeDownvoteReturn(1)],
-        [true, encodeUpvoteReturn(10)],
-        [true, encodeDownvoteReturn(2)],
-        [true, encodeUpvoteReturn(0)],
-        [true, encodeDownvoteReturn(0)],
+        [true, encodeVoteStatsReturn(5, 1, 0)],
+        [true, encodeVoteStatsReturn(10, 2, 0)],
+        [true, encodeVoteStatsReturn(0, 0, 0)],
       ]),
     )
 
     const result = await getVotesBatch(refs)
     expect(mockEthCall).toHaveBeenCalledOnce()
-    expect(mockEthCall.mock.calls[0][0].to).toBe(MULTICALL_ADDR)
     expect(result.totals.get(refs[0].toLowerCase())).toEqual({ upvotes: 5, downvotes: 1 })
     expect(result.totals.get(refs[1].toLowerCase())).toEqual({ upvotes: 10, downvotes: 2 })
     expect(result.totals.get(refs[2].toLowerCase())).toEqual({ upvotes: 0, downvotes: 0 })
     expect(result.myVotes.size).toBe(0)
   })
 
-  it('batches N refs into one multicall with 3N calls (with voter)', async () => {
+  it('includes myVotes when voter is provided', async () => {
     const voter = '0xAAAA000000000000000000000000000000000001'
     const refs = [makeRef(1), makeRef(2)]
     mockEthCall.mockResolvedValueOnce(
       encodeAggregate3Return([
-        [true, encodeUpvoteReturn(3)],
-        [true, encodeDownvoteReturn(0)],
-        [true, encodeVoteOfReturn(1)],
-        [true, encodeUpvoteReturn(7)],
-        [true, encodeDownvoteReturn(4)],
-        [true, encodeVoteOfReturn(-1)],
+        [true, encodeVoteStatsReturn(3, 0, 1)],
+        [true, encodeVoteStatsReturn(7, 4, -1)],
       ]),
     )
 
@@ -102,15 +88,14 @@ describe('getVotesBatch', () => {
     const refs = [makeRef(1), makeRef(1).toUpperCase(), makeRef(1)]
     mockEthCall.mockResolvedValueOnce(
       encodeAggregate3Return([
-        [true, encodeUpvoteReturn(5)],
-        [true, encodeDownvoteReturn(1)],
+        [true, encodeVoteStatsReturn(5, 1, 0)],
       ]),
     )
 
     const result = await getVotesBatch(refs)
     expect(mockEthCall).toHaveBeenCalledOnce()
     const decoded = decodeAggregate3Calldata(mockEthCall.mock.calls[0][0].data)
-    expect(decoded[0].length).toBe(2)
+    expect(decoded[0].length).toBe(1)
     expect(result.totals.size).toBe(1)
   })
 
@@ -118,9 +103,7 @@ describe('getVotesBatch', () => {
     const refs = [makeRef(1), makeRef(2)]
     mockEthCall.mockResolvedValueOnce(
       encodeAggregate3Return([
-        [true, encodeUpvoteReturn(5)],
-        [true, encodeDownvoteReturn(1)],
-        [false, '0x'],
+        [true, encodeVoteStatsReturn(5, 1, 1)],
         [false, '0x'],
       ]),
     )
@@ -133,8 +116,7 @@ describe('getVotesBatch', () => {
   it('skips null/undefined entries', async () => {
     mockEthCall.mockResolvedValueOnce(
       encodeAggregate3Return([
-        [true, encodeUpvoteReturn(5)],
-        [true, encodeDownvoteReturn(1)],
+        [true, encodeVoteStatsReturn(5, 1, 0)],
       ]),
     )
 
@@ -143,32 +125,22 @@ describe('getVotesBatch', () => {
     expect(result.totals.get(makeRef(1).toLowerCase())).toEqual({ upvotes: 5, downvotes: 1 })
   })
 
-  it('chunks large batches: 100 refs with voter = 300 calls → 2 chunks', async () => {
-    // MAX_BATCH_SIZE=250, callsPerRef=3, refsPerChunk=floor(250/3)=83
-    // 100 refs → 83 + 17
-    const refs = Array.from({ length: 100 }, (_, i) => makeRef(i + 1))
+  it('chunks large batches at MAX_BATCH_SIZE boundary', async () => {
+    // MAX_BATCH_SIZE=250, 1 call per ref → 250 refs per chunk
+    // 300 refs → 250 + 50
+    const refs = Array.from({ length: 300 }, (_, i) => makeRef(i + 1))
     const voter = '0xBBBB000000000000000000000000000000000001'
 
-    const chunk1Results = []
-    for (let i = 0; i < 83; i++) {
-      chunk1Results.push([true, encodeUpvoteReturn(0)])
-      chunk1Results.push([true, encodeDownvoteReturn(0)])
-      chunk1Results.push([true, encodeVoteOfReturn(0)])
-    }
-    const chunk2Results = []
-    for (let i = 0; i < 17; i++) {
-      chunk2Results.push([true, encodeUpvoteReturn(0)])
-      chunk2Results.push([true, encodeDownvoteReturn(0)])
-      chunk2Results.push([true, encodeVoteOfReturn(0)])
-    }
+    const chunk1 = Array.from({ length: 250 }, () => [true, encodeVoteStatsReturn(0, 0, 0)])
+    const chunk2 = Array.from({ length: 50 }, () => [true, encodeVoteStatsReturn(0, 0, 0)])
 
     mockEthCall
-      .mockResolvedValueOnce(encodeAggregate3Return(chunk1Results))
-      .mockResolvedValueOnce(encodeAggregate3Return(chunk2Results))
+      .mockResolvedValueOnce(encodeAggregate3Return(chunk1))
+      .mockResolvedValueOnce(encodeAggregate3Return(chunk2))
 
     const result = await getVotesBatch(refs, voter)
     expect(mockEthCall).toHaveBeenCalledTimes(2)
-    expect(result.totals.size).toBe(100)
-    expect(result.myVotes.size).toBe(100)
+    expect(result.totals.size).toBe(300)
+    expect(result.myVotes.size).toBe(300)
   })
 })
