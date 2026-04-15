@@ -43,6 +43,14 @@ export function isUsernameRegistryConfigured() {
   );
 }
 
+// Hidden curators (declared on-chain but suppressed from the UI)
+export const HIDDEN_CURATORS = new Set(
+  (import.meta.env.VITE_HIDDEN_CURATORS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 // Freedom Browser adapter conventions (not protocol-level)
 // These are client implementation details for how this app uses
 // Freedom's window.swarm feed API. Other clients may use different

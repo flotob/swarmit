@@ -5,7 +5,7 @@ import { fetchBoardIndex, resolveCuratorProfile } from '../swarm/feeds.js'
 import { validate } from '../protocol/objects.js'
 import { refToHex } from '../protocol/references.js'
 import { useCuratorPrefsStore } from '../stores/curators.js'
-import { DEFAULT_CURATORS } from '../config.js'
+import { DEFAULT_CURATORS, HIDDEN_CURATORS } from '../config.js'
 
 const defaultRefHexes = new Set(DEFAULT_CURATORS.map((r) => refToHex(r)).filter(Boolean))
 
@@ -21,6 +21,7 @@ export function useCuratorDeclarations() {
       const byAddr = new Map()
       for (const c of all) byAddr.set(c.curator.toLowerCase(), c)
       const curators = [...byAddr.values()]
+        .filter((c) => !HIDDEN_CURATORS.has(c.curator.toLowerCase()))
 
       const knownRefs = new Set(curators.map((c) => refToHex(c.curatorProfileRef)).filter(Boolean))
       for (const ref of DEFAULT_CURATORS) {
