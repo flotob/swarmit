@@ -55,6 +55,17 @@ export function usePublish() {
     return swarm.publishJSON(obj, label)
   }
 
+  async function needsFeedDeclaration() {
+    if (auth.userFeedDeclared || !auth.userFeedTopic || !auth.userFeedOwner) return false
+    if (!isContractConfigured()) return false
+    try {
+      const feedId = feedIdFromCoordinates(auth.userFeedTopic, auth.userFeedOwner)
+      return !(await hasUserFeed(auth.userAddress, feedId))
+    } catch {
+      return false
+    }
+  }
+
   async function runPipeline({ boardSlug, kind, contentLabel, contentBuilderFn, existingContentRef, submissionExtras, chainExtras, stepNames }) {
     if (pipelineLock) {
       error.value = 'A publish is already in progress'
@@ -72,6 +83,14 @@ export function usePublish() {
       const { userAddress } = await ensureIdentity()
       const author = { address: userAddress }
       setStep('Ensure identity', 'done', userAddress)
+
+      const declareFeed = await needsFeedDeclaration()
+      if (declareFeed) {
+        const announceIdx = steps.value.findIndex((s) => s.name === 'Announce on-chain')
+        if (announceIdx !== -1) {
+          steps.value.splice(announceIdx, 0, { name: 'Declare user feed', status: 'pending', detail: '' })
+        }
+      }
 
       let contentRef
       let contentTitle = null
@@ -113,23 +132,21 @@ export function usePublish() {
 
       let announced = false
       if (isContractConfigured()) {
-        setStep('Announce on-chain', 'active')
-
-        // Must complete before announce so the two txs don't race on nonce.
-        if (!auth.userFeedDeclared && auth.userFeedTopic && auth.userFeedOwner) {
+        // Must complete before announce to avoid nonce race
+        if (declareFeed) {
+          setStep('Declare user feed', 'active', 'Sending transaction...')
           try {
-            const feedId = feedIdFromCoordinates(auth.userFeedTopic, auth.userFeedOwner)
-            const declared = await hasUserFeed(userAddress, feedId)
-            if (!declared) {
-              const declareTx = await declareUserFeed(auth.userFeedTopic, auth.userFeedOwner)
-              await waitForReceipt(declareTx)
-            }
+            const declareTx = await declareUserFeed(auth.userFeedTopic, auth.userFeedOwner)
+            setStep('Declare user feed', 'active', 'Confirming...')
+            await waitForReceipt(declareTx, { interval: 2000 })
             auth.userFeedDeclared = true
+            setStep('Declare user feed', 'done')
           } catch {
-            // Non-critical — will retry on next publish
+            setStep('Declare user feed', 'skipped', 'Will retry next time')
           }
         }
 
+        setStep('Announce on-chain', 'active')
         try {
           const tx = await announceSubmission({
             boardSlug,

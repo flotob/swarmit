@@ -20,6 +20,7 @@ const STEP_LABELS = {
   'Publish reply': 'Publishing content...',
   'Publish submission': 'Recording submission...',
   'Update user feed': 'Updating feed...',
+  'Declare user feed': 'Declaring user feed...',
   'Announce on-chain': 'Announcing on-chain...',
 }
 
