@@ -1,6 +1,16 @@
 <script setup>
 import { Button } from '../components/ui/button'
 import { ExternalLink } from 'lucide-vue-next'
+
+// Freedom browser doesn't navigate ens:// links on regular clicks —
+// window.open takes the same code path as "open in new tab" which works.
+function navigate(e) {
+  const href = e.currentTarget.getAttribute('href')
+  if (href && !href.startsWith('http')) {
+    e.preventDefault()
+    window.open(href, '_blank')
+  }
+}
 </script>
 
 <template>
@@ -12,7 +22,7 @@ import { ExternalLink } from 'lucide-vue-next'
         <h2 class="text-lg font-semibold text-foreground mb-2">What is Swarmit?</h2>
         <p>
           Swarmit is a decentralized message board built on
-          <a href="https://www.ethswarm.org" target="_blank" rel="noopener" class="text-link hover:underline">Swarm</a>
+          <a href="ens://swarm.eth" class="text-link hover:underline" @click="navigate">Swarm</a>
           (content storage) and
           <a href="https://www.gnosis.io" target="_blank" rel="noopener" class="text-link hover:underline">Gnosis Chain</a>
           (announcements and discovery). Posts, replies, and votes are published to Swarm as
@@ -80,7 +90,7 @@ import { ExternalLink } from 'lucide-vue-next'
             <dd>
               A Swarm-native browser that provides the <code class="text-xs bg-secondary px-1 py-0.5 rounded">window.swarm</code> API
               for publishing content, managing feeds, and connecting to the Swarm network.
-              <a href="https://github.com/nicedayla/nicedayla-browser" target="_blank" rel="noopener" class="text-link hover:underline ml-1">Learn more</a>.
+              <a href="ens://freedombrowser.eth" class="text-link hover:underline ml-1" @click="navigate">Learn more</a>.
             </dd>
           </div>
         </dl>
