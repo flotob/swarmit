@@ -13,6 +13,7 @@ const router = createRouter({
     { path: '/u/:address', name: 'user-profile', component: () => import('../views/UserProfileView.vue') },
     { path: '/curators', name: 'curators', component: () => import('../views/CuratorPickerView.vue') },
     { path: '/create-board', name: 'create-board', component: () => import('../views/CreateBoardView.vue') },
+    { path: '/about', name: 'about', component: () => import('../views/AboutView.vue') },
     { path: '/activity/:submissionRef', name: 'submission-detail', component: () => import('../views/SubmissionDetailView.vue') },
   ],
 })
