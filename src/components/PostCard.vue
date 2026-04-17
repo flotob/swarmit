@@ -8,6 +8,7 @@ import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import AttachmentGallery from './AttachmentGallery.vue'
 import CrosspostDialog from './CrosspostDialog.vue'
+import TipAuthorButton from './TipAuthorButton.vue'
 import { Skeleton } from './ui/skeleton'
 import { ChevronUp, ChevronDown, FileText, Link as LinkIcon, Share2, MessageSquare, ExternalLink, Repeat2 } from 'lucide-vue-next'
 
@@ -232,6 +233,7 @@ function share() {
             <Repeat2 class="w-3 h-3" />
             crosspost
           </button>
+          <TipAuthorButton v-if="authorAddress" :address="authorAddress" />
         </div>
       </template>
     </div>

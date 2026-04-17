@@ -4,6 +4,7 @@ import { timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
 import { displayName } from '../lib/displayName.js'
 import { useVotes } from '../composables/useVotes.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import TipAuthorButton from './TipAuthorButton.vue'
 import { ChevronUp, ChevronDown, MessageSquare } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -101,6 +102,7 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
             <MessageSquare class="w-3 h-3" />
             reply
           </button>
+          <TipAuthorButton v-if="node.content?.author?.address" :address="node.content.author.address" />
         </div>
       </template>
     </div>
