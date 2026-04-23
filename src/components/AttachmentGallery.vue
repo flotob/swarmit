@@ -26,7 +26,7 @@ const unembedded = computed(() =>
       <img
         :src="bzzToGatewayUrl(att.reference)"
         :alt="att.altText || att.name || 'Attachment'"
-        class="max-w-xs max-h-64 rounded-md border border-border"
+        class="max-w-full md:max-w-xs max-h-64 h-auto rounded-md border border-border"
       />
     </a>
   </div>
