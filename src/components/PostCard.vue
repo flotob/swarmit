@@ -128,14 +128,14 @@ function share() {
           :href="titleHref"
           target="_blank"
           rel="noopener"
-          class="text-link hover:underline font-medium leading-snug"
+          class="text-link hover:underline font-medium leading-snug break-words [overflow-wrap:anywhere]"
         >
           {{ entry.content?.title || '(untitled)' }}
         </a>
-        <router-link v-else-if="threadRoute" :to="threadRoute" class="text-link hover:underline font-medium leading-snug">
+        <router-link v-else-if="threadRoute" :to="threadRoute" class="text-link hover:underline font-medium leading-snug break-words [overflow-wrap:anywhere]">
           {{ entry.content?.title || '(untitled)' }}
         </router-link>
-        <span v-else class="text-link font-medium leading-snug">
+        <span v-else class="text-link font-medium leading-snug break-words [overflow-wrap:anywhere]">
           {{ entry.content?.title || '(untitled)' }}
         </span>
 
@@ -197,10 +197,10 @@ function share() {
             :href="entry.content.link.url"
             target="_blank"
             rel="noopener"
-            class="inline-flex items-center gap-1 text-sm text-link hover:underline mb-2"
+            class="inline-flex items-start gap-1 text-sm text-link hover:underline mb-2 break-all"
           >
             {{ entry.content.link.url }}
-            <ExternalLink class="w-3.5 h-3.5" />
+            <ExternalLink class="w-3.5 h-3.5 shrink-0 mt-0.5" />
           </a>
 
           <MarkdownRenderer

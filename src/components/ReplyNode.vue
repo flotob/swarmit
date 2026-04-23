@@ -53,7 +53,7 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
       </button>
     </div>
 
-    <div class="flex-1 min-w-0 py-2 pl-1">
+    <div class="flex-1 min-w-0 py-2 pl-1 [overflow-wrap:anywhere]">
       <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
         <button
           @click="$emit('toggle-collapse', node.submissionId)"

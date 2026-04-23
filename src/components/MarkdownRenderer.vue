@@ -42,6 +42,9 @@ const html = computed(() => {
 </template>
 
 <style>
+.prose {
+  overflow-wrap: anywhere;
+}
 .prose p { margin-bottom: 0.75em; }
 .prose p:last-child { margin-bottom: 0; }
 .prose code {
@@ -49,6 +52,7 @@ const html = computed(() => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.875em;
+  overflow-wrap: anywhere;
 }
 .prose pre {
   background: var(--secondary);

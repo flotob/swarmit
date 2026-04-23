@@ -9,7 +9,13 @@ import { useWallet } from '../composables/useWallet'
 import { useColorMode } from '../composables/useColorMode'
 import { displayName } from '../lib/displayName.js'
 import { STATUS } from '../lib/submission-status.js'
-import { Bell, Wallet, Radio } from 'lucide-vue-next'
+import { Bell, Wallet, Radio, ChevronDown } from 'lucide-vue-next'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -66,6 +72,12 @@ function selectView(viewId) {
 }
 
 const availableViews = computed(() => viewScope.value ? views.getAvailableViews(viewScope.value) : [])
+
+const activeViewLabel = computed(() => {
+  const id = activeView.value || defaultViewId.value
+  if (!id) return ''
+  return id.charAt(0).toUpperCase() + id.slice(1)
+})
 </script>
 
 <template>
@@ -89,10 +101,11 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
         </span>
 
         <template v-if="availableViews.length">
+          <!-- Desktop: horizontal tabs -->
           <button
             v-for="id in availableViews"
             :key="id"
-            class="header-tab"
+            class="header-tab hidden md:inline-block"
             :class="activeView === id || (!activeView && id === defaultViewId)
               ? 'header-tab-active'
               : 'header-tab-inactive'"
@@ -100,6 +113,24 @@ const availableViews = computed(() => viewScope.value ? views.getAvailableViews(
           >
             {{ id.charAt(0).toUpperCase() + id.slice(1) }}
           </button>
+
+          <!-- Mobile: dropdown -->
+          <DropdownMenu>
+            <DropdownMenuTrigger class="header-tab header-tab-active md:hidden inline-flex items-center gap-1 outline-none">
+              {{ activeViewLabel }}
+              <ChevronDown class="w-3 h-3 opacity-70" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" class="min-w-[8rem]">
+              <DropdownMenuItem
+                v-for="id in availableViews"
+                :key="id"
+                @click="selectView(id)"
+                class="cursor-pointer"
+              >
+                {{ id.charAt(0).toUpperCase() + id.slice(1) }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </template>
 
         <span

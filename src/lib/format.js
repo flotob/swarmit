@@ -22,7 +22,7 @@ export function timeAgo(timestamp) {
 }
 
 export const MAX_THREAD_DEPTH = 6;
-export const PX_PER_DEPTH = 24;
+export const PX_PER_DEPTH = 16;
 
 export function formatLinkDisplay(url) {
   if (!url) return null;
