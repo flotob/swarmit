@@ -162,12 +162,12 @@ const activeViewLabel = computed(() => {
 
         <span class="text-header-foreground/20 hidden lg:inline">|</span>
 
-        <span class="inline-flex items-center gap-1 px-2 py-1.5">
+        <span class="hidden md:inline-flex items-center gap-1 px-2 py-1.5">
           <Radio class="w-3.5 h-3.5" :class="auth.swarmDetected ? 'text-success' : 'text-destructive'" />
           {{ auth.swarmDetected ? 'Swarm' : 'No Swarm' }}
         </span>
 
-        <span class="text-header-foreground/20">|</span>
+        <span class="hidden md:inline text-header-foreground/20">|</span>
 
         <button
           v-if="!auth.walletConnected"
