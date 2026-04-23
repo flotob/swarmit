@@ -24,6 +24,6 @@ const href = computed(() => {
     title="Tip 1 xDAI"
   >
     <HandCoins class="w-3 h-3" />
-    tip
+    <span class="hidden md:inline">tip</span>
   </a>
 </template>

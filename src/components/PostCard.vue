@@ -221,17 +221,18 @@ function share() {
             <MessageSquare class="w-3 h-3" />
             {{ isLinkPost ? 'comments' : 'discuss' }}
           </router-link>
-          <button @click="share" class="hover:underline flex items-center gap-1">
+          <button @click="share" class="hover:underline flex items-center gap-1" title="Share">
             <Share2 class="w-3 h-3" />
-            share
+            <span class="hidden md:inline">share</span>
           </button>
           <button
             v-if="canCrosspost"
             class="hover:underline flex items-center gap-1"
             @click="showCrosspostDialog = true"
+            title="Crosspost"
           >
             <Repeat2 class="w-3 h-3" />
-            crosspost
+            <span class="hidden md:inline">crosspost</span>
           </button>
           <TipAuthorButton v-if="authorAddress" :address="authorAddress" />
         </div>
