@@ -39,7 +39,7 @@ describe('resolveCuratorProfile', () => {
     mockFetch.mockResolvedValueOnce(mockOkResponse(validProfile))
     const profile = await resolveCuratorProfile(bzz)
     expect(profile).toEqual(validProfile)
-    expect(mockFetch).toHaveBeenCalledWith(`/bzz/${hex}/`)
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`/bzz/${hex}/$`)))
   })
 
   it('throws on invalid ref', async () => {

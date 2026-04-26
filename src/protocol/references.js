@@ -1,3 +1,5 @@
+import { bzzFetchUrl } from '../lib/bee-gateway.js';
+
 export {
   refToHex,
   hexToBzz,
@@ -11,11 +13,13 @@ export {
 } from 'swarmit-protocol/references';
 
 /**
- * Convert a bzz:// reference to a gateway-relative URL for rendering.
+ * Convert a bzz:// reference to a gateway URL for rendering.
+ * In Freedom Browser this is a relative '/bzz/<hex>/' that the local
+ * gateway proxies. Outside Freedom, it points at a public Swarm gateway.
  * @param {string} bzzRef - 'bzz://<64hex>' reference
- * @returns {string} '/bzz/<64hex>/' gateway path, or the input unchanged if not a bzz:// ref
+ * @returns {string} gateway URL, or the input unchanged if not a bzz:// ref
  */
 export function bzzToGatewayUrl(bzzRef) {
   if (!bzzRef || typeof bzzRef !== 'string' || !bzzRef.startsWith('bzz://')) return bzzRef;
-  return `/bzz/${bzzRef.slice(6)}/`;
+  return bzzFetchUrl(bzzRef.slice(6));
 }

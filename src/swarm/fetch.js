@@ -6,6 +6,7 @@
 
 import { refToHex } from '../protocol/references.js';
 import { validate } from '../protocol/objects.js';
+import { bzzFetchUrl } from '../lib/bee-gateway.js';
 
 // In-memory cache: reference → parsed object. Immutable content never changes.
 const cache = new Map();
@@ -23,7 +24,7 @@ export async function fetchObject(ref) {
     return cache.get(hex);
   }
 
-  const response = await fetch(`/bzz/${hex}/`);
+  const response = await fetch(bzzFetchUrl(hex));
 
   if (!response.ok) {
     throw new Error(`Swarm fetch failed: ${response.status} for ${hex}`);
@@ -44,7 +45,7 @@ export async function fetchRaw(ref) {
   const hex = refToHex(ref);
   if (!hex) throw new Error('Invalid Swarm reference');
 
-  const response = await fetch(`/bzz/${hex}/`);
+  const response = await fetch(bzzFetchUrl(hex));
 
   if (!response.ok) {
     throw new Error(`Swarm fetch failed: ${response.status} for ${hex}`);

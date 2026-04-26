@@ -10,6 +10,7 @@
 import { fetchObject } from './fetch.js';
 import { refToHex } from '../protocol/references.js';
 import { validateCuratorProfile } from '../protocol/objects.js';
+import { bzzFetchUrl } from '../lib/bee-gateway.js';
 
 // TTL cache for curator profiles. Keyed by ref hex → { profile, fetchedAt }.
 // Short TTL (30s) so feed-backed profiles refresh reasonably quickly.
@@ -29,7 +30,7 @@ export async function resolveFeed(feedManifestRef) {
 
   // Fetch the feed manifest — this resolves to the latest content.
   // We bypass the cache because the feed is mutable.
-  const response = await fetch(`/bzz/${hex}/`);
+  const response = await fetch(bzzFetchUrl(hex));
 
   if (!response.ok) {
     throw new Error(`Feed resolution failed: ${response.status} for ${hex}`);
@@ -60,7 +61,7 @@ export async function resolveCuratorProfile(curatorProfileRef) {
     return cached.profile;
   }
 
-  const response = await fetch(`/bzz/${hex}/`);
+  const response = await fetch(bzzFetchUrl(hex));
   if (!response.ok) {
     throw new Error(`Curator profile fetch failed: ${response.status} for ${hex}`);
   }
