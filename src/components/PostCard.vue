@@ -5,6 +5,7 @@ import { timeAgo, formatLinkDisplay } from '../lib/format.js'
 import { displayName } from '../lib/displayName.js'
 import { refToHex, bzzToGatewayUrl } from '../protocol/references.js'
 import { useVotes } from '../composables/useVotes.js'
+import { useReadOnly } from '../composables/useReadOnly.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import AttachmentGallery from './AttachmentGallery.vue'
 import CrosspostDialog from './CrosspostDialog.vue'
@@ -25,6 +26,7 @@ const router = useRouter()
 
 const submissionRef = computed(() => props.entry.submissionId || props.entry.submissionRef)
 const { score, myVote, isVoting, upvote, downvote } = useVotes(submissionRef)
+const { isReadOnly, tooltip: readOnlyTip } = useReadOnly()
 
 const authorAddress = computed(() => props.entry.content?.author?.address || props.entry.submission?.author?.address)
 const createdAt = computed(() => props.entry.submission?.createdAt || props.entry.content?.createdAt)
@@ -227,9 +229,10 @@ function share() {
           </button>
           <button
             v-if="canCrosspost"
-            class="hover:underline flex items-center gap-1"
+            class="hover:underline flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
+            :disabled="isReadOnly"
+            :title="isReadOnly ? readOnlyTip : 'Crosspost'"
             @click="showCrosspostDialog = true"
-            title="Crosspost"
           >
             <Repeat2 class="w-3 h-3" />
             <span class="hidden md:inline">crosspost</span>

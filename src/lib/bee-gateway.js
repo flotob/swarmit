@@ -26,3 +26,22 @@ export function getBeeOrigin() {
 export function bzzFetchUrl(hex) {
   return `${getBeeOrigin()}/bzz/${hex}/`;
 }
+
+/**
+ * Read the latest entry of a Swarm feed via the Bee HTTP /feeds endpoint.
+ * Use this only as a fallback for gateway mode — Freedom's window.swarm
+ * provides full indexed access; HTTP only returns the latest payload
+ * (the gateway's /feeds endpoint ignores ?index= in our tests).
+ *
+ * @param {string} topicHex - 64-char hex topic without 0x prefix
+ * @param {string} owner - 0x-prefixed Ethereum address
+ * @returns {Promise<any>} parsed JSON payload of the latest entry
+ */
+export async function httpReadLatestFeedEntry(topicHex, owner) {
+  const url = `${getBeeOrigin()}/feeds/${owner.toLowerCase()}/${topicHex}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Feed read failed: ${response.status}`);
+  }
+  return response.json();
+}

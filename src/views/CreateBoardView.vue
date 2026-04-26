@@ -12,11 +12,14 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { Alert, AlertDescription } from '../components/ui/alert'
+import ReadOnlyBanner from '../components/ReadOnlyBanner.vue'
+import { useReadOnly } from '../composables/useReadOnly'
 
 const router = useRouter()
 const wallet = useWallet()
 const swarm = useSwarm()
 const auth = useAuthStore()
+const { isReadOnly } = useReadOnly()
 
 const slug = ref('')
 const title = ref('')
@@ -103,6 +106,10 @@ async function handleSubmit() {
   <div>
     <h1 class="text-2xl font-bold text-foreground mb-6">Create Board</h1>
 
+    <div class="max-w-lg">
+      <ReadOnlyBanner />
+    </div>
+
     <form @submit.prevent="handleSubmit" class="space-y-4 max-w-lg">
       <div>
         <label class="block text-sm text-muted-foreground mb-1">Slug</label>
@@ -139,7 +146,7 @@ async function handleSubmit() {
         />
       </div>
 
-      <Button type="submit" :disabled="isCreating">
+      <Button type="submit" :disabled="isCreating || isReadOnly">
         {{ isCreating ? 'Creating...' : result?.registered ? 'Created — redirecting...' : result ? 'Published (not registered)' : 'Create Board' }}
       </Button>
     </form>

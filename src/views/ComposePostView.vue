@@ -12,6 +12,8 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs'
+import ReadOnlyBanner from '../components/ReadOnlyBanner.vue'
+import { useReadOnly } from '../composables/useReadOnly'
 
 const route = useRoute()
 const router = useRouter()
@@ -54,7 +56,10 @@ function onImageRemoved(descriptor) {
   attachments.value = attachments.value.filter((a) => a.reference !== descriptor.reference)
 }
 
+const { isReadOnly } = useReadOnly()
+
 const canSubmit = computed(() => {
+  if (isReadOnly.value) return false
   if (!effectiveSlug.value) return false
   if (!title.value.trim()) return false
   if (postType.value === 'text') return !!body.value.trim() || attachments.value.length > 0
@@ -96,6 +101,8 @@ async function handleSubmit() {
         &larr; Home
       </router-link>
     </Button>
+
+    <ReadOnlyBanner />
 
     <h1 class="text-2xl font-bold text-foreground mb-4">
       {{ slugFromRoute ? `Submit to r/${slugFromRoute}` : 'Submit a post' }}

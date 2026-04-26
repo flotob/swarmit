@@ -14,11 +14,14 @@ import { Badge } from '../components/ui/badge'
 import { Skeleton } from '../components/ui/skeleton'
 import { Alert, AlertDescription } from '../components/ui/alert'
 import ClaimUsernameCard from '../components/ClaimUsernameCard.vue'
+import { ExternalLink, Info } from 'lucide-vue-next'
+import { useReadOnly } from '../composables/useReadOnly'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const swarm = useSwarm()
+const { freedomBrowserUrl } = useReadOnly()
 const address = computed(() => route.params.address)
 
 const isOwnProfile = computed(() =>
@@ -39,6 +42,7 @@ const { data: profile, isLoading, isError, error } = useQuery({
     return {
       entries: result.entries,
       feedFound: result.feedFound,
+      historyTruncated: result.historyTruncated,
     }
   },
   enabled: computed(() => !!address.value),
@@ -80,6 +84,29 @@ async function goToThread(entry) {
 
     <div v-else class="mt-6 space-y-2">
       <p class="text-sm text-muted-foreground mb-3">{{ profile.entries.length }} submission{{ profile.entries.length > 1 ? 's' : '' }}</p>
+
+      <div
+        v-if="profile.historyTruncated"
+        class="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 mb-3 text-sm flex items-start gap-3"
+      >
+        <Info class="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <div class="flex-1 min-w-0">
+          <p class="text-foreground">Showing latest entry only.</p>
+          <p class="text-muted-foreground mt-1">
+            Full activity history can't be loaded through a public gateway.
+            <a
+              :href="freedomBrowserUrl"
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center gap-1 text-link hover:underline font-medium"
+            >
+              Open in Freedom Browser
+              <ExternalLink class="w-3.5 h-3.5" />
+            </a>
+            to see everything.
+          </p>
+        </div>
+      </div>
 
       <Card
         v-for="entry in profile.entries"

@@ -7,12 +7,12 @@
 import { getUserFeeds } from '../chain/events.js'
 import { isContractConfigured } from '../chain/contract.js'
 import { decodeFeedJSON, topicToSwarmFormat } from 'swarmit-protocol/feeds'
+import { isFreedomDetected, httpReadLatestFeedEntry } from '../lib/bee-gateway.js'
 
 /**
- * Read entries from a single feed.
- * @returns {Promise<Array>} entries (may be empty)
+ * Read entries from a single feed via window.swarm (full history).
  */
-async function readSingleFeed(swarm, topic, owner, maxEntries) {
+async function readSingleFeedFreedom(swarm, topic, owner, maxEntries) {
   const readParams = {
     topic: topicToSwarmFormat(topic),
     owner,
@@ -40,28 +40,50 @@ async function readSingleFeed(swarm, topic, owner, maxEntries) {
 }
 
 /**
+ * Read the latest entry of a single feed via the public Bee gateway HTTP API.
+ * The /feeds endpoint only returns the latest payload (?index= is ignored
+ * by the public gateway), so gateway mode is "latest only".
+ */
+async function readSingleFeedHttp(topic, owner) {
+  try {
+    const entry = await httpReadLatestFeedEntry(topicToSwarmFormat(topic), owner)
+    return entry ? [entry] : []
+  } catch {
+    return []
+  }
+}
+
+/**
  * @param {string} userAddress - wallet address to look up
- * @param {object} swarm - useSwarm() composable instance (needs readFeedEntry)
- * @param {{ maxEntries?: number }} [opts] - max entries per feed
- * @returns {Promise<{ entries: Array, feedFound: boolean }>}
+ * @param {object} swarm - useSwarm() composable instance (used in Freedom mode)
+ * @param {{ maxEntries?: number }} [opts] - max entries per feed (Freedom mode only)
+ * @returns {Promise<{ entries: Array, feedFound: boolean, historyTruncated: boolean }>}
+ *   historyTruncated is true when running outside Freedom (gateway mode):
+ *   only the latest entry of each feed is fetched.
  */
 export async function readUserFeed(userAddress, swarm, { maxEntries = 50 } = {}) {
   if (!userAddress || !isContractConfigured()) {
-    return { entries: [], feedFound: false }
+    return { entries: [], feedFound: false, historyTruncated: false }
   }
 
   let feeds
   try {
     feeds = await getUserFeeds(userAddress)
   } catch {
-    return { entries: [], feedFound: false }
+    return { entries: [], feedFound: false, historyTruncated: false }
   }
 
-  if (!feeds.length) return { entries: [], feedFound: false }
+  if (!feeds.length) return { entries: [], feedFound: false, historyTruncated: false }
+
+  const inFreedom = isFreedomDetected()
 
   // Read all declared feeds in parallel
   const perFeedResults = await Promise.all(
-    feeds.map((f) => readSingleFeed(swarm, f.feedTopic, f.feedOwner, maxEntries))
+    feeds.map((f) =>
+      inFreedom
+        ? readSingleFeedFreedom(swarm, f.feedTopic, f.feedOwner, maxEntries)
+        : readSingleFeedHttp(f.feedTopic, f.feedOwner)
+    )
   )
 
   // Merge + dedup by submissionRef + sort by createdAt descending
@@ -75,5 +97,5 @@ export async function readUserFeed(userAddress, swarm, { maxEntries = 50 } = {})
       return true
     })
 
-  return { entries: merged, feedFound: true }
+  return { entries: merged, feedFound: true, historyTruncated: !inFreedom }
 }

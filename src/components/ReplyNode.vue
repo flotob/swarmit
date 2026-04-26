@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { timeAgo, PX_PER_DEPTH, MAX_THREAD_DEPTH } from '../lib/format.js'
 import { displayName } from '../lib/displayName.js'
 import { useVotes } from '../composables/useVotes.js'
+import { useReadOnly } from '../composables/useReadOnly.js'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import TipAuthorButton from './TipAuthorButton.vue'
 import { ChevronUp, ChevronDown, MessageSquare } from 'lucide-vue-next'
@@ -16,6 +17,7 @@ const props = defineProps({
 defineEmits(['reply', 'toggle-collapse'])
 
 const { score, myVote, isVoting, upvote, downvote } = useVotes(computed(() => props.node.submissionId))
+const { isReadOnly, tooltip: readOnlyTip } = useReadOnly()
 
 const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX_THREAD_DEPTH) - 1))
 </script>
@@ -96,7 +98,9 @@ const lineCount = computed(() => Math.max(0, Math.min(props.node.depth || 0, MAX
 
         <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
           <button
-            class="hover:underline flex items-center gap-1 cursor-pointer"
+            class="hover:underline flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
+            :disabled="isReadOnly"
+            :title="isReadOnly ? readOnlyTip : undefined"
             @click="$emit('reply', node)"
           >
             <MessageSquare class="w-3 h-3" />
